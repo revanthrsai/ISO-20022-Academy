@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISO 20022 Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <!-- INTRO PRELOADER -->
+    <div class="preloader" id="preloader" aria-hidden="true">
+        <div class="preloader-currency" id="preloader-currency">
+            <span class="currency-symbol">&#8377;</span>
+            <span class="currency-symbol">$</span>
+            <span class="currency-symbol">&euro;</span>
+            <span class="currency-symbol">&yen;</span>
+            <span class="currency-symbol">&pound;</span>
+        </div>
+        <div class="eyelid eyelid-top"></div>
+        <div class="eyelid eyelid-bottom"></div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <a class="logo" href="#/">
+                <div class="logo-icon">💳</div>
+                <span>ISO 20022</span>
+            </a>
+
+            <nav class="nav">
+                <button class="nav-item active" data-page="history" onclick="navigate('history', event)">History</button>
+                <button class="nav-item" data-page="explorer" onclick="navigate('explorer', event)">Explorer</button>
+                <button class="nav-item" data-page="transformer" onclick="navigate('transformer', event)">Transformer</button>
+                <button class="nav-item" data-page="glossary" onclick="navigate('glossary', event)">Glossary</button>
+                <button class="nav-item" data-page="learning" onclick="navigate('learning', event)">Learning Path</button>
+            </nav>
+        </div>
+
+        <div class="header-right">
+			<div class="theme-toggle" onclick="toggleTheme()">
+				<div class="toggle-thumb"></div>
+			</div>
+        </div>
+    </header>
+	<!--currency banner -->
+	<div class="ticker-wrapper">
+		<div class="ticker-live"><span class="ticker-live-dot"></span>LIVE</div>
+		<div class="ticker-track">
+			<span>USD 🇺🇸</span>
+			<span>EUR 🇪🇺</span>
+			<span>GBP 🇬🇧</span>
+			<span>INR 🇮🇳</span>
+			<span>JPY 🇯🇵</span>
+			<span>AUD 🇦🇺</span>
+			<span>CAD 🇨🇦</span>
+			<span>CHF 🇨🇭</span>
+			<span>CNY 🇨🇳</span>
+
+			<span>SWIFT</span>
+			<span>SEPA</span>
+			<span>TARGET2</span>
+			<span>Fedwire</span>
+			<span>CHAPS</span>
+			<span>RTP</span>
+
+			<!-- duplicate for seamless loop -->
+			<span>USD 🇺🇸</span>
+			<span>EUR 🇪🇺</span>
+			<span>GBP 🇬🇧</span>
+			<span>INR 🇮🇳</span>
+			<span>JPY 🇯🇵</span>
+			<span>AUD 🇦🇺</span>
+			<span>CAD 🇨🇦</span>
+			<span>CHF 🇨🇭</span>
+			<span>CNY 🇨🇳</span>
+
+			<span>SWIFT</span>
+			<span>SEPA</span>
+			<span>TARGET2</span>
+			<span>Fedwire</span>
+			<span>CHAPS</span>
+			<span>RTP</span>
+		</div>
+	</div>
+    <!-- MAIN CONTAINER -->
+    <div class="main-container">
+        <!-- Sidebar (collapsible later) -->
+        <aside class="sidebar">
+            <!-- Secondary nav can go here -->
+        </aside>
+
+        <!-- CONTENT AREA -->
+        <main class="content-area" id="content">
+            <!-- Pages loaded here -->
+        </main>
+
+        <!-- DETAIL PANEL (Message Explorer) -->
+        <aside class="detail-panel" id="detail-panel">
+            <!-- Message details slide in here -->
+        </aside>
+    </div>
+
+    <script src="assets/js/data.js"></script>
+    <script src="assets/js/ui.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/preloader.js"></script>
+</body>
+</html>
