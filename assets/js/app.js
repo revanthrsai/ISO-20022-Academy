@@ -3,55 +3,60 @@
 const PAGES = {
     history: `
         <div class="page">
-			<section class="story-section reveal-section">
-				<div class="story-year">1970s</div>
-				<h2 class="kinetic-headline"><span class="kinetic-word">Banks spoke</span> <span class="gradient-text kinetic-word">different languages.</span></h2>
+            <section class="story-section reveal-section">
+                <div class="story-year">1970s</div>
+                <h2 class="kinetic-headline"><span class="kinetic-word">Banks spoke</span> <span class="gradient-text kinetic-word">different languages.</span></h2>
 
-				<div class="stats-strip">
-					<div class="stat">
-						<div class="stat-value"><span class="stat-number" data-target="11000">0</span><span class="stat-suffix">+</span></div>
-						<div class="stat-label">Financial institutions</div>
-					</div>
-					<div class="stat">
-						<div class="stat-value"><span class="stat-number" data-target="200">0</span><span class="stat-suffix">+</span></div>
-						<div class="stat-label">Countries &amp; territories</div>
-					</div>
-				</div>
+                <div class="stats-strip">
+                    <div class="stat">
+                        <div class="stat-value"><span class="stat-number" data-target="11000">0</span><span class="stat-suffix">+</span></div>
+                        <div class="stat-label">Financial institutions</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value"><span class="stat-number" data-target="200">0</span><span class="stat-suffix">+</span></div>
+                        <div class="stat-label">Countries &amp; territories</div>
+                    </div>
+                </div>
 
-				<p>
-					International payments depended on telex networks, manual processing,
-					and fragmented standards. Every institution interpreted data differently.
-				</p>
-			</section>
+                <p>
+                    International payments depended on telex networks, manual processing,
+                    and fragmented standards. Every institution interpreted data differently.
+                </p>
+            </section>
 
-			<section class="story-section reveal-section">
-				<div class="story-year">The Problem</div>
-				<h2>Money could travel globally.<br>Information <span class="gradient-text">could not.</span></h2>
-				<p>
-					Payments crossed borders every day, but their underlying data remained
-					inconsistent, incomplete, and difficult for machines to understand.
-				</p>
-			</section>
+            <section class="story-section reveal-section">
+                <div class="story-year">The Problem</div>
+                <h2>Money could travel globally.<br>Information <span class="gradient-text">could not.</span></h2>
+                <p>
+                    Payments crossed borders every day, but their underlying data remained
+                    inconsistent, incomplete, and difficult for machines to understand.
+                </p>
+            </section>
 
-			<section class="story-section reveal-section">
-				<div class="story-year">The Need</div>
-				<h2>The world needed a <span class="gradient-text">common financial language.</span></h2>
-				<section class="iso-birth reveal-section">
-				<div class="iso-year">
-					2004
-				</div>
-				<div class="iso-name">
-					ISO 20022
-				</div>
-				<div class="iso-tagline">
-					A universal language for global finance
-				</div>
-			</section>
-				<p>
-					A language that every bank, clearing house, payment processor,
-					and regulator could understand.
-				</p>
-			</section>
+            <section class="story-section reveal-section">
+                <div class="story-year">The Need</div>
+                <h2>The world needed a <span class="gradient-text">common financial language.</span></h2>
+                <div class="iso-birth">
+                    <div class="iso-year">2004</div>
+                    <div class="iso-name">ISO 20022</div>
+                    <div class="iso-tagline">A universal language for global finance</div>
+                </div>
+                <p>
+                    A language that every bank, clearing house, payment processor,
+                    and regulator could understand.
+                </p>
+            </section>
+
+            <section class="story-section reveal-section">
+                <p style="font-style: italic; font-size: clamp(20px, 2.6vw, 30px); font-weight: 600; max-width: 720px;">
+                    &ldquo;Imagine a world that never learned to speak the same financial language.&rdquo;
+                </p>
+            </section>
+
+            <div class="history-cinematic-break reveal-section" id="history-cinematic-break">
+                <video class="bg-video" id="history-break-video" src="assets/video/iso-history.mp4" muted loop playsinline controls preload="auto"></video>
+                <div class="history-hero-fade"></div>
+            </div>
 
             <div class="scrub-section" id="scrub-section">
                 <div class="scrub-pin">
@@ -106,19 +111,12 @@ const PAGES = {
                 </div>
             </div>
 
-            <div class="history-video-section">
-                <div class="history-video-eyebrow">Watch &amp; Listen</div>
-                <div class="history-video-title">The Story of ISO 20022</div>
-                <p class="history-video-sub">A short visual narration of how global payment messaging evolved — coming soon.</p>
+            <section class="story-section reveal-section">
+                <h2>You've seen how we got here.<br>Now see how it <span class="gradient-text">runs today.</span></h2>
+                <p style="font-style: italic;">&ldquo;2004 gave the industry one shared language. Below, that language is organized into the core domains running the world's financial system right now.&rdquo;</p>
+                <button class="btn" onclick="navigate('journey', event)" style="margin-top: 24px;">Start the Learning Journey &rarr;</button>
+            </section>
 
-                <div class="video-theatre">
-                    <span class="video-badge">Coming Soon</span>
-                    <button class="video-play-btn" onclick="alert('This episode is being produced. Check back soon.')" aria-label="Play">
-                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    </button>
-                    <span class="video-caption">Episode 1 &middot; The Origins of SWIFT &middot; ~4 min</span>
-                </div>
-            </div>
         </div>
 
         <div class="scroll-cue" id="scroll-cue">
@@ -126,20 +124,14 @@ const PAGES = {
             <span class="scroll-cue-chevron">&#8595;</span>
         </div>
     `,
-    explorer: `
-        <div class="page">
-            <h2 class="section-title">Message Explorer</h2>
-            <p class="section-description">
-                Select a message family to explore. Click any message to view full details, use cases, and real XML examples.
-            </p>
-            <!-- Explorer content inserted by renderExplorer() -->
-        </div>
+    journey: `
+        <!-- Roadmap pipeline, or the split-screen lesson once a pillar is opened, is rendered by renderRoadmapView() / loadLessonModule() in ui.js -->
     `,
-    transformer: `
+    playground: `
         <div class="page">
-            <h2 class="section-title">Message Transformer</h2>
+            <h2 class="section-title">Playground</h2>
             <p class="section-description">
-                Convert payment messages between different formats. Select source and destination formats to begin transformation.
+                Hands-on experimentation with message formats. Select source and destination formats to begin transformation.
             </p>
 
             <div style="max-width: 800px; margin-top: 40px;">
@@ -190,57 +182,6 @@ const PAGES = {
             <input type="text" class="search-box" id="glossary-search" placeholder="Search glossary..." onkeyup="filterGlossary(this.value)" style="margin-bottom: 32px;">
             <div class="glossary-grid" id="glossary-grid"></div>
         </div>
-    `,
-    learning: `
-        <div class="page">
-            <h2 class="section-title">Learning Path</h2>
-            <p class="section-description">
-                Structured learning modules to master ISO 20022. Each module includes interactive lessons and real-world examples.
-            </p>
-            <div class="grid-3" style="margin-top: 32px;">
-                <div class="card">
-                    <div style="font-size: 32px; margin-bottom: 12px;">🌱</div>
-                    <div class="card-title">Foundations</div>
-                    <div class="card-description">What ISO 20022 is and why it exists.</div>
-                    <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Coming Soon</div>
-                </div>
-
-                <div class="card">
-                    <div style="font-size: 32px; margin-bottom: 12px;">📚</div>
-                    <div class="card-title">Message Families</div>
-                    <div class="card-description">Deep dive into CAMT, PACS, PAIN, and more.</div>
-                    <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Coming Soon</div>
-                </div>
-
-                <div class="card">
-                    <div style="font-size: 32px; margin-bottom: 12px;">🔧</div>
-                    <div class="card-title">Technical Deep Dive</div>
-                    <div class="card-description">XML structure and field mappings.</div>
-                    <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Coming Soon</div>
-                </div>
-
-                <div class="card">
-                    <div style="font-size: 32px; margin-bottom: 12px;">💡</div>
-                    <div class="card-title">Real-World Scenarios</div>
-                    <div class="card-description">Case studies from actual banking systems.</div>
-                    <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Coming Soon</div>
-                </div>
-
-                <div class="card">
-                    <div style="font-size: 32px; margin-bottom: 12px;">🎯</div>
-                    <div class="card-title">Implementation</div>
-                    <div class="card-description">Build your first ISO 20022 parser.</div>
-                    <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Coming Soon</div>
-                </div>
-
-                <div class="card">
-                    <div style="font-size: 32px; margin-bottom: 12px;">🚀</div>
-                    <div class="card-title">Advanced Topics</div>
-                    <div class="card-description">Multi-currency and enterprise-scale systems.</div>
-                    <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Coming Soon</div>
-                </div>
-            </div>
-        </div>
     `
 };
 
@@ -260,45 +201,68 @@ function navigate(page, evt) {
     content.innerHTML = PAGES[page];
 
     // Run page-specific initialization
-    if (page === 'explorer') {
-        renderExplorer();
+    if (page === 'journey') {
+        renderRoadmapView();
     } else if (page === 'glossary') {
         renderGlossary();
     } else if (page === 'history') {
         initScrubTimeline();
-		initRevealAnimations();
+        initRevealAnimations();
         initStatCounters();
         initScrollCue();
+        initBackgroundVideos();
     }
+}
+
+// Full-bleed background video (mid-page cinematic break): plays only while
+// the section is actually on screen, starting once the user scrolls it into
+// view and pausing once scrolled past -- no need for a separate timer-based
+// fade.
+function initBackgroundVideos() {
+    const videos = document.querySelectorAll('.bg-video');
+    if (!videos.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target;
+            if (entry.isIntersecting) {
+                video.play().catch(() => {});
+            } else {
+                video.pause();
+            }
+        });
+    }, { threshold: 0.35 });
+
+    videos.forEach(video => observer.observe(video));
 }
 
 // Scroll cue: a bouncing "scroll" hint pinned to the bottom of the
 // viewport on first load. Fades out once the user starts scrolling,
-// and clicking it nudges the content area down by one screen.
+// and clicking it nudges the page down by one screen. The whole document
+// scrolls (not an inner pane), so this watches window scroll position.
 function initScrollCue() {
     const cue = document.getElementById('scroll-cue');
-    const scrollContainer = document.querySelector('.content-area');
-    if (!cue || !scrollContainer) return;
+    if (!cue) return;
 
     function updateVisibility() {
         const activeCue = document.getElementById('scroll-cue');
         if (!activeCue) return;
-        if (scrollContainer.scrollTop > 80) {
+        if (window.scrollY > 80) {
             activeCue.classList.add('is-hidden');
         } else {
             activeCue.classList.remove('is-hidden');
         }
     }
 
-    if (!scrollContainer.dataset.scrollCueBound) {
-        scrollContainer.dataset.scrollCueBound = '1';
-        scrollContainer.addEventListener('scroll', updateVisibility, { passive: true });
+    if (!window.__scrollCueBound) {
+        window.__scrollCueBound = true;
+        window.addEventListener('scroll', updateVisibility, { passive: true });
     }
 
     updateVisibility();
 
     cue.addEventListener('click', function () {
-        scrollContainer.scrollBy({ top: scrollContainer.clientHeight * 0.85, behavior: 'smooth' });
+        window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' });
     });
 }
 
@@ -340,7 +304,46 @@ function initScrubTimeline() {
 // Initialize on load
 window.addEventListener('DOMContentLoaded', () => {
     navigate('history');
+    initHeaderAutoHide();
 });
+
+// Auto-hiding header: slides up out of view on scroll-down, slides back in
+// on scroll-up. Ignored near the very top of the page so the header doesn't
+// flicker while the user is still reading the first screen.
+function initHeaderAutoHide() {
+    const header = document.querySelector('.header');
+    if (!header) return;
+
+    let lastY = window.scrollY;
+    let ticking = false;
+
+    // Small dead-zone (16px) so the header doesn't sit forced-visible while
+    // page content has already scrolled up underneath it, and a 4px scroll
+    // delta threshold so tiny/jittery scroll events (touchpads, momentum)
+    // don't flicker the header in and out.
+    function onScroll() {
+        const currentY = window.scrollY;
+        const delta = currentY - lastY;
+
+        if (currentY <= 16) {
+            header.classList.remove('header-hidden');
+        } else if (delta > 4) {
+            header.classList.add('header-hidden');
+        } else if (delta < -4) {
+            header.classList.remove('header-hidden');
+        }
+
+        lastY = currentY;
+        ticking = false;
+    }
+
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(onScroll);
+        }
+    }, { passive: true });
+}
 
 // Count-up stat strip: starts the instant the preloader's eyelids finish
 // opening (or immediately if the intro already played this session).

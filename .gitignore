@@ -3,4 +3,4 @@
 Thumbs.db
 *.log
 .vscode/
-"@ | Out-File -Encoding utf8 .gitignore
+"@ | Out-File -Encoding utf8 .gitignoreassets/video/iso-history.mp4 assets/video/payment-intro.mp4
