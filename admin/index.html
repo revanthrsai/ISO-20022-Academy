@@ -4,12 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ISO Academy CMS</title>
+    <!-- Explicitly point to the config file -->
+    <meta name="cms-config-url" content="/admin/config.yml" />
     <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
   </head>
   <body>
-    <!-- Netlify Identity Widget integration for the admin page -->
-    <script>
-      CMS.init();
-    </script>
+    <!-- CMS mounts automatically -->
   </body>
 </html>
