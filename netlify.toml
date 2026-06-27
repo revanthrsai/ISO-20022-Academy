@@ -1,6 +1,13 @@
-#[build]
-#  publish = "."
+[build]
+  publish = "."
 
+# Let /admin and its assets be served as real files, never rewritten
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/:splat"
+  status = 200
+
+# SPA fallback for the public site
 [[redirects]]
   from = "/*"
   to = "/index.html"

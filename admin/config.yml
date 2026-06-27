@@ -1,18 +1,16 @@
 backend:
   name: git-gateway
-  repo: revanthrsai/ISO-Academy-20022 # Your GitHub repository
-  branch: main # Branch to update
-  #identity_url: "https://iso-20022-academy.netlify.app/.netlify/identity"
+  branch: main
 
-media_folder: "assets/images/uploads" # Folder where uploaded images are saved
-public_folder: "assets/images/uploads"
+media_folder: "assets/images/uploads"
+public_folder: "/assets/images/uploads"
 
 collections:
   - name: "articles"
     label: "Library Articles"
-    folder: "content" # The folder where the .md files are saved
+    folder: "content"
     create: true
-    slug: "{{id}}" # The filename will be the ID (e.g., 101-nostro-vostro.md)
+    slug: "{{id}}"
     fields:
       - { label: "Article ID", name: "id", widget: "string", hint: "e.g., 101-nostro-vostro" }
       - { label: "Title", name: "title", widget: "string" }
