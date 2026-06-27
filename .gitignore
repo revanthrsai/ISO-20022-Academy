@@ -4,3 +4,4 @@ Thumbs.db
 .vscode/
 
 assets/video/
+node_modules/
