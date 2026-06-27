@@ -2,7 +2,7 @@ backend:
   name: git-gateway
   repo: revanthrsai/ISO-Academy-20022 # Your GitHub repository
   branch: main # Branch to update
-  identity_url: "https://iso-20022-academy.netlify.app/.netlify/identity"
+  #identity_url: "https://iso-20022-academy.netlify.app/.netlify/identity"
 
 media_folder: "assets/images/uploads" # Folder where uploaded images are saved
 public_folder: "assets/images/uploads"
