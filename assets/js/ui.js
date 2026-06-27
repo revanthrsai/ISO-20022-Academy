@@ -717,6 +717,13 @@ function renderKnowledgeLesson(node, mod) {
                 <p class="lesson-story-text" data-reveal="up">${node.story.lead}</p>
                 ${node.story.beats.map((p, i) => `<p class="lesson-story-text" data-reveal="up" data-reveal-delay="${(i + 1) * 70}">${p}</p>`).join('')}
                 ${node.story.castPayoff ? `<div class="lesson-unlocked-skill" data-reveal="up"><strong>Recap.</strong> ${node.story.castPayoff}</div>` : ''}
+                ${(node.story.rolesLearned && node.story.rolesLearned.length) ? `
+                <div class="lesson-unlocked-skill" data-reveal="up" style="margin-top:14px">
+                    <strong>Congratulations — you just learned:</strong>
+                    <div class="spotlight-fields" style="margin-top:12px">
+                        ${node.story.rolesLearned.map(r => `<div class="spotlight-field"><span class="spotlight-field-tag">${r.term}</span><span class="spotlight-field-meaning">${r.who}</span></div>`).join('')}
+                    </div>
+                </div>` : ''}
             </div>
 
             <!-- BEAT 4 — How the World Solved It -->

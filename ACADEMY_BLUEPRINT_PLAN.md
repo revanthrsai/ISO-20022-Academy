@@ -25,8 +25,8 @@ files it touches, and a "Definition of Done" so any session can pick up cleanly.
 - ✅ **Phase 6** — Message Explorer: every message in `DATA.messages` enriched with a Lesson-Spine `node` (story → why → who creates/receives → business process & flow → business components → message components → XML → validation → what breaks → interview questions → related messages). `ui.js` detail panel rebuilt as `renderMessageNode()` — concept-before-payload, XML never first, every message has ≥1 "what breaks" and ≥1 interview question. Explorer is now reachable: beat-6 message rows in the journey (and message spotlights) open the panel; related-message tags cross-navigate. Reuses existing detail/spotlight/lesson CSS — no new styles.
 - ✅ **Phase 7** — Knowledge graph closed + 5 gap nodes built. `knowledge-nodes.js` gains **The Three Layers (metamodel)**, **Regional Dialects (networks)**, **Routing & Cover Payments (physics)**, **Tracking Identifiers (physics: MsgId vs EndToEndId vs UETR)**, and **The Envelope & Extensions (payload: head.001 + SplmtryData)** — each a full 9-beat node, beat-1 human-question test passing. Existing chapters cross-link into them (Payments → identifiers/routing/networks). `ui.js`: related-idea links are now **clickable** ("You'll want to understand…" opens the node; "Look up" chips jump to the filtered glossary), gap nodes render via `openKnowledgeNode()` with their IA-layer label (no journey module needed), and a **"Go Deeper" rail** on the roadmap surfaces all five layers so they're reachable, not buried. Glossary gained UETR, HVPS+, Cover Payment, Business Application Header, Data Dictionary, Structured Address so every link resolves — no dead ends. **Plus (user request):** the Message Explorer now opens as an **Outlook-style popup** (centered reading window over a blurred backdrop, Esc / click-out to close) instead of the side panel.
 - ✅ **Phase 8** — Plain-English pass across the content built in 3–7. The two house-style analogies are now in canon: the **Lego box** (shared studs → a payments block snaps into a securities/trade message) in Foundations, and the **smart passport** (each fact in its own labelled box instead of one cramped line that trips screening on a word like "LONDON") in Payments. Acronyms are unpacked on first use throughout — pain/pacs/camt expanded to payment-initiation / clearing-&-settlement / cash-management, plus MT↔MX, RTGS, UUID/RFC 4122, BIC, MT101/MT940/MT564, KYC. Content-only edits in `knowledge-nodes.js` + `data.js`; no structural or CSS change. DoD: Foundations + Payments are now completable with zero finance background.
-- ⬜ **Phase 9** — Named-human stories ("you just learned…" payoff) (next).
-- ⬜ Phase 10 — pending.
+- ✅ **Phase 9** — Named-human stories layered in. Each of the six chapters now ends its story beat with an explicit **"Congratulations — you just learned…"** payoff that names retroactively the ISO roles the Bob & Sweety scene just dramatized (Payments → Debtor / Debtor Agent / Clearing System / Creditor Agent / Creditor / Settlement; FX → counterparties / settlement agent / currency pair / PvP; Cards → cardholder / merchant / acquirer / issuer; Trade → applicant / beneficiary / issuing & advising bank / letter of credit; Securities → investor / broker / depository / custodian). New `story.rolesLearned` field in `knowledge-nodes.js`, rendered as a structured term→who reveal in `ui.js` (reuses existing lesson + spotlight classes — no new CSS). DoD: every domain tells the story first, then names the vocabulary it taught.
+- ✅ **Phase 10** — Design freeze lifted (final). The **Playground** is now live: a real MT103 → pacs.008 transformer (`assets/js/playground.js`, `Playground` module; `initPlayground()` runs on navigation). **Slice A** — the canonical Bob → Sweety payment is an editable MT103 (8 SWIFT fields) on the left; the pacs.008 rebuilds **live** on the right on every keystroke, field by field; a **Plain English ⇄ XML** toggle renders the logical tree (every cryptic tag swapped for its human name from a `PLAIN` dictionary); hovering/focusing a source field lights up exactly where it lands in the XML *and* in the validator (shared `data-from` keys). **Slice B** — a live validator runs the concrete failure modes the message lessons teach (placeholder/over-length EndToEndId, malformed BIC, bad amount/currency, missing UTC offset, invalid UETR variant bits) and an MT-truncation **warning** (>35-char name); **"What breaks" injectors** trigger each fault (truncate name, placeholder reference, drop timezone, corrupt UETR) and reset to Bob → Sweety. New CSS section **14b** in `style.css` (the freeze is lifted, so new layout is allowed); reuses existing tokens/glass/mono. The old static "In development" preview page is replaced. Slice C (multi-party cover-payment routing visualizer, schema-repair exercises) is flagged as "Coming next" on the page and left for a future session. DoD: the Playground is interactive end-to-end, teaches MT→MX losslessly, and catches real validation failures in real time.
 
 > **To commit Phase 2:** add `<script src="assets/js/knowledge-nodes.js"></script>`
 > to `index.html` after `data.js` and before `ui.js`. (Optional until Phase 3 —
@@ -391,12 +391,16 @@ nothing decorative blocks comprehension.
 
 The Blueprint's sandbox is ambitious. Build it in slices aligned to the phases
 above rather than all at once:
-- **Slice A (with Phase 6):** read-only XML with a logical tree view that renames
-  tags to plain English on hover.
-- **Slice B (with Phase 7):** live validation messages for the concrete failure
-  modes (UETR bits, EndToEndId placeholder, missing codeword).
-- **Slice C (Phase 10):** routing/cover-payment visualizer; "Schema Repair"
-  broken-payload exercises; minimal/maximal/idempotency test profiles.
+- **Slice A (Phase 10 — ✅ done):** editable MT103 → live pacs.008 transform with
+  a logical tree view that renames every tag to plain English (toggle) and a
+  hover-link that maps each source field to where it lands in the XML.
+- **Slice B (Phase 10 — ✅ done):** live validation for the concrete failure modes
+  (placeholder/over-length EndToEndId, bad BIC, amount/currency, missing UTC
+  offset, UETR variant bits) plus the MT 35-char truncation warning, with
+  "what breaks" fault injectors.
+- **Slice C (future):** routing/cover-payment visualizer; "Schema Repair"
+  broken-payload exercises; minimal/maximal/idempotency test profiles. Flagged
+  "Coming next" on the Playground page.
 
 ---
 

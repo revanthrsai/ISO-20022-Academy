@@ -247,65 +247,19 @@ const PAGES = {
                 <div class="eyebrow" data-reveal="fade">Playground</div>
                 <h2 class="section-title" data-reveal="up">Watch one message become another.</h2>
                 <p class="section-description" data-reveal="up">
-                    The same payment, two languages. The transformer reads a message in one format and
-                    reconstructs it in another &mdash; field by field, meaning preserved. Here's a preview of what's coming.
+                    The same payment, two languages. Edit the old SWIFT <strong>MT103</strong> on the left and the
+                    <strong>ISO&nbsp;20022 pacs.008</strong> rebuilds live on the right &mdash; field by field, meaning preserved.
+                    Flip it to plain English, hover a field to see where it lands, and watch the validator catch exactly
+                    what breaks.
                 </p>
             </div>
 
-            <div class="pg-console" data-reveal="up">
-                <div class="pg-format-row">
-                    <div class="pg-format">
-                        <label class="pg-label">Source</label>
-                        <div class="pg-pill is-source">SWIFT MT103</div>
-                    </div>
-                    <div class="pg-transform-badge" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>
-                    </div>
-                    <div class="pg-format">
-                        <label class="pg-label">Destination</label>
-                        <div class="pg-pill is-dest">ISO 20022 &middot; pacs.008</div>
-                    </div>
-                </div>
-
-                <div class="pg-panes">
-                    <div class="pg-pane">
-                        <div class="pg-pane-bar"><span class="pg-dot"></span><span class="pg-dot"></span><span class="pg-dot"></span><span class="pg-pane-name">message.mt</span></div>
-                        <pre class="pg-code pg-code-mt"><code>:20:REF-400USD
-:32A:260624USD400,00
-:50K:/BOB
-:59:/SWEETY
-:71A:SHA</code></pre>
-                    </div>
-
-                    <div class="pg-wire" aria-hidden="true">
-                        <span class="pg-wire-dot"></span>
-                        <span class="pg-wire-dot" style="animation-delay:.6s"></span>
-                        <span class="pg-wire-dot" style="animation-delay:1.2s"></span>
-                    </div>
-
-                    <div class="pg-pane">
-                        <div class="pg-pane-bar"><span class="pg-dot"></span><span class="pg-dot"></span><span class="pg-dot"></span><span class="pg-pane-name">message.xml</span></div>
-                        <pre class="pg-code pg-code-xml"><code>&lt;FIToFICstmrCdtTrf&gt;
-  &lt;CdtTrfTxInf&gt;
-    &lt;Amt Ccy="USD"&gt;400.00&lt;/Amt&gt;
-    &lt;Dbtr&gt;&lt;Nm&gt;Bob&lt;/Nm&gt;&lt;/Dbtr&gt;
-    &lt;Cdtr&gt;&lt;Nm&gt;Sweety&lt;/Nm&gt;&lt;/Cdtr&gt;
-  &lt;/CdtTrfTxInf&gt;
-&lt;/FIToFICstmrCdtTrf&gt;</code></pre>
-                    </div>
-                </div>
-
-                <div class="pg-stats" data-reveal-group data-reveal-stagger="120">
-                    <div class="pg-stat" data-reveal="up"><div class="pg-stat-num"><span data-count="5">0</span></div><div class="pg-stat-label">Fields mapped</div></div>
-                    <div class="pg-stat" data-reveal="up"><div class="pg-stat-num"><span data-count="100">0</span><span class="pg-stat-suffix">%</span></div><div class="pg-stat-label">Meaning preserved</div></div>
-                    <div class="pg-stat" data-reveal="up"><div class="pg-stat-num"><span data-count="0">0</span></div><div class="pg-stat-label">Data lost</div></div>
-                </div>
-            </div>
+            <div class="pg-lab" id="pg-lab" data-reveal="up"></div>
 
             <div class="pg-soon" data-reveal="up">
-                <span class="pg-soon-badge">In development</span>
-                <p>Soon you'll edit either side and watch the other rebuild live &mdash; with field-by-field mapping,
-                validation, and real-time conversion between MT, XML, JSON and CSV.</p>
+                <span class="pg-soon-badge">Coming next</span>
+                <p>This is Bob&rsquo;s real $400 transfer, converted live. Next up: serial vs. cover-payment routing across
+                multiple banks, and broken-payload &ldquo;schema repair&rdquo; challenges.</p>
             </div>
         </div>
     `,
@@ -351,6 +305,8 @@ function navigate(page, evt) {
         renderRoadmapView();
     } else if (page === 'glossary') {
         renderGlossary();
+    } else if (page === 'playground') {
+        initPlayground();
     } else if (page === 'history') {
         initScrubTimeline();
         initRevealAnimations();

@@ -89,7 +89,14 @@ const knowledgeNodes = {
                 "Those aren't technical questions yet — they're the same questions a shopkeeper asks before writing a receipt.",
                 "ISO 20022 wrote those questions down once, in a single shared dictionary, so that every bank in the world fills in the same blanks the same way."
             ],
-            castPayoff: "You just met the four words every message in this academy is built from: a party who sends, a party who receives, an amount, and an identifier that ties it all together."
+            castPayoff: "You just met the four words every message in this academy is built from: a party who sends, a party who receives, an amount, and an identifier that ties it all together.",
+            rolesLearned: [
+                { term: 'Debtor', who: 'Bob — the party the money leaves' },
+                { term: 'Creditor', who: 'Sweety — the party it lands with' },
+                { term: 'Amount', who: 'how much, and in which currency' },
+                { term: 'Agent', who: "a bank acting on a party's behalf" },
+                { term: 'Identifier', who: 'the reference that ties the whole transaction together' }
+            ]
         },
 
         // --- Beat 4: How the world solved it ---
@@ -169,7 +176,15 @@ const knowledgeNodes = {
                 "Before ISO 20022, that handoff was a minefield of bank-specific formats and ambiguous free text; one misread field could delay Bob's money for days.",
                 "Once it lands, the story isn't over: Sweety's bank still has to tell her it arrived, and keep her balance in sync — that's the 'cash management' half of the job."
             ],
-            castPayoff: "You just lived through Debtor (Bob), Debtor Agent (his bank), Clearing System, Creditor Agent (Sweety's bank), and Creditor (Sweety) — plus the statement and notification that confirm it all."
+            castPayoff: "You just lived through Debtor (Bob), Debtor Agent (his bank), Clearing System, Creditor Agent (Sweety's bank), and Creditor (Sweety) — plus the statement and notification that confirm it all.",
+            rolesLearned: [
+                { term: 'Debtor', who: 'Bob, who tapped send' },
+                { term: 'Debtor Agent', who: "Bob's bank, which sent the transfer" },
+                { term: 'Clearing System', who: 'the rails that routed it between banks' },
+                { term: 'Creditor Agent', who: "Sweety's bank, which received it" },
+                { term: 'Creditor', who: 'Sweety, who got the money' },
+                { term: 'Settlement', who: 'the moment the funds actually moved' }
+            ]
         },
 
         // --- Beat 4: How the world solved it ---
@@ -260,7 +275,14 @@ const knowledgeNodes = {
                 "The danger is timing. If one side pays its currency and the other defaults before paying back, the first side simply loses the money — a real disaster that happened, and reshaped the whole market.",
                 "So a neutral settlement agent now sits in the middle and refuses to move either currency unless both move together."
             ],
-            castPayoff: "You just met the two counterparties, the settlement agent between them, the currency pair, the settlement date — and the simple rule that neither leg moves unless both do."
+            castPayoff: "You just met the two counterparties, the settlement agent between them, the currency pair, the settlement date — and the simple rule that neither leg moves unless both do.",
+            rolesLearned: [
+                { term: 'Counterparties', who: "Bob's and Sweety's sides of the swap" },
+                { term: 'Settlement Agent', who: 'the neutral party moving both currencies together' },
+                { term: 'Currency Pair', who: 'AED for INR' },
+                { term: 'Settlement Date', who: 'the day the converted funds change hands' },
+                { term: 'Payment-versus-Payment', who: 'the rule that neither leg moves unless both do' }
+            ]
         },
 
         // --- Beat 4: How the world solved it ---
@@ -343,7 +365,14 @@ const knowledgeNodes = {
                 "Later, clearing and settlement actually move the money between the shop's bank and Sweety's bank.",
                 "Card networks used to do all this with their own private formats — so every processor needed custom wiring for every network it touched."
             ],
-            castPayoff: "You just met the cardholder, the merchant, the acquirer (the shop's bank), and the card issuer (Sweety's bank) — and the authorization that ties them together in a heartbeat."
+            castPayoff: "You just met the cardholder, the merchant, the acquirer (the shop's bank), and the card issuer (Sweety's bank) — and the authorization that ties them together in a heartbeat.",
+            rolesLearned: [
+                { term: 'Cardholder', who: 'Sweety, who tapped' },
+                { term: 'Merchant', who: 'the pharmacy being paid' },
+                { term: 'Acquirer', who: "the merchant's bank" },
+                { term: 'Card Issuer', who: "Sweety's bank, which approves or declines" },
+                { term: 'Authorization', who: 'the under-a-second yes / no' }
+            ]
         },
 
         // --- Beat 4: How the world solved it ---
@@ -429,7 +458,14 @@ const knowledgeNodes = {
                 "Then every event that touches the fund afterward — a dividend, a split — has to reach her custodian accurately and on time.",
                 "Mismatched details between custodians used to cause failed settlements and missed deadlines, sometimes costing investors real money they never heard about in time."
             ],
-            castPayoff: "You just met the investor, the broker, the central depository, and the custodian — plus the corporate action and the settlement that keep Sweety's small stake honest."
+            castPayoff: "You just met the investor, the broker, the central depository, and the custodian — plus the corporate action and the settlement that keep Sweety's small stake honest.",
+            rolesLearned: [
+                { term: 'Investor', who: 'Sweety, who holds the stake' },
+                { term: 'Broker', who: 'who executes the buy or sell order' },
+                { term: 'Central Depository', who: 'the definitive registry of who owns what' },
+                { term: 'Custodian', who: 'who safekeeps and services her holding' },
+                { term: 'Corporate Action', who: 'the dividend or split that touches the fund' }
+            ]
         },
 
         // --- Beat 4: How the world solved it ---
@@ -512,7 +548,14 @@ const knowledgeNodes = {
                 "That promise, a letter of credit, turns 'trust a stranger' into 'trust a bank'.",
                 "Done on paper, it crawled; done as structured data, banks and companies on both sides process it consistently — and the capital behind Bob's paycheck keeps moving."
             ],
-            castPayoff: "You just met the applicant (the buyer), the beneficiary (the seller), the issuing bank, and the advising bank — and the guarantee that lets trade happen between strangers."
+            castPayoff: "You just met the applicant (the buyer), the beneficiary (the seller), the issuing bank, and the advising bank — and the guarantee that lets trade happen between strangers.",
+            rolesLearned: [
+                { term: 'Applicant', who: "the buyer — Bob's employer" },
+                { term: 'Beneficiary', who: 'the seller — the overseas supplier' },
+                { term: 'Issuing Bank', who: "the buyer's bank that makes the promise" },
+                { term: 'Advising Bank', who: 'the seller-side bank that relays it' },
+                { term: 'Letter of Credit', who: 'the guarantee that lets strangers trade' }
+            ]
         },
 
         // --- Beat 4: How the world solved it ---
