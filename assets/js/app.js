@@ -241,6 +241,9 @@ const PAGES = {
     journey: `
         <!-- Roadmap pipeline, or the split-screen lesson once a pillar is opened, is rendered by renderRoadmapView() / loadLessonModule() in ui.js -->
     `,
+    learn: `
+        <div class="page"><div id="learn-root"><!-- renderArticleIndex() fills this --></div></div>
+    `,
     playground: `
         <div class="page">
             <div class="pg-head" data-reveal-group>
@@ -307,6 +310,8 @@ function navigate(page, evt) {
         renderGlossary();
     } else if (page === 'playground') {
         initPlayground();
+    } else if (page === 'learn') {
+        renderArticleIndex();
     } else if (page === 'history') {
         initScrubTimeline();
         initRevealAnimations();
