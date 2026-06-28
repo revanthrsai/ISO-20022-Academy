@@ -37,6 +37,10 @@ Rules for any session, for both Revanth and Claude:
 * **If a session is dragging** (several rounds of "no, I meant…"), stop.
   Write a one-paragraph handoff note in the log and start fresh next time
   rather than pushing through a degraded context window.
+* **At the end of every session, hand back a bundle of the modified files.**
+  After updating the Session Log, package the files that changed (plus this
+  plan) as a downloadable bundle so the changes can be moved back into the
+  repo as the source of truth.
 
 A typical session kickoff looks like:
 
@@ -49,6 +53,8 @@ A typical session kickoff looks like:
 
 The project is currently undergoing a complete product redesign.
 
+Phase 1 (Product Foundation) is **complete and signed off** (Session 1.4, 2026-06-28): philosophy, navigation/IA, design tokens, component inventory, and the shared page shell are all locked, and every planned Phase 2–5 page has been validated against the shell. Next up: Phase 2 — History.
+
 This roadmap replaces the previous implementation plan.
 
 Completed work from earlier iterations may be reused where appropriate, but no previous UI or information architecture should be treated as final.
@@ -59,7 +65,7 @@ The priority is to establish a clean, scalable foundation before expanding conte
 
 # Phase 1 — Product Foundation (Current)
 
-Status: 🟡 In Progress
+Status: 🟡 Complete — signed off Session 1.4 (2026-06-28)
 
 Goal:
 
@@ -348,16 +354,26 @@ The objective is to become the definitive learning platform for ISO 20022.
 log them here instead of acting on them. Revisit when planning a future
 session, not during the current one.)*
 
+- **Disposition of the current "Learning Journey" page** (`navigate('journey')`).
+  ~~The new four-question IA has no fifth top-level section...~~ **Resolved in
+  Session 1.3 — disposition (c):** retired from the global nav, kept as a non-nav
+  deep route (still reachable from in-page CTAs; `PAGES.journey` / `renderRoadmapView()`
+  untouched).
+- ~~**Rename `learn → library` in code**~~ **Done in Session 1.3.** The
+  `navigate()` key `learn` is now `library` across `index.html`, `app.js`, and
+  `markdown.js`. (The internal `learn-root` element id was left as-is — it is
+  plumbing, not the route key.)
+
 ---
 
 # Session Log
 
 | Session | Status | Date | Shipped / DoD met | Deferred |
 |---|---|---|---|---|
-| 1.1 Philosophy & Navigation | ⏳ Not started | | | |
-| 1.2 Design System | ⏳ Not started | | | |
-| 1.3 Page Templates | ⏳ Not started | | | |
-| 1.4 IA Validation & Sign-off | ⏳ Not started | | | |
+| 1.1 Philosophy & Navigation | ✅ Done | 2026-06-28 | `PHILOSOPHY.md` locks the four-question framing + nine-beat Lesson Spine; `NAVIGATION.md` names the four top-level sections, the full `#/…` hash-route scheme, every section's final sub-route slugs, and the current-code → target-route mapping. No visual build (per scope). | `journey` page disposition + `learn → library` rename → Backlog (both for 1.3). |
+| 1.2 Design System | ✅ Done | 2026-06-28 | `DESIGN_TOKENS.css` — canonical single-source token set (color incl. light theme, type scale, spacing, radius, elevation, glass, icon, motion); every token has a value. `COMPONENTS.md` — shared component inventory (shell/nav, 6 card variants, content blocks, reading surface, controls, layout grids); each has name, props, and one example. Both extracted from the live `assets/css/style.css` so spec and code agree. | None new. (Nav `learn → library` rename + `journey` disposition already in Backlog for 1.3; documented in `COMPONENTS.md` §1, not acted on.) |
+| 1.3 Page Templates | ✅ Done | 2026-06-28 | Shared page shell now has all three regions: `TEMPLATE.html` (new) is the standalone shell — header + content-area + **footer** — rendering generic placeholder content built from 1.2 tokens + components (no section-specific content). Live shell wired to match: new `site-footer` (markup in `index.html`, styles appended to `assets/css/style.css`, spec added to `COMPONENTS.md` §1). Both Backlog items executed: `learn → library` renamed across `index.html`, `app.js`, `markdown.js`; "Learning Journey" retired from global nav — `journey` kept as a non-nav deep route (disposition c). | `learn-root` DOM id left unchanged (internal plumbing, not the route key). |
+| 1.4 IA Validation & Sign-off | ✅ Done | 2026-06-28 | Walked every planned Phase 2–5 page through the Phase 1 shell (`TEMPLATE.html`) + component inventory. Result: all pages render through the shell. Two shared controls were missing and patched in (no rebuild): **`pager`** (sequential prev/next — History chapters read in order, Library lesson sequence) and **`filter-bar`/`filter-chip`** (Glossary `?category=` filter; reusable as Library level filter). Each added in three places — `assets/css/style.css`, `COMPONENTS.md` §5, and demoed in `TEMPLATE.html`. New §7 in `COMPONENTS.md` records the full coverage matrix + gap decisions. No tokens added (both resolve from existing `DESIGN_TOKENS.css`). Playground tool interiors confirmed **page-owned** (Phase 4), same status as History's scrub-timeline. **Phase 1 marked ✅** in Current Status. | None. |
 | 2.1 Evolution of Payments + SWIFT/MT | ⏳ Not started | | | |
 | 2.2 Legacy Problems + Birth of ISO | ⏳ Not started | | | |
 | 2.3 Migration Timeline + polish | ⏳ Not started | | | |

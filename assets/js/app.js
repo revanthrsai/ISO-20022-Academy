@@ -251,10 +251,12 @@ const PAGES = {
             <span class="scroll-cue-chevron">&#8595;</span>
         </div>
     `,
+    // Non-nav deep route: retired from the global nav in 1.3 (disposition c),
+    // still reachable via in-page CTAs. Roadmap rendered by renderRoadmapView().
     journey: `
         <!-- Roadmap pipeline, or the split-screen lesson once a pillar is opened, is rendered by renderRoadmapView() / loadLessonModule() in ui.js -->
     `,
-    learn: `
+    library: `
         <div class="page"><div id="learn-root"><!-- renderArticleIndex() fills this --></div></div>
     `,
     playground: `
@@ -323,7 +325,7 @@ function navigate(page, evt) {
         renderGlossary();
     } else if (page === 'playground') {
         initPlayground();
-    } else if (page === 'learn') {
+    } else if (page === 'library') {
         renderArticleIndex();
     } else if (page === 'history') {
         initScrubTimeline();
