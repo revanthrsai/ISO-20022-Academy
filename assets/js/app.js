@@ -206,22 +206,49 @@ const PAGES = {
         <div class="page">
             <div class="pg-head" data-reveal-group>
                 <div class="eyebrow" data-reveal="fade">Playground</div>
-                <h2 class="section-title" data-reveal="up">Watch one message become another.</h2>
+                <h2 class="section-title" data-reveal="up">Work with the messages yourself.</h2>
                 <p class="section-description" data-reveal="up">
+                    Hands-on tools for ISO&nbsp;20022 &mdash; built to feel like real software, not documentation.
+                    Start by <strong>reading</strong> a message, then <strong>transforming</strong> one into another.
+                </p>
+            </div>
+
+            <div class="pg-tools" role="tablist" aria-label="Playground tools" data-reveal="up">
+                <button class="pg-tool-tab is-on" role="tab" data-tool="viewer" onclick="setPlaygroundTool('viewer', event)">
+                    <span class="pg-tool-tab-name">XML Viewer</span>
+                    <span class="pg-tool-tab-sub">Read any message</span>
+                </button>
+                <button class="pg-tool-tab" role="tab" data-tool="transformer" onclick="setPlaygroundTool('transformer', event)">
+                    <span class="pg-tool-tab-name">Transformer</span>
+                    <span class="pg-tool-tab-sub">MT103 &rarr; pacs.008</span>
+                </button>
+                <span class="pg-tool-soon">Validator &middot; Comparator &middot; Samples &mdash; coming next</span>
+            </div>
+
+            <!-- TOOL · XML Viewer (Session 4.1) -->
+            <section class="pg-tool-panel" id="pg-tool-viewer" data-reveal="up">
+                <p class="pg-tool-intro">
+                    Paste an ISO&nbsp;20022 message &mdash; or load a sample from any 300-level family below &mdash; and read it as a
+                    collapsible tree. Flip <strong>Plain English</strong> to rename every cryptic tag to what it actually means.
+                </p>
+                <div class="xv" id="xv-root"></div>
+            </section>
+
+            <!-- TOOL · Transformer (pre-existing live MT103 → pacs.008) -->
+            <section class="pg-tool-panel" id="pg-tool-transformer" hidden>
+                <p class="pg-tool-intro">
                     The same payment, two languages. Edit the old SWIFT <strong>MT103</strong> on the left and the
                     <strong>ISO&nbsp;20022 pacs.008</strong> rebuilds live on the right &mdash; field by field, meaning preserved.
                     Flip it to plain English, hover a field to see where it lands, and watch the validator catch exactly
                     what breaks.
                 </p>
-            </div>
-
-            <div class="pg-lab" id="pg-lab" data-reveal="up"></div>
-
-            <div class="pg-soon" data-reveal="up">
-                <span class="pg-soon-badge">Coming next</span>
-                <p>This is Bob&rsquo;s real $400 transfer, converted live. Next up: serial vs. cover-payment routing across
-                multiple banks, and broken-payload &ldquo;schema repair&rdquo; challenges.</p>
-            </div>
+                <div class="pg-lab" id="pg-lab"></div>
+                <div class="pg-soon">
+                    <span class="pg-soon-badge">Coming next</span>
+                    <p>This is Bob&rsquo;s real $400 transfer, converted live. Next up: serial vs. cover-payment routing across
+                    multiple banks, and broken-payload &ldquo;schema repair&rdquo; challenges.</p>
+                </div>
+            </section>
         </div>
     `,
     glossary: `
@@ -242,6 +269,26 @@ const PAGES = {
 
 // Ordered top-level sections, for the prev/next header arrows.
 const NAV_ORDER = ['history', 'library', 'playground', 'glossary'];
+
+// Which Playground tool is showing ('viewer' | 'transformer'). Phase 4 adds more.
+let playgroundTool = 'viewer';
+
+// Switch between Playground tools without leaving the section. Each tool's
+// panel is a sibling <section>; we just toggle which one is visible and lazily
+// (re)initialise it so its live state is fresh.
+function setPlaygroundTool(tool, evt) {
+    if (evt) evt.preventDefault();
+    playgroundTool = tool;
+    document.querySelectorAll('.pg-tool-tab').forEach(t => {
+        t.classList.toggle('is-on', t.getAttribute('data-tool') === tool);
+    });
+    const viewer = document.getElementById('pg-tool-viewer');
+    const transformer = document.getElementById('pg-tool-transformer');
+    if (viewer) viewer.hidden = (tool !== 'viewer');
+    if (transformer) transformer.hidden = (tool !== 'transformer');
+    if (tool === 'viewer' && window.XmlViewer) XmlViewer.init('xv-root');
+    if (tool === 'transformer' && window.Playground) Playground.init();
+}
 
 // Which section is currently active (falls back to the first).
 function currentNavPage() {
@@ -294,6 +341,8 @@ function navigate(page, evt) {
         renderGlossary();
     } else if (page === 'playground') {
         initPlayground();
+        if (window.XmlViewer) XmlViewer.init('xv-root');
+        playgroundTool = 'viewer';
     } else if (page === 'library') {
         renderArticleIndex();
     } else if (page === 'history') {
