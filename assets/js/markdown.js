@@ -69,6 +69,29 @@ const Articles = (function () {
             .replace(/"/g, '&quot;');
     }
 
+    // ---- Split-title treatment (premium heading) ---------------------------
+    // "What Is Money? The IOU You Forgot Was an IOU" → main "What Is Money?"
+    // + tail "The IOU You Forgot Was an IOU" (rendered soft-blurred, sharpens
+    // on hover). Splits at the first '?' (kept) or ':' (dropped).
+    function splitTitle(t) {
+        t = String(t || '');
+        const q = t.indexOf('?');
+        const c = t.indexOf(':');
+        let cut = -1, keep = 0;
+        if (q !== -1 && (c === -1 || q < c)) { cut = q; keep = 1; }
+        else if (c !== -1) { cut = c; keep = 0; }
+        if (cut === -1 || cut >= t.length - 2) return { main: t, tail: '' };
+        return {
+            main: t.slice(0, cut + keep).trim(),
+            tail: t.slice(cut + 1).trim()
+        };
+    }
+    function titleHtml(t, tailClass) {
+        const p = splitTitle(t);
+        return esc(p.main) + (p.tail
+            ? ` <span class="${tailClass}">${esc(p.tail)}</span>` : '');
+    }
+
     // ---- {{embed}} / {{link}} expansion -----------------------------------
     function actionFor(spec) {
         // spec like "playground" | "explorer:PACS.008" | "page:journey"
@@ -266,7 +289,7 @@ const Articles = (function () {
                             : learned ? '<span class="learn-card-done"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Learned</span>'
                             : '<span class="learn-card-min">' + a.minutes + ' min read</span>'}
                 </div>
-                <h4 class="learn-card-title">${esc(a.title)}</h4>
+                <h4 class="learn-card-title">${titleHtml(a.title, 'title-tail title-tail-sm')}</h4>
                 <p class="learn-card-summary">${esc(a.summary)}</p>
                 <div class="learn-card-foot">
                     <div class="learn-tags">${tags}</div>
@@ -275,6 +298,20 @@ const Articles = (function () {
                     </span>
                 </div>
             </article>`;
+    }
+
+    // ---- On-this-page TOC: give every h2 an id, collect the outline -------
+    function outline(html) {
+        const items = [];
+        const withIds = html.replace(/<h2>([\s\S]*?)<\/h2>/g, (m, inner) => {
+            const text = inner.replace(/<[^>]+>/g, '').trim();
+            let id = 'sec-' + text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            let n = 2;
+            while (items.some(i => i.id === id)) id = id + '-' + n++;
+            items.push({ id, text });
+            return `<h2 id="${id}">${inner}</h2>`;
+        });
+        return { withIds, items };
     }
 
     // ---- The single-article view -----------------------------------------
@@ -304,7 +341,17 @@ const Articles = (function () {
                 <p>${esc(meta.earnedSkill)}</p>
             </div>` : '';
 
+        const toc = outline(html);
+        const tocHtml = toc.items.length > 1 ? `
+            <aside class="article-toc" aria-label="On this page">
+                <div class="article-toc-label">On this page</div>
+                <nav class="article-toc-list">
+                    ${toc.items.map(i => `<a class="article-toc-link" href="javascript:void(0)" data-target="${i.id}" onclick="articleTocGo('${i.id}')">${esc(i.text)}</a>`).join('')}
+                </nav>
+            </aside>` : '';
+
         return `
+            <div class="article-layout${tocHtml ? ' has-toc' : ''}">
             <article class="article-page">
                 <button class="article-back" onclick="navigate('library')">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
@@ -316,15 +363,17 @@ const Articles = (function () {
                         <span class="article-level-pill">${esc(lvl.tag || lvl.name)}</span>
                         ${minutes ? '<span class="article-min">' + minutes + ' min read</span>' : ''}
                     </div>
-                    <h1 class="article-title">${esc(title)}</h1>
+                    <h1 class="article-title">${titleHtml(title, 'title-tail')}</h1>
                     ${meta.summary ? '<p class="article-standfirst">' + esc(meta.summary) + '</p>' : ''}
                 </header>
 
-                <div class="md-body">${html}</div>
+                <div class="md-body">${toc.withIds}</div>
                 ${earned}
                 ${learnedRowHtml(entry.id)}
                 ${relatedHtml}
-            </article>`;
+            </article>
+            ${tocHtml}
+            </div>`;
     }
 
     // ---- "Mark as learned" (Session 7.5) ----------------------------------
@@ -388,6 +437,7 @@ async function openArticle(id) {
         const loaded = await Articles.load(id);
         content.innerHTML = Articles.articleHtml(loaded);
         if (window.Motion) Motion.scan(content);
+        initArticleToc();
     } catch (e) {
         content.innerHTML = `<div class="page"><div class="article-error">
             <h3>That article wouldn't load.</h3>
@@ -395,6 +445,34 @@ async function openArticle(id) {
             <button class="article-back" onclick="navigate('library')">← Back to the Library</button>
         </div></div>`;
     }
+}
+
+// ---- On-this-page TOC: smooth-scroll + scroll-spy --------------------------
+let __tocObserver = null;
+function articleTocGo(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function initArticleToc() {
+    if (__tocObserver) { __tocObserver.disconnect(); __tocObserver = null; }
+    const links = Array.from(document.querySelectorAll('.article-toc-link'));
+    if (!links.length || !('IntersectionObserver' in window)) return;
+    const heads = links
+        .map(l => document.getElementById(l.getAttribute('data-target')))
+        .filter(Boolean);
+    const setActive = (id) => links.forEach(l =>
+        l.classList.toggle('is-on', l.getAttribute('data-target') === id));
+    __tocObserver = new IntersectionObserver((entries) => {
+        // The active section is the last heading above the reading line.
+        const line = window.innerHeight * 0.3;
+        let current = heads[0] && heads[0].id;
+        for (const h of heads) {
+            if (h.getBoundingClientRect().top <= line) current = h.id;
+        }
+        if (current) setActive(current);
+    }, { rootMargin: '-20% 0px -60% 0px', threshold: [0, 1] });
+    heads.forEach(h => __tocObserver.observe(h));
+    if (heads[0]) setActive(heads[0].id);
 }
 
 // ---- Knowledge check + learned toggle handlers (Session 7.5) --------------

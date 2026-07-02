@@ -403,6 +403,180 @@ const SampleLibrary = (function () {
     </Rsn>
   </Admi.002.001.01>
 </Document>`
+        },
+
+        // ---- sese — securities settlement -----------------------------------
+        'sese.023': {
+            family: 'sese', label: 'sese.023', kind: 'Settlement instruction',
+            sub: 'Securities Settlement Transaction Instruction',
+            note: "Bob's pension fund buys 500 UAE government bonds — the instruction that tells the custodian to receive them against payment.",
+            dest: ['viewer', 'validator'],
+            xml:
+`<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:sese.023.001.11">
+  <SctiesSttlmTxInstr>
+    <TxId>PFND-SETT-20260627-081</TxId>
+    <SttlmTpAndAddtlParams>
+      <SctiesMvmntTp>RECE</SctiesMvmntTp>
+      <Pmt>APMT</Pmt>
+    </SttlmTpAndAddtlParams>
+    <TradDtls>
+      <TradDt><Dt><Dt>2026-06-25</Dt></Dt></TradDt>
+      <SttlmDt><Dt><Dt>2026-06-27</Dt></Dt></SttlmDt>
+    </TradDtls>
+    <FinInstrmId>
+      <ISIN>AEG000000AB12</ISIN>
+      <Desc>UAE Government Bond 3.2% 2031</Desc>
+    </FinInstrmId>
+    <QtyAndAcctDtls>
+      <SttlmQty><Qty><Unit>500</Unit></Qty></SttlmQty>
+      <SfkpgAcct><Id>SAFE-778341</Id></SfkpgAcct>
+    </QtyAndAcctDtls>
+    <SttlmParams>
+      <SctiesTxTp><Cd>TRAD</Cd></SctiesTxTp>
+    </SttlmParams>
+    <RcvgSttlmPties>
+      <Dpstry><Id><AnyBIC>CSDAAEA0XXX</AnyBIC></Id></Dpstry>
+      <Pty1><Id><AnyBIC>EMIRAEADXXX</AnyBIC></Id></Pty1>
+    </RcvgSttlmPties>
+    <SttlmAmt>
+      <Amt Ccy="AED">498750.00</Amt>
+      <CdtDbtInd>DBIT</CdtDbtInd>
+    </SttlmAmt>
+  </SctiesSttlmTxInstr>
+</Document>`
+        },
+        'semt.002': {
+            family: 'semt', label: 'semt.002', kind: 'Custody statement',
+            sub: 'Securities Balance Custody Report',
+            note: "Month-end: the custodian reports what the pension fund actually holds — the camt.053 of the securities world.",
+            dest: ['viewer', 'validator'],
+            xml:
+`<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:semt.002.001.11">
+  <SctiesBalCtdyRpt>
+    <Pgntn><PgNb>1</PgNb><LastPgInd>true</LastPgInd></Pgntn>
+    <StmtGnlDtls>
+      <RptNb><Shrt>047</Shrt></RptNb>
+      <StmtDtTm><Dt>2026-06-30</Dt></StmtDtTm>
+      <Frqcy><Cd>MNTH</Cd></Frqcy>
+      <UpdTp><Cd>COMP</Cd></UpdTp>
+    </StmtGnlDtls>
+    <SfkpgAcct><Id>SAFE-778341</Id></SfkpgAcct>
+    <BalForAcct>
+      <FinInstrmId>
+        <ISIN>AEG000000AB12</ISIN>
+        <Desc>UAE Government Bond 3.2% 2031</Desc>
+      </FinInstrmId>
+      <AggtBal><Qty><Qty><Qty><Unit>500</Unit></Qty></Qty></Qty></AggtBal>
+      <AcctBaseCcyAmts><HldgVal><Amt Ccy="AED">501200.00</Amt></HldgVal></AcctBaseCcyAmts>
+    </BalForAcct>
+  </SctiesBalCtdyRpt>
+</Document>`
+        },
+
+        // ---- tsin — trade finance -------------------------------------------
+        'tsin.001': {
+            family: 'tsin', label: 'tsin.001', kind: 'Invoice financing',
+            sub: 'Invoice Financing Request',
+            note: "Sweety's employer waits 60 days for a customer to pay a ₹42 lakh invoice — so it asks its bank to advance the cash against it today.",
+            dest: ['viewer', 'validator'],
+            xml:
+`<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:tsin.001.001.01">
+  <InvcFincgReq>
+    <ReqGrpInf>
+      <GrpId>BNGL-FIN-20260627-003</GrpId>
+      <CreDtTm>2026-06-27T11:05:00+05:30</CreDtTm>
+      <NbOfInvcReqs>1</NbOfInvcReqs>
+      <TtlBlkInvcAmt Ccy="INR">4200000.00</TtlBlkInvcAmt>
+      <FincgAgrmtList>
+        <Vndr><Nm>Karnataka Textile Works Pvt Ltd</Nm></Vndr>
+        <FincgPty><Nm>Bangalore Mercantile Bank</Nm></FincgPty>
+      </FincgAgrmtList>
+    </ReqGrpInf>
+    <InvcReqInf>
+      <InvcGnlInf>
+        <InvcNb>KTW-INV-2026-1188</InvcNb>
+        <InvcDt>2026-06-20</InvcDt>
+      </InvcGnlInf>
+      <InvcTtlAmt Ccy="INR">4200000.00</InvcTtlAmt>
+      <InvcDueDt>2026-08-19</InvcDueDt>
+      <ReqdFincgAmt Ccy="INR">3780000.00</ReqdFincgAmt>
+      <Buyr><Nm>Gulf Retail Group LLC</Nm></Buyr>
+    </InvcReqInf>
+  </InvcFincgReq>
+</Document>`
+        },
+
+        // ---- caaa — cards ------------------------------------------------------
+        'caaa.001': {
+            family: 'caaa', label: 'caaa.001', kind: 'Card authorisation',
+            sub: 'Acceptor Authorisation Request',
+            note: 'Bob taps his card for coffee. Before the till beeps, this question races to the issuer: can he spend AED 18.50?',
+            dest: ['viewer', 'validator'],
+            xml:
+`<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:caaa.001.001.13">
+  <AccptrAuthstnReq>
+    <Hdr>
+      <MsgFctn>AUTQ</MsgFctn>
+      <PrtcolVrsn>13.0</PrtcolVrsn>
+      <XchgId>100482</XchgId>
+      <CreDtTm>2026-06-27T08:12:44+04:00</CreDtTm>
+      <InitgPty><Id>POS-DXB-00417</Id></InitgPty>
+    </Hdr>
+    <AuthstnReq>
+      <Envt>
+        <Mrchnt><Id><Id>MRCH-772100</Id></Id><CmonNm>Marina Beans Coffee</CmonNm></Mrchnt>
+        <POI><Id><Id>TERM-0031</Id></Id></POI>
+        <Card><PlainCardData><PAN>4539578763621486</PAN><XpryDt>2027-09</XpryDt></PlainCardData></Card>
+      </Envt>
+      <Tx>
+        <TxId><TxDtTm>2026-06-27T08:12:44+04:00</TxDtTm><TxRef>POS-100482</TxRef></TxId>
+        <TxDtls>
+          <Ccy>AED</Ccy>
+          <TtlAmt>18.50</TtlAmt>
+          <OnLineRsn>ICCF</OnLineRsn>
+        </TxDtls>
+      </Tx>
+    </AuthstnReq>
+  </AccptrAuthstnReq>
+</Document>`
+        },
+
+        // ---- fxtr — foreign exchange ------------------------------------------
+        'fxtr.014': {
+            family: 'fxtr', label: 'fxtr.014', kind: 'FX trade',
+            sub: 'Foreign Exchange Trade Instruction',
+            note: "Behind Bob's $400 sits a bigger machine: his bank sells USD for INR in the interbank market to cover the day's remittance flow.",
+            dest: ['viewer', 'validator'],
+            xml:
+`<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:fxtr.014.001.04">
+  <FXTradInstr>
+    <TradInf>
+      <TradDt>2026-06-27</TradDt>
+      <OrgtrRef>EMIR-FX-20260627-115</OrgtrRef>
+    </TradInf>
+    <TradgSdId>
+      <SubmitgPty><AnyBIC><AnyBIC>EMIRAEADXXX</AnyBIC></AnyBIC></SubmitgPty>
+    </TradgSdId>
+    <CtrPtySdId>
+      <SubmitgPty><AnyBIC><AnyBIC>HDFCINBBXXX</AnyBIC></AnyBIC></SubmitgPty>
+    </CtrPtySdId>
+    <TradAmts>
+      <TradgSdBuyAmt Ccy="INR">8305000.00</TradgSdBuyAmt>
+      <TradgSdSellAmt Ccy="USD">100000.00</TradgSdSellAmt>
+      <SttlmDt>2026-06-29</SttlmDt>
+    </TradAmts>
+    <AgrdRate>
+      <XchgRate>83.05</XchgRate>
+      <UnitCcy>USD</UnitCcy>
+      <QtdCcy>INR</QtdCcy>
+    </AgrdRate>
+  </FXTradInstr>
+</Document>`
         }
     };
 
@@ -412,24 +586,45 @@ const SampleLibrary = (function () {
         'pacs.008', 'pacs.002', 'pacs.004',
         'camt.054', 'camt.053', 'camt.056',
         'head.001-pacs', 'head.001-camt',
-        'admi.004', 'admi.002'
+        'admi.004', 'admi.002',
+        'sese.023', 'semt.002',
+        'tsin.001',
+        'caaa.001',
+        'fxtr.014'
     ];
 
-    const FAMILIES = [
-        { id: 'all', label: 'All' },
-        { id: 'pain', label: 'pain' },
-        { id: 'pacs', label: 'pacs' },
-        { id: 'camt', label: 'camt' },
-        { id: 'head', label: 'head' },
-        { id: 'admi', label: 'admi' }
+    // The catalogue tree: ISO 20022 business domains → message families.
+    const DOMAINS = [
+        { id: 'payments',   label: 'Payments',         sub: 'pain · pacs · camt · head · admi',
+          families: ['pain', 'pacs', 'camt', 'head', 'admi'] },
+        { id: 'securities', label: 'Securities',       sub: 'sese · semt',
+          families: ['sese', 'semt'] },
+        { id: 'trade',      label: 'Trade Finance',    sub: 'tsin',
+          families: ['tsin'] },
+        { id: 'cards',      label: 'Cards',            sub: 'caaa',
+          families: ['caaa'] },
+        { id: 'fx',         label: 'Foreign Exchange', sub: 'fxtr',
+          families: ['fxtr'] }
     ];
+    const FAMILY_NAMES = {
+        pain: 'Payments Initiation', pacs: 'Payments Clearing & Settlement',
+        camt: 'Cash Management', head: 'Business Application Header',
+        admi: 'Administration', sese: 'Securities Settlement',
+        semt: 'Securities Management', tsin: 'Trade Services Initiation',
+        caaa: 'Acceptor to Acquirer', fxtr: 'FX Trade'
+    };
+    function domainOf(family) {
+        const d = DOMAINS.find(d => d.families.includes(family));
+        return d ? d.id : 'payments';
+    }
 
     const DEST_LABEL = { viewer: 'View', validator: 'Validate', transformer: 'Transform' };
 
     // -------------------------------------------------------------------------
-    // STATE
+    // STATE — one selected tree node: whole catalogue, a domain, or one family.
     // -------------------------------------------------------------------------
-    let filter = 'all';
+    let sel = { type: 'domain', id: 'payments' };   // 'all' | 'domain' | 'family'
+    let openDomains = { payments: true };
     let mountId = 'smp-root';
 
     function esc(s) {
@@ -497,9 +692,75 @@ const SampleLibrary = (function () {
     }
 
     // -------------------------------------------------------------------------
-    // RENDER
+    // RENDER — catalogue tree (left) + sample cards (right)
     // -------------------------------------------------------------------------
-    function setFilter(f) { filter = f; render(); }
+    function select(type, id) {
+        sel = { type, id };
+        if (type === 'domain') openDomains[id] = true;
+        if (type === 'family') openDomains[domainOf(id)] = true;
+        render();
+    }
+    function toggleDomain(id) {
+        openDomains[id] = !openDomains[id];
+        render();
+    }
+    // Back-compat shim (old chip API): map family/all onto the tree selection.
+    function setFilter(f) {
+        if (f === 'all') select('all', null); else select('family', f);
+    }
+
+    function visibleKeys() {
+        if (sel.type === 'all') return ORDER.slice();
+        if (sel.type === 'domain') {
+            const d = DOMAINS.find(x => x.id === sel.id);
+            return ORDER.filter(k => d && d.families.includes(SAMPLES[k].family));
+        }
+        return ORDER.filter(k => SAMPLES[k].family === sel.id);
+    }
+
+    function treeHtml() {
+        const allOn = sel.type === 'all';
+        const domainRows = DOMAINS.map(d => {
+            const open = !!openDomains[d.id];
+            const on = sel.type === 'domain' && sel.id === d.id;
+            const fams = d.families.map(f => {
+                const n = ORDER.filter(k => SAMPLES[k].family === f).length;
+                const fOn = sel.type === 'family' && sel.id === f;
+                return `<button class="smp-tree-fam${fOn ? ' is-on' : ''}" onclick="SampleLibrary.select('family', '${f}')">
+                    <span class="smp-tree-fam-code">${esc(f)}</span>
+                    <span class="smp-tree-fam-n">${n}</span>
+                </button>`;
+            }).join('');
+            return `<div class="smp-tree-domain${open ? ' is-open' : ''}">
+                <div class="smp-tree-row">
+                    <button class="smp-tree-caret" aria-label="${open ? 'Collapse' : 'Expand'} ${esc(d.label)}" onclick="SampleLibrary.toggleDomain('${d.id}')">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                    </button>
+                    <button class="smp-tree-node${on ? ' is-on' : ''}" onclick="SampleLibrary.select('domain', '${d.id}')">
+                        <span class="smp-tree-name">${esc(d.label)}</span>
+                        <span class="smp-tree-sub">${esc(d.sub)}</span>
+                    </button>
+                </div>
+                <div class="smp-tree-fams">${fams}</div>
+            </div>`;
+        }).join('');
+        return `<nav class="smp-tree" aria-label="ISO 20022 catalogue">
+            <button class="smp-tree-root${allOn ? ' is-on' : ''}" onclick="SampleLibrary.select('all', null)">
+                <span class="smp-tree-name">ISO 20022 Catalogue</span>
+                <span class="smp-tree-sub">every sample</span>
+            </button>
+            ${domainRows}
+        </nav>`;
+    }
+
+    function headingFor() {
+        if (sel.type === 'all') return 'ISO 20022 Catalogue';
+        if (sel.type === 'domain') {
+            const d = DOMAINS.find(x => x.id === sel.id);
+            return d ? d.label : '';
+        }
+        return `${sel.id} — ${FAMILY_NAMES[sel.id] || ''}`;
+    }
 
     function cardHtml(key) {
         const s = SAMPLES[key];
@@ -522,17 +783,19 @@ const SampleLibrary = (function () {
     function render() {
         const root = document.getElementById(mountId);
         if (!root) return;
-        const keys = ORDER.filter(k => filter === 'all' || SAMPLES[k].family === filter);
-        const chips = FAMILIES.map(f =>
-            `<button class="smp-chip${f.id === filter ? ' is-on' : ''}" onclick="SampleLibrary.setFilter('${f.id}')">${esc(f.label)}</button>`
-        ).join('');
+        const keys = visibleKeys();
         const count = keys.length;
         root.innerHTML = `
-            <div class="smp-bar">
-                <div class="smp-chips">${chips}</div>
-                <span class="smp-count">${count} sample${count === 1 ? '' : 's'}</span>
+            <div class="smp-layout">
+                ${treeHtml()}
+                <div class="smp-main">
+                    <div class="smp-bar">
+                        <span class="smp-heading">${esc(headingFor())}</span>
+                        <span class="smp-count">${count} sample${count === 1 ? '' : 's'}</span>
+                    </div>
+                    <div class="smp-grid">${keys.map(cardHtml).join('')}</div>
+                </div>
             </div>
-            <div class="smp-grid">${keys.map(cardHtml).join('')}</div>
         `;
     }
 
@@ -543,24 +806,72 @@ const SampleLibrary = (function () {
         if (document.getElementById('smp-styles')) return;
         const css = `
         .smp { display: flex; flex-direction: column; gap: 20px; }
-        .smp-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-        .smp-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-        .smp-chip {
-            padding: 7px 15px; border-radius: var(--radius-pill);
-            background: var(--surface); border: 1px solid var(--border);
-            color: var(--text-muted); cursor: pointer; font-family: var(--font-mono);
-            font-size: 12.5px; letter-spacing: 0.02em;
-            transition: border-color var(--dur-fast) var(--ease-out),
-                        color var(--dur-fast) var(--ease-out),
-                        background var(--dur-fast) var(--ease-out);
+
+        /* Catalogue tree (left) + samples (right) */
+        .smp-layout {
+            display: grid; grid-template-columns: 250px minmax(0, 1fr);
+            gap: 26px; align-items: start;
         }
-        .smp-chip:hover { border-color: var(--border-hi); color: var(--text); }
-        .smp-chip.is-on { border-color: var(--primary-deep); background: var(--glass-tint-strong); color: var(--text); }
+        .smp-tree {
+            position: sticky; top: 96px;
+            display: flex; flex-direction: column; gap: 4px;
+            padding: 14px; border: 1px solid var(--border);
+            border-radius: var(--radius-md); background: var(--surface);
+        }
+        .smp-tree-root {
+            display: flex; flex-direction: column; gap: 1px; text-align: left;
+            padding: 9px 10px; margin-bottom: 6px;
+            background: transparent; border: 1px solid transparent;
+            border-radius: var(--radius-sm); cursor: pointer; color: var(--text);
+        }
+        .smp-tree-root:hover { background: var(--surface-alt); }
+        .smp-tree-root.is-on { border-color: var(--primary-deep); background: var(--glass-tint-strong); }
+        .smp-tree-domain { border-top: 1px solid var(--border); padding-top: 4px; }
+        .smp-tree-row { display: flex; align-items: center; gap: 2px; }
+        .smp-tree-caret {
+            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px; padding: 0;
+            background: transparent; border: none; cursor: pointer;
+            color: var(--text-faint);
+            transition: transform var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+        }
+        .smp-tree-caret:hover { color: var(--text); }
+        .smp-tree-domain.is-open > .smp-tree-row .smp-tree-caret { transform: rotate(90deg); }
+        .smp-tree-node {
+            flex: 1; display: flex; flex-direction: column; gap: 1px; text-align: left;
+            padding: 8px 10px; background: transparent;
+            border: 1px solid transparent; border-radius: var(--radius-sm);
+            cursor: pointer; color: var(--text-muted); min-width: 0;
+        }
+        .smp-tree-node:hover { background: var(--surface-alt); color: var(--text); }
+        .smp-tree-node.is-on { border-color: var(--primary-deep); background: var(--glass-tint-strong); color: var(--text); }
+        .smp-tree-name { font-family: var(--font-display); font-weight: 700; font-size: 13.5px; }
+        .smp-tree-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.03em; color: var(--text-faint); }
+        .smp-tree-fams { display: none; flex-direction: column; gap: 2px; padding: 2px 0 8px 30px; }
+        .smp-tree-domain.is-open .smp-tree-fams { display: flex; }
+        .smp-tree-fam {
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            padding: 5px 9px; background: transparent;
+            border: 1px solid transparent; border-radius: var(--radius-sm);
+            cursor: pointer; color: var(--text-muted);
+            font-family: var(--font-mono); font-size: 12px;
+        }
+        .smp-tree-fam:hover { background: var(--surface-alt); color: var(--text); }
+        .smp-tree-fam.is-on { border-color: var(--primary-deep); background: var(--glass-tint-strong); color: var(--primary-bright); }
+        .smp-tree-fam-n { font-size: 10px; color: var(--text-faint); }
+
+        .smp-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+        .smp-bar { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .smp-heading { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--text); }
         .smp-count { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--text-faint); }
 
         .smp-grid {
             display: grid; gap: 16px;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+        @media (max-width: 860px) {
+            .smp-layout { display: block; }
+            .smp-tree { position: static; margin-bottom: 18px; }
         }
 
         .smp-card {
@@ -627,7 +938,7 @@ const SampleLibrary = (function () {
         render();
     }
 
-    return { init, setFilter, loadInto };
+    return { init, setFilter, select, toggleDomain, loadInto };
 })();
 
 window.SampleLibrary = SampleLibrary;

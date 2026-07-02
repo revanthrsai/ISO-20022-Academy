@@ -204,16 +204,9 @@ const PAGES = {
     `,
     playground: `
         <div class="page">
-            <div class="pg-head" data-reveal-group>
-                <div class="eyebrow" data-reveal="fade">Playground</div>
-                <h2 class="section-title" data-reveal="up">Work with the messages yourself.</h2>
-                <p class="section-description" data-reveal="up">
-                    Hands-on tools for ISO&nbsp;20022 &mdash; built to feel like real software, not documentation.
-                    Start by <strong>reading</strong> a message, then <strong>transforming</strong> one into another.
-                </p>
-            </div>
-
-            <div class="pg-tools" role="tablist" aria-label="Playground tools" data-reveal="up">
+            <div class="pg-layout">
+            <aside class="pg-rail" role="tablist" aria-label="Playground tools" aria-orientation="vertical" data-reveal="up">
+                <div class="pg-rail-label">Playground</div>
                 <button class="pg-tool-tab is-on" role="tab" data-tool="viewer" onclick="setPlaygroundTool('viewer', event)">
                     <span class="pg-tool-tab-name">XML Viewer</span>
                     <span class="pg-tool-tab-sub">Read any message</span>
@@ -234,7 +227,8 @@ const PAGES = {
                     <span class="pg-tool-tab-name">Sample Library</span>
                     <span class="pg-tool-tab-sub">Load a real message</span>
                 </button>
-            </div>
+            </aside>
+            <div class="pg-stage">
 
             <!-- TOOL · XML Viewer (Session 4.1) -->
             <section class="pg-tool-panel" id="pg-tool-viewer" data-reveal="up">
@@ -310,17 +304,20 @@ const PAGES = {
                 </div>
                 <div class="cmp" id="cmp-root"></div>
             </section>
-            <!-- TOOL · Sample Message Library (Session 4.5) — browse, then load into any tool -->
+            <!-- TOOL · Sample Message Library (Session 4.5) — the ISO 20022 catalogue tree -->
             <section class="pg-tool-panel" id="pg-tool-samples" hidden>
                 <p class="pg-tool-intro">
-                    A shelf of real, valid ISO&nbsp;20022 messages &mdash; two to three per
-                    <strong>family</strong> &mdash; each a beat of the same Bob&nbsp;&rarr;&nbsp;Sweety transfer.
-                    Pick one and send it straight into the <strong>Viewer</strong>, <strong>Validator</strong>, or
+                    The <strong>ISO&nbsp;20022 catalogue</strong>, browsable as a tree &mdash;
+                    <strong>Payments</strong>, <strong>Securities</strong>, <strong>Trade Finance</strong>,
+                    <strong>Cards</strong>, and <strong>Foreign Exchange</strong>. Pick a business domain, pick a
+                    message, and send it straight into the <strong>Viewer</strong>, <strong>Validator</strong>, or
                     (for the pacs.008 it speaks) the <strong>Transformer</strong> &mdash; no pasting required.
                 </p>
                 <div class="smp" id="smp-root"></div>
             </section>
-            </section>
+
+            </div><!-- /pg-stage -->
+            </div><!-- /pg-layout -->
         </div>
     `,
     glossary: `

@@ -1,0 +1,49 @@
+# Deploy the site to GitHub Pages as a PLAIN STATIC SITE (no Jekyll).
+# Jekyll must be bypassed: it converts content/*.md to .html (breaking the
+# article engine's fetch of raw markdown) and chokes on {{embed:...}} tokens.
+# This workflow also regenerates the Library TOC from content frontmatter,
+# exactly like the Netlify build does.
+#
+# One-time setup: repo Settings → Pages → Source = "GitHub Actions".
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build Library TOC from content frontmatter
+        run: node scripts/build-toc.js
+
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

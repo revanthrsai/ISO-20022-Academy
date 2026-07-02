@@ -2706,7 +2706,6 @@ body.kinetic-ready .scroll-cue {
 }
 
 /* ---- 14. PLAYGROUND console --------------------------------------------- */
-.pg-head { max-width: 720px; }
 .pg-console {
     margin-top: 12px;
     padding: clamp(20px, 3vw, 34px);
@@ -3642,7 +3641,79 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
 }
 .article-error h3 { font-family: var(--font-display); color: var(--text); margin-bottom: 8px; }
 
-.article-page { max-width: 760px; margin: 0 auto; }
+/* Two-column article shell: prose + sticky "On this page" rail. */
+.article-layout { max-width: 1080px; margin: 0 auto; }
+.article-layout.has-toc {
+    display: grid;
+    grid-template-columns: minmax(0, 760px) 240px;
+    gap: 56px;
+    align-items: start;
+    justify-content: center;
+}
+.article-toc {
+    position: sticky;
+    top: 96px;
+    padding: 4px 0 4px 20px;
+    border-left: 1px solid var(--border);
+}
+.article-toc-label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 14px;
+}
+.article-toc-list { display: flex; flex-direction: column; gap: 2px; }
+.article-toc-link {
+    display: block;
+    padding: 5px 10px;
+    margin-left: -10px;
+    border-radius: 8px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-out),
+                background var(--dur-fast) var(--ease-out);
+}
+.article-toc-link:hover { color: var(--text); background: var(--surface-alt); }
+.article-toc-link.is-on { color: var(--primary-bright); background: var(--glow-faint); }
+@media (max-width: 1100px) {
+    .article-layout.has-toc { display: block; }
+    .article-toc { display: none; }
+}
+
+/* Split-title: the tail after "?" / ":" softly blurred, sharpens on hover. */
+.title-tail {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.42em;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.35;
+    color: var(--text-muted);
+    filter: blur(2.2px);
+    opacity: 0.55;
+    transition: filter 0.45s var(--ease-out), opacity 0.45s var(--ease-out);
+}
+.article-title:hover .title-tail { filter: blur(0); opacity: 0.9; }
+.title-tail-sm {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.78em;
+    font-weight: 500;
+    filter: blur(1.6px);
+    opacity: 0.5;
+    transition: filter 0.45s var(--ease-out), opacity 0.45s var(--ease-out);
+}
+.learn-card:hover .title-tail-sm { filter: blur(0); opacity: 0.85; }
+@media (prefers-reduced-motion: reduce) {
+    .title-tail, .title-tail-sm { filter: none; opacity: 0.7; }
+}
+
+.article-page { max-width: 760px; margin: 0 auto; min-width: 0; }
 .article-back {
     display: inline-flex;
     align-items: center;
@@ -3789,6 +3860,36 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
     white-space: pre;
 }
 .md-body hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+
+/* Tables — same register as the code wells, so every article matches */
+.md-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 26px;
+    font-family: var(--font-sans);
+    font-size: 14.5px;
+    line-height: 1.5;
+}
+.md-body th {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-hi);
+    background: var(--surface);
+}
+.md-body td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    color: #DCE6E1;
+    vertical-align: top;
+}
+.md-body tr:last-child td { border-bottom: none; }
+.md-body table { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: block; }
+.md-body table thead, .md-body table tbody { display: table; width: 100%; table-layout: fixed; }
 
 /* Inline interactive link (from {{link:...}}) */
 .md-inline-link {
@@ -4040,9 +4141,9 @@ body.light-mode .hero-token { color: var(--primary-deep); text-shadow: 0 0 18px 
     .site-footer-inner { flex-direction: column; gap: var(--space-xl); }
 }
 
-/* ===== FILTER BAR — interactive category / segment filter row (Session 1.4)
+/* ===== FILTER BAR â interactive category / segment filter row (Session 1.4)
    IA-validation gap fix: Glossary needs `#/glossary?category=<cat>` filtering
-   (docs/HANDBOOK.md (IA) §3) and the Library level index can reuse the same control.
+   (docs/HANDBOOK.md (IA) Â§3) and the Library level index can reuse the same control.
    `.tag` is a static metadata pill; this is the pressable, stateful filter. ===== */
 .filter-bar {
     display: flex;

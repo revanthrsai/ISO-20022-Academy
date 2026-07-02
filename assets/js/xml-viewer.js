@@ -722,14 +722,26 @@ const XmlViewer = (function () {
         }
         .xv-error-msg { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; }
 
-        /* Playground tool switcher (shared chrome for the tool panels) */
-        .pg-tools {
-            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-            margin: 34px 0 22px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
+        /* Playground shell: left tool rail + working stage (columns) */
+        .pg-layout {
+            display: grid; grid-template-columns: 210px minmax(0, 1fr);
+            gap: 28px; align-items: start; margin-top: 8px;
         }
+        .pg-rail {
+            position: sticky; top: 96px;
+            display: flex; flex-direction: column; gap: 8px;
+            padding-right: 20px; border-right: 1px solid var(--border);
+        }
+        .pg-rail-label {
+            font-family: var(--font-mono); font-size: 10.5px;
+            letter-spacing: 0.14em; text-transform: uppercase;
+            color: var(--text-faint); padding: 2px 0 8px 2px;
+        }
+        .pg-stage { min-width: 0; }
         .pg-tool-tab {
             display: flex; flex-direction: column; gap: 1px; text-align: left;
-            padding: 9px 16px; border-radius: var(--radius-sm);
+            width: 100%;
+            padding: 10px 14px; border-radius: var(--radius-sm);
             background: var(--surface); border: 1px solid var(--border);
             color: var(--text-muted); cursor: pointer;
             transition: border-color var(--dur-fast) var(--ease-out),
@@ -741,11 +753,16 @@ const XmlViewer = (function () {
         .pg-tool-tab-name { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
         .pg-tool-tab-sub { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.03em; color: var(--text-faint); }
         .pg-tool-tab.is-on .pg-tool-tab-sub { color: var(--primary); }
-        .pg-tool-soon {
-            margin-left: auto; font-family: var(--font-mono); font-size: 10.5px;
-            letter-spacing: 0.04em; color: var(--text-faint);
+        @media (max-width: 900px) {
+            .pg-layout { display: block; }
+            .pg-rail {
+                position: static; flex-direction: row; flex-wrap: wrap;
+                border-right: none; border-bottom: 1px solid var(--border);
+                padding: 0 0 14px; margin-bottom: 22px;
+            }
+            .pg-rail-label { width: 100%; }
+            .pg-tool-tab { width: auto; }
         }
-        @media (max-width: 640px) { .pg-tool-soon { display: none; } }
         .pg-tool-intro {
             max-width: 70ch; margin: 0 0 22px; color: var(--text-muted);
             font-size: var(--fs-body); line-height: 1.7;
