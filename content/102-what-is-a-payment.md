@@ -8,6 +8,8 @@ updated: 2026-06-28
 tags: [payment, transfer, instruction, ledgers]
 related: [101-what-is-money, 103-payment-lifecycle, 104-clearing-and-settlement]
 earnedSkill: "Describe a payment as an instruction that moves value between two ledgers, and explain why the message and the money are two different things."
+num: 102
+status: published
 ---
 
 > **The problem first.** Bob taps "send $400" on his phone in Dubai. A second later Sweety's bank in Bangalore shows the money as hers. No truck, no courier, no cash crossed the 2,000 miles between them. So what exactly *travelled*?

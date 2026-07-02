@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [payment gateway, ingress, validation, translation, channel]
 related: [102-what-is-a-payment, 103-payment-lifecycle, 201-payment-systems]
 earnedSkill: "Describe what a payment gateway does to an arriving payment — authenticate, validate, translate, normalise — and explain why this front-door work makes everything downstream simpler."
+num: 202
+status: published
 ---
 
 > **The problem first.** Sweety's payment to her landlord arrives at the bank from a phone app. Another arrives from a corporate file. A third comes in off a shared system from a different bank entirely. Each one speaks a different format and arrives through a different door. If the bank's core systems had to understand every one of those formats, they'd be impossibly complicated. Something has to stand at the entrance and turn all that variety into one clean, trusted stream. That something is the gateway.

@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [case-study, cross-border, correspondent, pacs.008, pacs.009, cover-payment, FX]
 related: [503-cross-border-payment, 501-customer-transfer, 302-pacs-family, 101-nostro-vostro]
 earnedSkill: "Walk a cross-border payment through correspondent banks — explaining why intermediaries appear, the difference between the customer leg (pacs.008) and the cover leg (pacs.009 COV), where FX happens, and how the same UETR keeps a payment readable across a chain of banks that have never met."
+num: 503
+status: published
 ---
 
 > **The problem first.** Bob is in Dubai with dirhams; Sweety is in Bangalore expecting rupees. Their two banks have never dealt with each other — no shared account, no direct line, not even the same currency. In the domestic transfer, both banks plugged into one rail and were done in seconds. Here, the rail runs out at the border. So how does Bob's money cross from a bank in the UAE to a bank in India, get turned into rupees on the way, and still arrive as the *same* payment Sweety can match to Invoice 0042?

@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [investigations, camt.026, camt.027, camt.028, camt.029, case-management, R-transactions]
 related: [405-investigations, 403-recall, 402-return, 305-message-lifecycle]
 earnedSkill: "Explain what an investigation is and when it's needed, name the case-management messages (camt.027 claim non-receipt, camt.026 unable to apply, camt.028 additional info, camt.029 resolution), describe how a case opens and closes, and tell an investigation apart from the clean exceptions."
+num: 405
+status: published
 ---
 
 > **The problem first.** Bob's payment to Sweety left his account three days ago. It wasn't rejected — no red cross. It wasn't returned — no money came back. It just... never arrived. Somewhere among the intermediary banks the payment is sitting, mislabelled or stuck, and the tracking trail shows it reached a correspondent and then went silent. Nobody did anything obviously wrong, so none of the clean exceptions fired. How do banks *hunt down* a payment that simply disappeared — without phoning each other up?

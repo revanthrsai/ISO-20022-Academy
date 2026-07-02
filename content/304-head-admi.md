@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [head, admi, head.001, BAH, business-application-header, admi.004, housekeeping]
 related: [304-head-admi, 305-message-lifecycle, 302-pacs-family, 201-business-application-header]
 earnedSkill: "Explain what the Business Application Header (head.001) does and why it sits outside the message, tell the head family from the admi family, and recognise an admi message as network housekeeping rather than a payment."
+num: 304
+status: published
 ---
 
 > **The problem first.** Bob's bank wants to send Sweety's payment onward, but the network it's handing to is enormous — thousands of banks, millions of instructions a day. The payment itself says *who pays whom*, but it doesn't say *which institution is sending this envelope, to which institution, right now, and whether it's a copy or the real thing*. A mail room can't sort a letter with no address on the outside. So where does that routing information live — and what keeps the whole postal network itself running?

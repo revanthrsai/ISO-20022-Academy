@@ -8,6 +8,8 @@ updated: 2026-06-28
 tags: [clearing, settlement, RTGS, netting]
 related: [103-payment-lifecycle, 101-nostro-vostro, 105-payment-participants]
 earnedSkill: "Separate the 'agreeing what's owed' step from the 'actually moving the money' step, and know which systems do which — and why one is reversible and the other isn't."
+num: 104
+status: published
 ---
 
 > **The problem first.** Two banks send each other thousands of payments a day. Do they really shove money back and forth for every single one? And at what exact instant is a payment *truly final* — past the point where anyone can claw it back?

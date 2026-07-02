@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [case-study, customer-transfer, pain.001, pacs.008, camt.054, end-to-end]
 related: [501-customer-transfer, 305-message-lifecycle, 301-pain-family, 302-pacs-family]
 earnedSkill: "Walk a single domestic customer credit transfer end-to-end — naming the pain, pacs, and camt message at each step, the four parties that touch it, and the two references that keep it one payment — and read the whole thing as a sequence rather than a pile of acronyms."
+num: 501
+status: published
 ---
 
 > **The problem first.** Bob owes Sweety ₹33,000 for Invoice 0042. He opens his banking app, types her account, taps send — and a second later sees a tick. To Bob that was one action. But between his tap and the moment Sweety's accountant ticks the invoice as paid, four institutions passed half a dozen instructions back and forth, money settled across a central system, and two ledgers were rewritten. This is the case study that puts every family you've learned into one motion. What actually happened in that second — and the hours after it?

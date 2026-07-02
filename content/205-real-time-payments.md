@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [real-time payments, instant, irrevocable, push, 24x7]
 related: [103-payment-lifecycle, 102-clearing-and-settlement, 201-payment-systems]
 earnedSkill: "Explain what makes a payment 'real-time' — speed, always-on, finality, push — and trace how those four traits compress the payment lifecycle and shift where the risk sits."
+num: 205
+status: published
 ---
 
 > **The problem first.** Bob sends Sweety money on a Sunday night. A generation ago that meant waiting until Monday, maybe Tuesday, for it to land — banks were closed, the systems ran in overnight batches, and nobody could promise exactly when. Today, on a real-time rail, Sweety's phone buzzes before Bob has put his own down. Nothing about the people changed; everything about the plumbing did. So what actually had to change for money to move in seconds, at midnight, on a weekend — and what does that cost?

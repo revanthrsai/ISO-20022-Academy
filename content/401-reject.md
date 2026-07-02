@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [reject, RJCT, pacs.002, pain.002, status, R-transactions]
 related: [401-reject, 402-return, 302-pacs-family, 301-pain-family]
 earnedSkill: "Tell a reject apart from a return, name the message that carries a reject (pain.002 to the customer, pacs.002 between banks), read the RJCT status and its reason code, and explain why a reject never needs money sent back."
+num: 401
+status: published
 ---
 
 > **The problem first.** Bob taps send on ₹33,000 to Sweety. A second later his app shows a red cross: *payment not processed*. No money left his account. Somewhere between his bank and Sweety's, something said *no* before a single rupee moved. How does a bank say "no" in a way Bob's app — or another bank's computer — can act on automatically, and why is this the easiest payment failure to live with?

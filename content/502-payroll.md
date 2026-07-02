@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [case-study, payroll, bulk, pain.001, batch-booking, pacs.008, camt.054]
 related: [502-payroll, 501-customer-transfer, 301-pain-family, 303-camt-family]
 earnedSkill: "Explain how a bulk payment differs from a single transfer — one pain.001 carrying many transactions, the choice between batch and single booking, the fan-out into one pacs.008 per employee, and how reporting (camt.053/054) ties hundreds of credits back to a single payroll run."
+num: 502
+status: published
 ---
 
 > **The problem first.** It's the last Friday of the month and Bob's company has to pay 200 people. Building 200 separate transfers by hand would take all day and guarantee mistakes. The finance team uploads one file, approves it once, and by Monday morning 200 salaries have landed — each employee seeing their own clean credit, the company seeing one debit on its statement. How does *one* instruction become *two hundred* payments, and how does everyone still get told exactly what happened to their slice?

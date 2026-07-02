@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [message-lifecycle, pain, pacs, camt, head, end-to-end, EndToEndId, UETR]
 related: [301-pain-family, 302-pacs-family, 303-camt-family, 304-head-admi]
 earnedSkill: "Trace one payment end-to-end through the pain, pacs, and camt families inside their head envelopes, name which family owns each step, and explain how a single reference threads the whole journey so the same payment can be tracked across every hop."
+num: 305
+status: published
 ---
 
 > **The problem first.** You now know four families of instruction on their own — one initiates, one settles, one reports, one wraps the rest. But a real payment doesn't use them one at a time, in isolation. Bob taps "send" once, and a relay race begins: each family takes the baton, runs its leg, and hands off to the next, until ₹33,000 reaches Sweety and everyone has been told it arrived. So what does the *whole* chain look like, in order — and what makes a payment that a dozen banks touched still readable as one journey?

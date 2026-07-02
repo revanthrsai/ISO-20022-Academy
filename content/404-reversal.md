@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [reversal, pacs.007, direct debit, pain.007, R-transactions]
 related: [404-reversal, 403-recall, 402-return, 302-pacs-family]
 earnedSkill: "Explain what a reversal is and how it differs from a recall, name the message that performs it (pacs.007, with pain.007 on the customer side), describe why a reversal needs no permission, and connect reversals to the direct-debit world where they live."
+num: 404
+status: published
 ---
 
 > **The problem first.** Sweety runs a gym and collects ₹2,000 a month from members by direct debit — she *pulls* the money rather than waiting for them to push it. This month a glitch charged Bob ₹20,000 instead of ₹2,000. The money already left Bob's account and settled in Sweety's. Bob didn't make a mistake; Sweety did, and she pulled funds she had every right to pull — just the wrong amount. She doesn't need to *ask* anyone to fix it. How does the party who *collected* a payment cleanly undo its own settled collection?

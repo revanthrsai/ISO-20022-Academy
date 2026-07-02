@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [payment systems, RTGS, ACH, rails, scheme]
 related: [103-payment-lifecycle, 102-clearing-and-settlement, 105-payment-participants]
 earnedSkill: "Tell the major kinds of payment system apart by how and when they settle, and predict which one a given payment will travel on from its size, speed, and direction."
+num: 201
+status: published
 ---
 
 > **The problem first.** Bob's bank and Sweety's bank need to exchange value, but they can't each build a private cable to every other bank on earth — that's millions of cables. So how do thousands of banks reach each other without wiring themselves together one pair at a time? They share a small number of public roads. Those roads are payment systems, and which one a payment takes changes almost everything about it.

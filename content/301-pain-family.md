@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [pain, initiation, pain.001, pain.002, customer-to-bank]
 related: [301-pain-family, 302-pacs-family, 302-pain-001, 103-payment-lifecycle]
 earnedSkill: "Explain what the pain family is for, name pain.001 and pain.002 and what each does, walk the three nested levels of a pain.001, and pinpoint the moment your bank stops speaking pain and starts speaking pacs."
+num: 301
+status: published
 ---
 
 > **The problem first.** Bob is standing in his kitchen in Dubai with his phone, trying to get ₹33,000 to Sweety in Bangalore. He doesn't have her bank's number. He doesn't speak to her bank. He certainly isn't going to fill in a wire by hand. All he can actually do is tell *his own* bank what he wants. So what does that "telling" look like once it leaves his banking app — and why is it completely different from what his bank sends onward?

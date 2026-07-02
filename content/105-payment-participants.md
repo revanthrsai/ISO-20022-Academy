@@ -8,6 +8,8 @@ updated: 2026-06-28
 tags: [participants, debtor, creditor, agent, intermediary]
 related: [102-what-is-a-payment, 104-clearing-and-settlement, 101-nostro-vostro]
 earnedSkill: "Name the parties in a payment by their roles — payer, payee, their banks, any intermediaries, and the systems behind them — and map a real transfer onto that cast."
+num: 105
+status: published
 ---
 
 > **The problem first.** Bob sends Sweety $400. It feels like a two-person event: Bob and Sweety. But the money passes through at least four organisations to get there, and each one has a precise name and a precise job. If you think it's just "sender and receiver," everything that moves the money will read like it's full of strangers.

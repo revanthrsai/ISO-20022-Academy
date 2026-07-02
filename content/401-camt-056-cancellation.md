@@ -8,6 +8,8 @@ updated: 2026-07-01
 tags: [camt.056, cancellation, recall, R-transactions]
 related: [401-camt-056-cancellation, 403-recall, 402-return, 405-investigations]
 earnedSkill: "Read a camt.056 field by field, name its three structural parts (Assignment, Case, Underlying), pick the right cancellation reason code, trace how the camt.029 answer decides whether a pacs.004 return follows, and state the one distinction that matters most: a camt.056 requests, a pacs.004 returns."
+num: 406
+status: published
 ---
 
 > **The problem first.** Bob's bank just sent ₹33,000 to Sweety — and then realised it sent it **twice**. The duplicate settled too. The money is sitting safely in Sweety's account, where it has every right to be; nobody on her side did anything wrong. There is no "undo" button on a settled payment. So how does Bob's bank *ask* Sweety's bank to give it back — in a structured request the receiver can act on automatically, knowing the answer might be **no**?

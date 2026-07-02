@@ -2,6 +2,9 @@ backend:
   name: git-gateway
   branch: main
 
+# Drafts → In Review → Ready board. Nothing goes live until you hit Publish.
+publish_mode: editorial_workflow
+
 media_folder: "assets/images/uploads"
 public_folder: "/assets/images/uploads"
 
@@ -10,13 +13,88 @@ collections:
     label: "Library Articles"
     folder: "content"
     create: true
-    slug: "{{id}}"
+    # Filename = "<num>-<slug>.md"; the filename (minus .md) becomes the article id.
+    slug: "{{fields.num}}-{{fields.slug}}"
+    identifier_field: title
+    summary: "{{fields.num}} · {{fields.title}}"
+    sortable_fields: ["num", "title"]
+    editor:
+      preview: false
     fields:
-      - { label: "Article ID", name: "id", widget: "string", hint: "e.g., 101-nostro-vostro" }
-      - { label: "Title", name: "title", widget: "string" }
-      - { label: "Level (e.g., 101, 201)", name: "level", widget: "number" }
-      - { label: "Category", name: "category", widget: "select", options: ["Fundamentals", "Messaging", "Exceptions"] }
-      - { label: "Summary", name: "summary", widget: "text", required: false }
-      - { label: "Minutes to Read", name: "minutes", widget: "number", required: false }
-      - { label: "Tags", name: "tags", widget: "list", required: false }
-      - { label: "Body", name: "body", widget: "markdown" }
+      - label: "Title"
+        name: "title"
+        widget: "string"
+        hint: "Shown on the card and at the top of the article. Pattern that works: 'Thing: What It Actually Does' — e.g. 'Remittance Information: The Invoice Inside the Payment'."
+
+      - label: "URL Slug"
+        name: "slug"
+        widget: "string"
+        pattern: ["^[a-z0-9-]+$", "lowercase letters, numbers and hyphens only"]
+        hint: "Short kebab-case name, e.g. 'remittance-information'. Combined with the number to form the filename."
+
+      - label: "Shelf (Library section)"
+        name: "level"
+        widget: "select"
+        options:
+          - { label: "100 · Fundamentals — how money moves, no XML", value: 100 }
+          - { label: "200 · Architecture — systems, gateway, hub, switch, rails", value: 200 }
+          - { label: "300 · Message Deep Dives — pain, pacs, camt, head", value: 300 }
+          - { label: "400 · Exceptions — reject, return, recall, reversal, investigations", value: 400 }
+          - { label: "500 · Case Studies — end-to-end walks", value: 500 }
+          - { label: "600 · Field Guides — one structured field per read", value: 600 }
+        value_type: "int"
+
+      - label: "Number (position on the shelf)"
+        name: "num"
+        widget: "number"
+        value_type: "int"
+        hint: "Ordering within the shelf, e.g. 601, 602… Lower = earlier. Check the Library for the next free number."
+
+      - label: "Summary"
+        name: "summary"
+        widget: "text"
+        hint: "1–2 sentences on the card. Best pattern: tension + promise. 'Two words everyone uses interchangeably — and the difference is where most payment confusion lives.'"
+
+      - label: "Minutes to read"
+        name: "minutes"
+        widget: "number"
+        value_type: "int"
+        default: 7
+        hint: "Rule of thumb: word count ÷ 200."
+
+      - label: "Last updated"
+        name: "updated"
+        widget: "datetime"
+        format: "YYYY-MM-DD"
+        time_format: false
+        required: false
+
+      - label: "Tags"
+        name: "tags"
+        widget: "list"
+        required: false
+        hint: "3–5 lowercase topic tags, e.g. remittance, camt.054, reconciliation"
+
+      - label: "Related article ids"
+        name: "related"
+        widget: "list"
+        required: false
+        hint: "Filenames without .md, e.g. 301-pacs-008"
+
+      - label: "Earned skill"
+        name: "earnedSkill"
+        widget: "string"
+        required: false
+        hint: "One sentence: what the reader can DO after this. 'Explain why…', 'Tell a nostro from a vostro…'"
+
+      - label: "Status"
+        name: "status"
+        widget: "select"
+        options: ["published", "draft"]
+        default: "published"
+        hint: "'draft' still opens on the site but is badged Draft. Use the editorial board (unpublished) for true work-in-progress."
+
+      - label: "Body"
+        name: "body"
+        widget: "markdown"
+        hint: "See docs/HANDBOOK.md §6 in the repo for the house style: problem-first opening, {{embed:...}} cards, {{flow:...}} diagrams, knowledge checks."

@@ -3,7 +3,7 @@
 // ===========================================================================
 //
 // A reusable "how the world solved it" flow — sender → message → clearing →
-// receiver — in BUSINESS TERMS ONLY (no tags, no XML), as PHILOSOPHY.md
+// receiver — in BUSINESS TERMS ONLY (no tags, no XML), as docs/HANDBOOK.md (Philosophy)
 // requires for beat 4 of the Lesson Spine.
 //
 // Authored in lessons as a one-line token (expanded by markdown.js):
@@ -20,7 +20,7 @@
 // LIVING PROCESS MAPS engine animates it for free (actors appear in
 // sequence, then a value pulse travels stop to stop) — including the
 // prefers-reduced-motion gate and the dead-IntersectionObserver fallbacks.
-// All colors come from DESIGN_TOKENS.css variables, so both themes work.
+// All colors come from style.css :root tokens variables, so both themes work.
 //
 // Global API:
 //   FlowDiagram.html(spec)  — spec is the token's inner text; returns the

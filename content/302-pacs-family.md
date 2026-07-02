@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [pacs, clearing, settlement, pacs.008, pacs.002, pacs.004, interbank]
 related: [302-pacs-family, 301-pain-family, 301-pacs-008, 105-payment-participants]
 earnedSkill: "Explain what the pacs family is for, tell pacs.008 from pacs.009, describe the round trip from instruction to confirmation or return, and point to the single reference that proves a pacs.008 came from a particular pain.001."
+num: 302
+status: published
 ---
 
 > **The problem first.** Bob's bank has his instruction and his money is good. But Sweety banks somewhere Bob's bank has never directly met — another country, another regulator, no shared account. Bob's bank can't just phone them up. It has to send something one or more *other* banks can read, act on, and forward — each one moving real money on its own books — until ₹33,000 finally lands in Sweety's account. What does that instruction look like, and how do the banks tell each other it worked?

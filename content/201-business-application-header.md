@@ -8,6 +8,8 @@ updated: 2026-07-01
 tags: [BAH, head.001, routing, namespaces]
 related: [201-business-application-header, 304-head-admi, 301-pacs-008, 302-pacs-family]
 earnedSkill: "Explain what the Business Application Header carries, why it rides separately from the message body, how Fr / To / BizMsgIdr / MsgDefIdr let a network route and validate a message without parsing its contents, and how the BAH replaces the old MT header block."
+num: 206
+status: published
 ---
 
 > **The problem first.** A payment instruction says *what* to do: pay ₹33,000 from Bob to Sweety. But who is it *from*? Who should *receive* it next? Which market's rules apply, and which exact version of the instruction is this? If all of that lived buried inside the payment, every router, gateway, and hub along the way would have to open the whole thing up and read it end to end just to decide where to forward it. At scale, that's madness. So ISO 20022 does what the postal service figured out centuries ago: it puts the addressing on the *outside*.

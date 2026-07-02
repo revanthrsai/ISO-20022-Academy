@@ -615,7 +615,7 @@ const DATA = {
     ]
 };
 
-// The five Glossary categories (NAVIGATION.md section 3). Order here is the order
+// The five Glossary categories (docs/HANDBOOK.md (IA) section 3). Order here is the order
 // the filter chips render in. Every glossary term's category is one of these slugs.
 const GLOSSARY_CATEGORIES = [
     { slug: 'business-terms',   label: 'Business Terms' },

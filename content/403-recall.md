@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [recall, cancellation, camt.056, camt.029, R-transactions]
 related: [403-recall, 402-return, 401-camt-056-cancellation, 405-investigations]
 earnedSkill: "Explain why a recall is a request and not a guaranteed return, name the message that asks (camt.056) and the one that answers (camt.029), describe how a granted recall turns into an actual pacs.004 return, and tell a recall apart from a return and a reversal."
+num: 403
+status: published
 ---
 
 > **The problem first.** Bob's payment to Sweety settled perfectly — the money is in the right account, the right person has it. The trouble is Bob's bank sent it **twice**. The duplicate also settled. Now Bob's bank is short ₹33,000 and the money is sitting safely in Sweety's account, where it has every right to be. Nobody at Sweety's end did anything wrong, so they won't send it back on their own. How does Bob's bank *ask* for a settled, perfectly-valid payment to be undone — knowing the answer might be no?

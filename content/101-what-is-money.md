@@ -8,6 +8,8 @@ updated: 2026-06-28
 tags: [money, value, trust, ledgers]
 related: [102-what-is-a-payment, 105-payment-participants, 101-nostro-vostro]
 earnedSkill: "Explain what money really is — a transferable promise recorded on a ledger — and why that single idea is the floor everything else in payments is built on."
+num: 101
+status: published
 ---
 
 > **The problem first.** Bob hands Sweety a $20 note for lunch. Easy. But the next day he wants to send her $400 from his phone — no note changes hands, nothing physical moves at all, and yet she ends up with the money. If the cash isn't the money, what is?

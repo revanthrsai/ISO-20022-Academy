@@ -4042,7 +4042,7 @@ body.light-mode .hero-token { color: var(--primary-deep); text-shadow: 0 0 18px 
 
 /* ===== FILTER BAR — interactive category / segment filter row (Session 1.4)
    IA-validation gap fix: Glossary needs `#/glossary?category=<cat>` filtering
-   (NAVIGATION.md §3) and the Library level index can reuse the same control.
+   (docs/HANDBOOK.md (IA) §3) and the Library level index can reuse the same control.
    `.tag` is a static metadata pill; this is the pressable, stateful filter. ===== */
 .filter-bar {
     display: flex;

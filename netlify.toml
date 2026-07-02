@@ -1,5 +1,8 @@
 [build]
   functions = "netlify/functions"
+  # Regenerate the Library registry from /content frontmatter on every deploy.
+  command = "node scripts/build-toc.js"
+  publish = "."
 
 # Let /admin and its assets be served as real files, never rewritten
 [[redirects]]

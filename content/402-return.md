@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [return, pacs.004, RtrRsn, settlement, R-transactions]
 related: [402-return, 401-reject, 403-recall, 302-pacs-family]
 earnedSkill: "Explain why a return exists only after settlement, name the message that performs it (pacs.004), read its return reason, describe the U-turn the funds make back to the debtor, and tell a return apart from a reject and a recall."
+num: 402
+status: published
 ---
 
 > **The problem first.** Bob's ₹33,000 made it all the way to Sweety's bank. The money settled — it's sitting there. But Sweety closed that account last month. Her bank is now holding money it can't give to anyone. It's too late to reject the payment; the funds already moved. So how does a bank hand settled money *back* — cleanly, with a reason, and without anyone losing track of it?

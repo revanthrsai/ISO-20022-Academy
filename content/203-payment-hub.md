@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [payment hub, orchestration, routing, processing, core]
 related: [103-payment-lifecycle, 201-payment-systems, 105-payment-participants]
 earnedSkill: "Explain why a bank centralises payment processing into a hub, and trace how a single payment is orchestrated — routed, processed, and dispatched — from the moment it clears the gateway."
+num: 203
+status: published
 ---
 
 > **The problem first.** A clean payment has just come through the bank's front door. Now a decision has to be made: should it go out on the fast, expensive road, or the cheap overnight one? Does it need a fraud check, a currency conversion, a compliance hold? And which of the bank's many systems should actually handle it? If every channel answered those questions its own way, the bank would behave differently depending on where a payment came in. Something central has to make those calls consistently for every payment. That something is the hub.

@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [payment switch, routing, authorisation, real-time, cards]
 related: [203-payment-hub, 201-payment-systems, 103-payment-lifecycle]
 earnedSkill: "Distinguish a payment switch from a payment hub by what each optimises for, and explain why an authorisation switch must answer in real time and what it does in that instant."
+num: 204
+status: published
 ---
 
 > **The problem first.** Sweety taps her card at a shop. Before she's lifted it off the reader, a decision has had to travel to her bank and back: is this card real, does she have the money, is it allowed — yes or no? There's no time to batch this, no time to think it over. A whole class of payment needs an answer in well under a second, every time, millions of times an hour. The hub's careful orchestration is too slow for that. A different kind of engine handles it: the switch.

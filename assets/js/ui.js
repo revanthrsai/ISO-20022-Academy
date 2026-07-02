@@ -291,7 +291,7 @@ function gotoGlossaryLink(kind, target) {
 }
 
 // Reflect filter + search into #/glossary?category=&q= so a filtered view is
-// shareable / reload-safe (NAVIGATION.md §2). Write-only (replaceState, no
+// shareable / reload-safe (docs/HANDBOOK.md (IA) §2). Write-only (replaceState, no
 // reload); routeOnLoad / applyGlossaryHash read it back.
 function syncGlossaryHash() {
     if (typeof location === 'undefined' || typeof history === 'undefined') return;

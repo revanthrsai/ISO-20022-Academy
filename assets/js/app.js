@@ -372,7 +372,7 @@ function setPlaygroundTool(tool, evt) {
     if (tool === 'samples' && window.SampleLibrary) SampleLibrary.init('smp-root');
 
     // Keep the URL on the active tool so a chosen tool is shareable / reload-safe
-    // (NAVIGATION.md §2). Write-only (replaceState, no reload); routeOnLoad /
+    // (docs/HANDBOOK.md (IA) §2). Write-only (replaceState, no reload); routeOnLoad /
     // hashchange read it back.
     if (typeof history !== 'undefined') {
         const slug = PG_TOOL_TO_SLUG[tool] || tool;
@@ -381,7 +381,7 @@ function setPlaygroundTool(tool, evt) {
     }
 }
 
-// Route slugs for the five Playground tools (NAVIGATION.md §3) ⇄ the internal
+// Route slugs for the five Playground tools (docs/HANDBOOK.md (IA) §3) ⇄ the internal
 // tool keys setPlaygroundTool understands.
 const PG_TOOL_SLUGS = { 'xml-viewer': 'viewer', viewer: 'viewer', transformer: 'transformer', validator: 'validator', comparator: 'comparator', samples: 'samples' };
 const PG_TOOL_TO_SLUG = { viewer: 'xml-viewer', transformer: 'transformer', validator: 'validator', comparator: 'comparator', samples: 'samples' };
@@ -531,7 +531,7 @@ function navigate(page, evt) {
     }
 
     // Reflect the section into the URL so every top-level view is shareable and
-    // reload-safe (NAVIGATION.md §2). Glossary owns its own query-string hash
+    // reload-safe (docs/HANDBOOK.md (IA) §2). Glossary owns its own query-string hash
     // (category / q / term); the rest are the bare section route. Write-only
     // (replaceState, no reload) so this never re-enters the hashchange router.
     if (page === 'glossary') {
@@ -769,7 +769,7 @@ function initStatCounters() {
 // ---------------------------------------------------------------------------
 // PAGES.history is the opening scene; this module appends a chapter index to it
 // and renders each chapter as a long-form reading view into #content, routed at
-// #/history/<chapter-slug> (route scheme finalized in 1.3, NAVIGATION.md §3), so
+// #/history/<chapter-slug> (route scheme finalized in 1.3, docs/HANDBOOK.md (IA) §3), so
 // a chapter is shareable and survives reload. Chapters read in order via the
 // shared `pager` control (added 1.4). Authored this session: chapters 01-02.
 // Chapters 03-05 are `status:'soon'` placeholders for 2.2/2.3 — listed in the

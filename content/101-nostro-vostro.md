@@ -8,6 +8,8 @@ updated: 2026-06-27
 tags: [correspondent banking, accounts, settlement]
 related: [101-nostro-vostro, 301-pacs-008]
 earnedSkill: "Explain why a cross-border payment needs a correspondent account, and tell a nostro from a vostro without thinking twice."
+num: 106
+status: published
 ---
 
 > **The problem first.** Bob, in Dubai, wants to send $400 to Sweety in Bangalore. His bank has never met her bank. There is no pipe between them, no shared vault, no truck driving dollars across the Arabian Sea. So how does the money actually get there?

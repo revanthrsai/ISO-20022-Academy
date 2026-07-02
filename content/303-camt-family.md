@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [camt, reporting, camt.053, camt.054, camt.052, reconciliation, cash-management]
 related: [303-camt-family, 302-pacs-family, 305-message-lifecycle, 103-payment-lifecycle]
 earnedSkill: "Explain what the camt family is for, tell a statement (camt.053) from an intraday report (camt.052) from a single-payment notification (camt.054), and say where reporting sits in the life of a payment."
+num: 303
+status: published
 ---
 
 > **The problem first.** Sweety's ₹33,000 has landed. Her bank applied the funds, the payment settled, everyone's happy. But Sweety doesn't work at the bank — she's at her desk in Bangalore, and as far as she can tell, *nothing has happened* until her bank tells her something did. And her accountant needs more: not just "money arrived," but *which* invoice it paid, on *what* date, leaving *what* balance. Who sends that, and what does it look like?

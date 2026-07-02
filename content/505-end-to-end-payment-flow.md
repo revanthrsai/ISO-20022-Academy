@@ -8,6 +8,8 @@ updated: 2026-06-29
 tags: [case-study, end-to-end, capstone, lifecycle, pain.001, pacs.008, camt.054]
 related: [505-end-to-end-payment-flow, 501-customer-transfer, 305-message-lifecycle, 103-payment-lifecycle]
 earnedSkill: "Narrate a single payment through every level of the Library at once — the fundamentals that make it possible, the bank architecture it passes through, the full message chain it becomes, and the exception branch it avoids — and explain, at any point in the journey, both what is happening and why, using the right name for each."
+num: 505
+status: published
 ---
 
 > **The problem first.** Bob taps send. ₹33,000, to Sweety, for Invoice 0042. One second later, a tick. You have now read the whole Library — what money is, how it clears, the systems it rides, every family of instruction, every way it can fail. So here is the only question left: in that one second, and the hours around it, *everything you learned happened at once.* Can you now narrate the entire thing — not as a list of facts, but as one continuous motion where you can stop at any instant and say exactly what is happening, and why?
