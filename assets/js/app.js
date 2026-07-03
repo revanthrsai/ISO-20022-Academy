@@ -4,7 +4,7 @@
 // the hash is stripped from the address bar right after each render. Incoming
 // deep links (#/library etc.) still open correctly on load; the bar then always
 // shows the bare site URL. Flip to false to restore shareable hash URLs.
-window.CLEAN_URLS = false; // custom domain is short now — hash deep links are back
+window.CLEAN_URLS = true; // bar always shows the bare domain, no child routes
 function stripHash() {
     if (!window.CLEAN_URLS || !location.hash) return;
     history.replaceState(null, '', location.pathname + location.search);
