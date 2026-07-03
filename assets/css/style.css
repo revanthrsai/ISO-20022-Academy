@@ -556,6 +556,13 @@ body {
 
 .header.header-scrolled .logo-icon { width: 32px; height: 32px; }
 
+.logo-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 .logo-icon::after {
     content: '';
     position: absolute;
