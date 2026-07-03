@@ -12,7 +12,7 @@ num: 205
 status: published
 ---
 
-> **The problem first.** Bob sends Sweety money on a Sunday night. A generation ago that meant waiting until Monday, maybe Tuesday, for it to land. Banks were closed, the systems ran in overnight batches, and nobody could promise exactly when. Today, on a real-time rail, Sweety's phone buzzes before Bob has put his own down. Nothing about the people changed; everything about the plumbing did. So what actually had to change for money to move in seconds, at midnight, on a weekend? And what does that cost?
+> **Sunday, 11:47 pm.** Bob sends Sweety money. A generation ago that meant waiting until Monday, maybe Tuesday, for it to land. Banks were closed, the systems ran in overnight batches, and nobody could promise exactly when. Today, on a real-time rail, Sweety's phone buzzes before Bob has put his own down. Nothing about the people changed; everything about the plumbing did. So what actually had to change for money to move in seconds, at midnight, on a weekend? And what does that cost?
 
 Every article in this level so far described machinery that, classically, took its time: payments cleared in batches, settled later, and rested overnight. **Real-time payments** tear up that assumption. They are the modern instant rails, running every second of every day, and they do more than speed up the old process. They **compress the entire lifecycle** you learned in the Fundamentals into a few seconds, and in doing so they move the risk around. Understanding them is understanding where payments are heading.
 

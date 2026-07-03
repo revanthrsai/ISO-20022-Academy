@@ -12,7 +12,7 @@ num: 503
 status: published
 ---
 
-> **The problem first.** Bob is in Dubai with dirhams; Sweety is in Bangalore expecting rupees. Their two banks have never dealt with each other: no shared account, no direct line, not even the same currency. In the domestic transfer, both banks plugged into one rail and were done in seconds. Here, the rail runs out at the border. So how does Bob's money cross from a bank in the UAE to a bank in India, get turned into rupees on the way, and still arrive as the *same* payment Sweety can match to Invoice 0042?
+> **Dirhams out, rupees in.** Bob is in Dubai with dirhams; Sweety is in Bangalore expecting rupees. Their two banks have never dealt with each other: no shared account, no direct line, not even the same currency. In the domestic transfer, both banks plugged into one rail and were done in seconds. Here, the rail runs out at the border. So how does Bob's money cross from a bank in the UAE to a bank in India, get turned into rupees on the way, and still arrive as the *same* payment Sweety can match to Invoice 0042?
 
 This is the customer transfer again (pain instructs, pacs settles, camt reports) but with the hard part of international banking dropped into the middle: the two banks at the ends have **no relationship**. Everything new in this case study exists to bridge that gap.
 

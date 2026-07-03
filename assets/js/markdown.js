@@ -251,9 +251,13 @@ const Articles = (function () {
             const done = (typeof Progress !== 'undefined')
                 ? published.filter(a => Progress.isLearned(a.id)).length : 0;
             const pct = published.length ? Math.round(done / published.length * 100) : 0;
+            const complete = published.length > 0 && done === published.length;
+            const countHtml = complete
+                ? `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Shelf complete`
+                : `${done}/${published.length} learned`;
             const shelfProgress = published.length ? `
-                        <div class="shelf-progress${done ? '' : ' is-empty'}" aria-label="${done} of ${published.length} lessons learned">
-                            <span class="shelf-progress-count">${done}/${published.length} learned</span>
+                        <div class="shelf-progress${done ? '' : ' is-empty'}${complete ? ' is-complete' : ''}" aria-label="${complete ? 'Shelf complete' : done + ' of ' + published.length + ' lessons learned'}">
+                            <span class="shelf-progress-count">${countHtml}</span>
                             <span class="shelf-progress-track"><span class="shelf-progress-fill" style="width:${pct}%"></span></span>
                         </div>` : '';
             return `

@@ -12,7 +12,7 @@ num: 402
 status: published
 ---
 
-> **The problem first.** Bob's ₹33,000 made it all the way to Sweety's bank. The money settled; it's sitting there. But Sweety closed that account last month. Her bank is now holding money it can't give to anyone. It's too late to reject the payment; the funds already moved. So how does a bank hand settled money *back*, cleanly, with a reason, and without anyone losing track of it?
+> **Delivered, and stuck.** Bob's ₹33,000 made it all the way to Sweety's bank. The money settled; it's sitting there. But Sweety closed that account last month. Her bank is now holding money it can't give to anyone. It's too late to reject the payment; the funds already moved. So how does a bank hand settled money *back*, cleanly, with a reason, and without anyone losing track of it?
 
 A **reject** (the last chapter) stops a payment before any money moves. A **return** is the opposite situation: the money already **settled**, and now it has to make a U-turn. This is the first true *R-transaction* where real funds physically travel backwards.
 

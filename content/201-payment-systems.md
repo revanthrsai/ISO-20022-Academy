@@ -12,7 +12,7 @@ num: 201
 status: published
 ---
 
-> **The problem first.** Bob's bank and Sweety's bank need to exchange value, but they can't each build a private cable to every other bank on earth. That's millions of cables. So how do thousands of banks reach each other without wiring themselves together one pair at a time? They share a small number of public roads. Those roads are payment systems, and which one a payment takes changes almost everything about it.
+> **Do the math.** Bob's bank and Sweety's bank need to exchange value, but they can't each build a private cable to every other bank on earth. That's millions of cables. So how do thousands of banks reach each other without wiring themselves together one pair at a time? They share a small number of public roads. Those roads are payment systems, and which one a payment takes changes almost everything about it.
 
 In the Fundamentals you met the cast of a payment (payer, payee, their banks, the intermediaries) and the five stages every payment passes through. This article is about the **infrastructure underneath all of them**: the shared systems banks join so that any member can reach any other member. Think of them as the road network. Once you can name the main kinds of road, you can look at any payment and guess, correctly, how fast it will move and what it will cost.
 

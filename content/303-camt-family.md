@@ -12,7 +12,7 @@ num: 303
 status: published
 ---
 
-> **The problem first.** Sweety's ₹33,000 has landed. Her bank applied the funds, the payment settled, everyone's happy. But Sweety doesn't work at the bank. She's at her desk in Bangalore, and as far as she can tell, *nothing has happened* until her bank tells her something did. And her accountant needs more: not just "money arrived," but *which* invoice it paid, on *what* date, leaving *what* balance. Who sends that, and what does it look like?
+> **Nobody knows yet.** Sweety's ₹33,000 has landed. Her bank applied the funds, the payment settled, everyone's happy. But Sweety doesn't work at the bank. She's at her desk in Bangalore, and as far as she can tell, *nothing has happened* until her bank tells her something did. And her accountant needs more: not just "money arrived," but *which* invoice it paid, on *what* date, leaving *what* balance. Who sends that, and what does it look like?
 
 That's the **camt family**, short for **Cash Management**. If pain is you instructing your bank and pacs is banks moving the money, camt is everyone being *told what happened* afterwards. It is the reporting layer of the payment world: statements, notifications, and balances.
 

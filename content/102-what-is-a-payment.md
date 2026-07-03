@@ -12,7 +12,7 @@ num: 102
 status: published
 ---
 
-> **The problem first.** Bob taps "send $400" on his phone in Dubai. A second later Sweety's bank in Bangalore shows the money as hers. No truck, no courier, no cash crossed the 2,000 miles between them. So what exactly *travelled*?
+> **Two thousand miles, and nothing moved.** Bob taps "send $400" on his phone in Dubai. A second later Sweety's bank in Bangalore shows the money as hers. No truck, no courier, no cash crossed the 2,000 miles between them. So what exactly *travelled*?
 
 The honest answer surprises people: **nothing valuable travelled at all.** What moved was *information*, an instruction, and the value changed hands because two ledgers were updated to agree with that instruction. Once you've seen that a payment is information first and money second, the whole field clicks into place.
 

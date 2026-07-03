@@ -3387,6 +3387,16 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
     color: var(--text-muted);
 }
 .shelf-progress.is-empty .shelf-progress-count { color: var(--text-faint); }
+.shelf-progress.is-complete .shelf-progress-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--primary-deep, var(--primary));
+    font-weight: 600;
+}
+.shelf-progress.is-complete .shelf-progress-fill {
+    box-shadow: 0 0 8px var(--glow-soft, rgba(16,185,129,0.35));
+}
 .shelf-progress-track {
     width: 96px;
     height: 3px;

@@ -12,7 +12,7 @@ num: 404
 status: published
 ---
 
-> **The problem first.** Sweety runs a gym and collects ₹2,000 a month from members by direct debit: she *pulls* the money rather than waiting for them to push it. This month a glitch charged Bob ₹20,000 instead of ₹2,000. The money already left Bob's account and settled in Sweety's. Bob didn't make a mistake; Sweety did, and she pulled funds she had every right to pull, just the wrong amount. She doesn't need to *ask* anyone to fix it. How does the party who *collected* a payment cleanly undo its own settled collection?
+> **₹20,000 instead of ₹2,000.** Sweety runs a gym and collects ₹2,000 a month from members by direct debit: she *pulls* the money rather than waiting for them to push it. This month a glitch charged Bob ₹20,000 instead of ₹2,000. The money already left Bob's account and settled in Sweety's. Bob didn't make a mistake; Sweety did, and she pulled funds she had every right to pull, just the wrong amount. She doesn't need to *ask* anyone to fix it. How does the party who *collected* a payment cleanly undo its own settled collection?
 
 You've now seen three exceptions. A **reject** stops a payment before settlement. A **return** is the receiver sending settled money back because it can't apply it. A **recall** is the sender *asking* for settled money back after its own mistake. A **reversal** is the fourth and most often misunderstood: the **originator undoing its own settled payment, by right, not by request.**
 

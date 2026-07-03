@@ -12,7 +12,7 @@ num: 103
 status: published
 ---
 
-> **The problem first.** Bob taps "send" and, after a pause, Sweety gets the money. That pause isn't dead time. A lot happens in it. If you can't name the steps inside the pause, every delayed or failed payment will feel like an unexplained black box.
+> **Inside the pause.** Bob taps "send" and, after a pause, Sweety gets the money. That pause isn't dead time. A lot happens in it. If you can't name the steps inside the pause, every delayed or failed payment will feel like an unexplained black box.
 
 A payment looks instant from the outside, but inside it's a relay race with distinct legs, each handed off to a different runner. The legs have names, they always happen in the same order, and **once you know them you can locate any problem** (a stuck payment, a rejected one, a missing one) by asking a single question: *which leg was it on when it stopped?*
 

@@ -12,7 +12,7 @@ num: 203
 status: published
 ---
 
-> **The problem first.** A clean payment has just come through the bank's front door. Now a decision has to be made: should it go out on the fast, expensive road, or the cheap overnight one? Does it need a fraud check, a currency conversion, a compliance hold? And which of the bank's many systems should actually handle it? If every channel answered those questions its own way, the bank would behave differently depending on where a payment came in. Something central has to make those calls consistently for every payment. That something is the hub.
+> **The payment is inside. Now what?** A clean payment has just come through the bank's front door, and a decision has to be made: should it go out on the fast, expensive road, or the cheap overnight one? Does it need a fraud check, a currency conversion, a compliance hold? And which of the bank's many systems should actually handle it? If every channel answered those questions its own way, the bank would behave differently depending on where a payment came in. Something central has to make those calls consistently for every payment. That something is the hub.
 
 In [The Payment Gateway](#) a payment was authenticated, validated, translated, and handed inside the bank in one clean format. This article is about what receives it. The **payment hub** is the central engine, the brain, that takes each payment and **orchestrates** its journey through the bank: deciding its route, running it through the necessary steps, and sending it on its way. If the gateway is the front door, the hub is everything the building does once you're inside.
 
