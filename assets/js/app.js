@@ -15,7 +15,7 @@ const PAGES = {
         <div class="page">
             <section class="hero-stage" data-hero aria-label="ISO Academy introduction">
                 <div class="hero-bg" aria-hidden="true">
-                    <video class="hero-video" autoplay muted loop playsinline preload="auto"
+                    <video class="hero-video" autoplay muted loop playsinline preload="auto" poster="assets/images/hero-poster.jpg"
                            src="content/videobyte/iso20022_cinematic_intro.mp4"></video>
                     <div class="hero-vignette"></div>
                 </div>

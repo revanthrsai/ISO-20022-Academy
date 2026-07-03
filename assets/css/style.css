@@ -3549,24 +3549,20 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
     letter-spacing: 0;
     line-height: 1.35;
     color: var(--text-muted);
-    filter: blur(2.2px);
-    opacity: 0.55;
-    transition: filter 0.45s var(--ease-out), opacity 0.45s var(--ease-out);
+    opacity: 0.8;
+    transition: opacity 0.45s var(--ease-out);
 }
-.article-title:hover .title-tail { filter: blur(0); opacity: 0.9; }
+.article-title:hover .title-tail { opacity: 1; }
 .title-tail-sm {
     display: block;
     margin-top: 3px;
     font-size: 0.78em;
     font-weight: 500;
-    filter: blur(1.6px);
-    opacity: 0.5;
-    transition: filter 0.45s var(--ease-out), opacity 0.45s var(--ease-out);
+    color: var(--text-muted);
+    opacity: 0.75;
+    transition: opacity 0.45s var(--ease-out);
 }
-.learn-card:hover .title-tail-sm { filter: blur(0); opacity: 0.85; }
-@media (prefers-reduced-motion: reduce) {
-    .title-tail, .title-tail-sm { filter: none; opacity: 0.7; }
-}
+.learn-card:hover .title-tail-sm { opacity: 1; }
 
 .article-page { max-width: 760px; margin: 0 auto; min-width: 0; }
 .article-back {
@@ -4148,24 +4144,4 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
 .learned-hint { color: var(--text-faint); font-size: 0.9em; }
 
 /* Learned badge on Library cards */
-.learn-card-done {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-family: var(--font-mono);
-    font-size: var(--fs-eyebrow);
-    letter-spacing: var(--ls-eyebrow);
-    text-transform: uppercase;
-    color: var(--success);
-}
-
-/* Progress note between the Library head and the level sections */
-.learn-progress {
-    margin: 0 0 var(--space-2xl);
-    font-family: var(--font-mono);
-    font-size: var(--fs-eyebrow);
-    letter-spacing: var(--ls-eyebrow);
-    text-transform: uppercase;
-    color: var(--text-muted);
-}
-.learn-progress-count { color: var(--primary); }
+.lea

@@ -304,7 +304,10 @@ const Articles = (function () {
     function outline(html) {
         const items = [];
         const withIds = html.replace(/<h2>([\s\S]*?)<\/h2>/g, (m, inner) => {
-            const text = inner.replace(/<[^>]+>/g, '').trim();
+            const text = inner.replace(/<[^>]+>/g, '')
+                .replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+                .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                .replace(/&amp;/g, '&').trim();
             let id = 'sec-' + text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
             let n = 2;
             while (items.some(i => i.id === id)) id = id + '-' + n++;
