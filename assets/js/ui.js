@@ -295,6 +295,7 @@ function gotoGlossaryLink(kind, target) {
 // reload); routeOnLoad / applyGlossaryHash read it back.
 function syncGlossaryHash() {
     if (typeof location === 'undefined' || typeof history === 'undefined') return;
+    if (window.CLEAN_URLS) return; // clean-URL mode: never reflect state into the bar
     if (glossaryState.focus) {
         const ft = '#/glossary/' + glossaryState.focus;
         if (location.hash !== ft) history.replaceState(null, '', ft);

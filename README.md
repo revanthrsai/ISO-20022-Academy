@@ -6,13 +6,13 @@
 actually moves to reading and validating real ISO 20022 messages — through long-form
 lessons that always start with a human problem, never a tag.
 
-[![Live Site](https://img.shields.io/badge/Live-revanthrsai.github.io-10B981?style=flat-square&logo=githubpages&logoColor=white)](https://revanthrsai.github.io/ISO-20022-Academy/)
+[![Live Site](https://img.shields.io/badge/Live-iso20022academy.in-10B981?style=flat-square&logo=githubpages&logoColor=white)](https://iso20022academy.in/)
 [![Deploy](https://github.com/revanthrsai/ISO-20022-Academy/actions/workflows/pages.yml/badge.svg)](https://github.com/revanthrsai/ISO-20022-Academy/actions/workflows/pages.yml)
 [![Made with Vanilla JS](https://img.shields.io/badge/Made%20with-Vanilla%20JS-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](#-tech-stack)
 [![CMS: Decap](https://img.shields.io/badge/CMS-Decap-2E3440?style=flat-square)](https://decapcms.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
-**[Visit the Academy →](https://revanthrsai.github.io/ISO-20022-Academy/)**
+**[Visit the Academy →](https://iso20022academy.in/)**
 
 </div>
 
@@ -69,54 +69,4 @@ node scripts/build-toc.js
 
 - **Frontend** — pure HTML, CSS, and vanilla JavaScript. Dark luxury fintech aesthetic
   (emerald `#10B981` palette) built entirely on CSS custom properties; hash-based SPA
-  routing; motion system gated behind `prefers-reduced-motion`.
-- **Content** — Markdown + YAML frontmatter in `content/`, rendered client-side by a
-  custom lesson engine (`markdown.js`) with `{{embed}}`, `{{check}}` and `{{flow}}` tokens.
-- **CMS** — [Decap CMS](https://decapcms.org) with the GitHub backend; auth via a free
-  [sveltia-cms-auth](https://github.com/sveltia/sveltia-cms-auth) Cloudflare Worker.
-- **Hosting & CI** — GitHub Pages, deployed by `.github/workflows/pages.yml` (bypasses
-  Jekyll, regenerates the TOC on every push).
-
-## 📁 File structure
-
-```
-index.html                 page shell: header/nav, content container, script includes
-content/*.md               the Library lessons (frontmatter + Markdown + tokens)
-admin/                     Decap CMS (config.yml + entry page) — publish at /admin
-scripts/build-toc.js       generates assets/js/toc.data.js from content/ frontmatter
-.github/workflows/         GitHub Pages deploy + TOC build (CI)
-assets/css/style.css       all styling; :root is the design-token source of truth
-assets/js/app.js           routing (hash), page templates, History chapters
-assets/js/toc.js           Library shelf definitions + lookup helpers
-assets/js/toc.data.js      GENERATED article registry — do not edit by hand
-assets/js/markdown.js      lesson engine: frontmatter, Markdown, embed/check/flow tokens
-assets/js/flow-diagram.js  business-terms flow diagram component
-assets/js/data.js          glossary terms + Progress store (localStorage)
-assets/js/ui.js            glossary rendering, detail panel, theme toggle
-assets/js/xml-viewer.js    Playground: XML tree viewer
-assets/js/transformer.js   Playground: MT ⇄ MX transformer
-assets/js/validator.js     Playground: message validator
-assets/js/comparator.js    Playground: message comparator
-assets/js/samples.js       Playground: sample message library
-assets/js/motion.js        motion design system (reduced-motion gated)
-assets/js/preloader.js     one-time intro animation
-docs/HANDBOOK.md           THE project doc: vision, IA, design system, authoring guide
-```
-
-## 📖 Documentation
-
-Everything lives in one curated file: **[`docs/HANDBOOK.md`](docs/HANDBOOK.md)**.
-Writing an article? Jump straight to §6 (Authoring & Publishing).
-
-## 🗺️ Roadmap
-
-This project is under active development — the Library is growing shelf by shelf.
-Found it useful, spotted an error, or want a topic covered? Open an issue or reach out.
-
-## 📄 License
-
-Released under the [MIT License](LICENSE) — free to use, copy, and adapt with attribution.
-
-<div align="center">
-<sub>Built with ☕ and vanilla JS by <a href="https://github.com/revanthrsai">Revanth</a></sub>
-</div>
+  routing; motion system gated behind `

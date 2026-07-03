@@ -3212,8 +3212,11 @@ a.link:hover {
     margin-left: calc(var(--content-pad) * -1);
     margin-right: calc(var(--content-pad) * -1);
     margin-top: calc(clamp(32px, 5vw, 72px) * -1);
-    margin-bottom: clamp(40px, 8vw, 96px);
-    min-height: clamp(320px, 48vh, 560px);
+    margin-bottom: clamp(16px, 3vw, 40px);
+    /* match the 16:9 video frame so the whole globe is visible,
+       capped by the viewport so it never overflows the first screen */
+    min-height: min(calc(100vh - 24px), 56.25vw);
+    min-height: min(calc(100svh - 24px), 56.25vw);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3237,8 +3240,8 @@ a.link:hover {
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(70% 60% at 50% 46%, transparent 40%, var(--bg) 92%),
-        linear-gradient(180deg, transparent 60%, var(--bg) 100%);
+        radial-gradient(110% 100% at 50% 48%, transparent 72%, var(--bg) 100%),
+        linear-gradient(180deg, transparent 90%, var(--bg) 100%);
 }
 
 /* ---- hero content ------------------------------------------------------- */
@@ -3329,7 +3332,7 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
 
 /* ---- responsive: adapt, don't just scale -------------------------------- */
 @media (max-width: 900px) {
-    .hero-stage { min-height: clamp(300px, 42vh, 460px); border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
+    .hero-stage { min-height: clamp(240px, 56.25vw, 460px); border-radius: 0 0 var(--radius-xl) var(--radius-xl); }
 }
 @media (max-width: 600px) {
     .hero-stage {
@@ -3953,6 +3956,13 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
     font-size: var(--fs-small);
 }
 .site-footer-dot { color: var(--border-hi); }
+.site-footer-credit {
+    color: var(--text-muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border-hi);
+    transition: color 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
+}
+.site-footer-credit:hover { color: var(--primary); border-color: var(--primary); }
 @media (max-width: 768px) {
     .site-footer-inner { flex-direction: column; gap: var(--space-xl); }
 }

@@ -1,5 +1,15 @@
 // App Module - Main application logic and navigation
 
+// Clean-URL mode: routes still drive rendering through the hash internally, but
+// the hash is stripped from the address bar right after each render. Incoming
+// deep links (#/library etc.) still open correctly on load; the bar then always
+// shows the bare site URL. Flip to false to restore shareable hash URLs.
+window.CLEAN_URLS = false; // custom domain is short now — hash deep links are back
+function stripHash() {
+    if (!window.CLEAN_URLS || !location.hash) return;
+    history.replaceState(null, '', location.pathname + location.search);
+}
+
 const PAGES = {
     history: `
         <div class="page">
@@ -291,7 +301,7 @@ function setPlaygroundTool(tool, evt) {
     // Keep the URL on the active tool so a chosen tool is shareable / reload-safe
     // (docs/HANDBOOK.md (IA) §2). Write-only (replaceState, no reload); routeOnLoad /
     // hashchange read it back.
-    if (typeof history !== 'undefined') {
+    if (!window.CLEAN_URLS && typeof history !== 'undefined') {
         const slug = PG_TOOL_TO_SLUG[tool] || tool;
         const target = '#/playground/' + slug;
         if (location.hash !== target) history.replaceState(null, '', target);
@@ -453,7 +463,7 @@ function navigate(page, evt) {
     // (replaceState, no reload) so this never re-enters the hashchange router.
     if (page === 'glossary') {
         if (typeof syncGlossaryHash === 'function') syncGlossaryHash();
-    } else if (typeof history !== 'undefined') {
+    } else if (!window.CLEAN_URLS && typeof history !== 'undefined') {
         const secTarget = '#/' + page;
         if (location.hash !== secTarget) history.replaceState(null, '', secTarget);
     }
@@ -991,6 +1001,7 @@ function goToHistoryLanding(evt){
 // navigate() and the sync helpers use replaceState, so they never land here —
 // no render loop.
 window.addEventListener('hashchange', function(){
+    setTimeout(stripHash, 0); // scrub the bar after this handler finishes rendering
     const h = location.hash || '';
     const mh = h.match(/^#\/history\/([a-z0-9-]+)$/);
     if (mh) { renderHistoryChapter(mh[1]); return; }
@@ -1011,6 +1022,7 @@ window.addEventListener('hashchange', function(){
 
 // First paint: honor a deep-linked chapter, otherwise open the History landing.
 function routeOnLoad(){
+    setTimeout(stripHash, 0); // honor the deep link below, then scrub the bar
     const h = location.hash || '';
     const mh = h.match(/^#\/history\/([a-z0-9-]+)$/);
     const ch = mh && getHistoryChapter(mh[1]);
