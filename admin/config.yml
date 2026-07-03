@@ -1,6 +1,9 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: revanthrsai/ISO-20022-Academy
   branch: main
+  # Free OAuth relay on Cloudflare Workers
+  base_url: https://sveltia-cms-auth.revanthrsai.workers.dev
 
 # Drafts → In Review → Ready board. Nothing goes live until you hit Publish.
 publish_mode: editorial_workflow
