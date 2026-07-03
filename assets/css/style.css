@@ -3371,6 +3371,59 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
     margin-bottom: 26px;
     border-bottom: 1px solid var(--border);
 }
+.shelf-progress {
+    margin-left: auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 7px;
+    padding-top: 4px;
+}
+.shelf-progress-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+.shelf-progress.is-empty .shelf-progress-count { color: var(--text-faint); }
+.shelf-progress-track {
+    width: 96px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+    overflow: hidden;
+}
+.shelf-progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--primary), var(--primary-bright, var(--primary)));
+    transition: width 0.6s var(--ease-out);
+}
+.learn-progress {
+    max-width: var(--maxw);
+    margin: 0 auto clamp(28px, 4vw, 44px);
+    padding: 12px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg, 12px);
+    background: var(--surface, transparent);
+    font-size: 14px;
+    color: var(--text-muted);
+}
+.learn-progress-count { color: var(--primary-deep, var(--primary)); font-weight: 600; }
+.learn-progress-start {
+    color: var(--primary-deep, var(--primary));
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid var(--primary);
+}
+.learn-progress-start:hover { color: var(--primary); }
+@media (max-width: 600px) {
+    .learn-level-head { flex-wrap: wrap; }
+    .shelf-progress { margin-left: 0; align-items: flex-start; width: 100%; }
+}
+
 .learn-level-num {
     flex-shrink: 0;
     font-family: var(--font-mono);
@@ -3950,6 +4003,13 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
     gap: var(--space-xs);
     color: var(--text-faint);
     font-size: var(--fs-small);
+}
+.site-footer-about {
+    margin-top: 14px;
+    max-width: 420px;
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--text-faint);
 }
 .site-footer-dot { color: var(--border-hi); }
 .site-footer-credit {

@@ -247,6 +247,15 @@ const Articles = (function () {
             const items = getArticlesByLevel(lvl);
             if (!items.length) return '';
             const cards = items.map(cardHtml).join('');
+            const published = items.filter(a => a.status !== 'draft');
+            const done = (typeof Progress !== 'undefined')
+                ? published.filter(a => Progress.isLearned(a.id)).length : 0;
+            const pct = published.length ? Math.round(done / published.length * 100) : 0;
+            const shelfProgress = published.length ? `
+                        <div class="shelf-progress${done ? '' : ' is-empty'}" aria-label="${done} of ${published.length} lessons learned">
+                            <span class="shelf-progress-count">${done}/${published.length} learned</span>
+                            <span class="shelf-progress-track"><span class="shelf-progress-fill" style="width:${pct}%"></span></span>
+                        </div>` : '';
             return `
                 <section class="learn-level" data-reveal="up">
                     <div class="learn-level-head">
@@ -254,7 +263,7 @@ const Articles = (function () {
                         <div>
                             <h3 class="learn-level-name">${esc(meta.name)}</h3>
                             <p class="learn-level-blurb">${esc(meta.blurb)}</p>
-                        </div>
+                        </div>${shelfProgress}
                     </div>
                     <div class="learn-grid">${cards}</div>
                 </section>`;
@@ -396,8 +405,16 @@ const Articles = (function () {
     function progressNote() {
         if (typeof Progress === 'undefined' || typeof ACADEMY_TOC === 'undefined') return '';
         const n = Progress.learnedCount();
-        if (!n) return '';
         const total = ACADEMY_TOC.length;
+        if (!n) {
+            const first = (typeof getArticlesByLevel === 'function' && (getArticlesByLevel(100) || [])
+                .filter(a => a.status !== 'draft')[0]) || null;
+            if (!first) return '';
+            return `<div class="learn-progress" data-reveal="fade">
+                New here? Start with
+                <a href="javascript:void(0)" class="learn-progress-start" onclick="openArticle('${first.id}')">${esc(first.title.split(/[?:]/)[0])}</a>
+                and read your way up the shelves. Finish a lesson and mark it learned — the shelves keep your place.</div>`;
+        }
         return `<div class="learn-progress" data-reveal="fade"><span class="learn-progress-count">${n} of ${total}</span> lessons marked learned</div>`;
     }
 
