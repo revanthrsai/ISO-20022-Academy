@@ -579,6 +579,15 @@ body {
     min-width: 0;
     gap: 2px;
 }
+@media (max-width: 700px) {
+    .nav {
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 88%, transparent 100%);
+        mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 88%, transparent 100%);
+    }
+    .nav::-webkit-scrollbar { display: none; }
+}
 
 .nav-item {
     position: relative;
@@ -3345,8 +3354,8 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
     .hero-cta .btn { width: 100%; justify-content: center; }
     .hero-vignette {
         background:
-            radial-gradient(120% 70% at 30% 30%, transparent 30%, var(--bg) 96%),
-            linear-gradient(180deg, transparent 55%, var(--bg) 100%);
+            radial-gradient(130% 100% at 50% 45%, transparent 58%, var(--bg) 100%),
+            linear-gradient(180deg, transparent 85%, var(--bg) 100%);
     }
 }
 
