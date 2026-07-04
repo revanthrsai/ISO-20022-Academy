@@ -5,3 +5,7 @@ Thumbs.db
 
 assets/video/
 node_modules/
+# generated at deploy time by scripts/build-seo.js
+/library/
+/sitemap.xml
+/robots.txt

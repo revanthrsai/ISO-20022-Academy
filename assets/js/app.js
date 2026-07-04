@@ -1017,6 +1017,8 @@ window.addEventListener('hashchange', function(){
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
     if (/^#\/playground(\?|$)/.test(h)) { if (currentNavPage() !== 'playground') navigate('playground'); return; }
+    const ml = h.match(/^#\/library\/([a-z0-9-]+)$/);
+    if (ml && typeof getArticle === 'function' && getArticle(ml[1])) { openArticle(ml[1]); return; }
     if (/^#\/library(\/|\?|$)/.test(h)) { if (currentNavPage() !== 'library') navigate('library'); return; }
 });
 
@@ -1031,6 +1033,8 @@ function routeOnLoad(){
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
     if (/^#\/playground(\?|$)/.test(h)) { navigate('playground'); return; }
+    const ml = h.match(/^#\/library\/([a-z0-9-]+)$/);
+    if (ml && typeof getArticle === 'function' && getArticle(ml[1])) { openArticle(ml[1]); return; }
     if (/^#\/library(\/|\?|$)/.test(h)) { navigate('library'); return; }
     navigate('history');
 }
