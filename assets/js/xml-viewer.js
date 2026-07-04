@@ -632,6 +632,9 @@ const XmlViewer = (function () {
 
         .xv-row {
             display: flex; align-items: baseline; gap: 7px;
+            flex-wrap: wrap; /* long plain-English label + long value: value drops
+                                to its own line instead of being crushed to a
+                                one-character-wide column */
             padding: 2.5px 6px; padding-left: calc(6px + var(--d) * 18px);
             border-radius: var(--radius-xs);
         }
@@ -647,7 +650,7 @@ const XmlViewer = (function () {
         .xv-node.is-collapsed > .xv-branch > .xv-twist { transform: rotate(0deg); }
         .xv-node.is-collapsed > .xv-children { display: none; }
 
-        .xv-label { flex-shrink: 0; }
+        .xv-label { flex-shrink: 0; max-width: 100%; }
         .xv-name { font-weight: 600; }
         .xv-tag { color: var(--primary-bright); }
         .xv-name-plain { color: var(--text); }
@@ -667,7 +670,13 @@ const XmlViewer = (function () {
             border-radius: var(--radius-pill); padding: 1px 7px; line-height: 1.4;
         }
         .xv-colon { color: var(--text-faint); }
-        .xv-val { color: var(--text); word-break: break-word; }
+        .xv-val {
+            color: var(--text);
+            flex: 1; min-width: 14ch;   /* never narrower than ~14 chars — wrap to a
+                                           new line first, then break long tokens
+                                           (IBANs, UETRs) only within a sane width */
+            overflow-wrap: anywhere; word-break: normal;
+        }
         .xv-empty { color: var(--text-faint); font-style: italic; }
         .xv-attrs { margin-left: 8px; }
         .xv-attr { font-size: 11px; margin-left: 6px; }

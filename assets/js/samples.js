@@ -189,7 +189,7 @@ const SampleLibrary = (function () {
       <MsgId>HDFCINBB-STS-20260627-400</MsgId>
       <CreDtTm>2026-06-27T15:01:40+05:30</CreDtTm>
       <InstgAgt><FinInstnId><BICFI>HDFCINBB</BICFI></FinInstnId></InstgAgt>
-      <InstdAgt><FinInstnId><BICFI>EBILAEAD</BICFI></FinInstnId></InstgAgt>
+      <InstdAgt><FinInstnId><BICFI>EBILAEAD</BICFI></FinInstnId></InstdAgt>
     </GrpHdr>
     <TxInfAndSts>
       <OrgnlInstrId>EBILAEAD-INSTR-0400</OrgnlInstrId>
