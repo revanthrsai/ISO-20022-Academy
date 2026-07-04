@@ -163,6 +163,7 @@ function stubHtml(meta, bodyHtml, id) {
   ${bodyHtml}
   <div class="foot">Part of <a href="${SITE}/">ISO 20022 Academy</a> — lessons, message playground, and glossary for the language of modern payments. Written by <a href="https://www.linkedin.com/in/revanth-sai-2002/">Revanth Sai Rayapati</a>.</div>
 </div>
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "11b2bff9a0f84f4a83a1bccdc1da12df"}'></script>
 </body>
 </html>`;
 }
