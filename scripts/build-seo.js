@@ -126,6 +126,8 @@ function stubHtml(meta, bodyHtml, id) {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${url}">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/images/favicon-192.png">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="ISO 20022 Academy">
 <meta property="og:title" content="${esc(meta.title)}">
