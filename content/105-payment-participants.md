@@ -6,7 +6,7 @@ summary: "A simple payment hides a surprising cast of characters. Learn their ro
 minutes: 7
 updated: 2026-06-28
 tags: [participants, debtor, creditor, agent, intermediary]
-related: [102-what-is-a-payment, 104-clearing-and-settlement, 101-nostro-vostro]
+related: [102-what-is-a-payment, 102-clearing-and-settlement, 101-nostro-vostro]
 earnedSkill: "Name the parties in a payment by their roles (payer, payee, their banks, any intermediaries, and the systems behind them) and map a real transfer onto that cast."
 num: 105
 status: published

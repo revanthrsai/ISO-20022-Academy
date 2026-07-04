@@ -6,7 +6,7 @@ summary: "A payment is information changing two ledgers, plus everyone agreeing 
 minutes: 7
 updated: 2026-06-28
 tags: [payment, transfer, instruction, ledgers]
-related: [101-what-is-money, 103-payment-lifecycle, 104-clearing-and-settlement]
+related: [101-what-is-money, 103-payment-lifecycle, 102-clearing-and-settlement]
 earnedSkill: "Describe a payment as an instruction that moves value between two ledgers, and explain why the message and the money are two different things."
 num: 102
 status: published

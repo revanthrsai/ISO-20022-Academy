@@ -6,7 +6,7 @@ summary: "A payment is a short journey with named stages, not a single event. Le
 minutes: 8
 updated: 2026-06-28
 tags: [lifecycle, initiation, clearing, settlement, reconciliation]
-related: [102-what-is-a-payment, 104-clearing-and-settlement, 105-payment-participants]
+related: [102-what-is-a-payment, 102-clearing-and-settlement, 105-payment-participants]
 earnedSkill: "Name the stages a payment passes through from initiation to reconciliation, and point to where things most often go wrong."
 num: 103
 status: published
