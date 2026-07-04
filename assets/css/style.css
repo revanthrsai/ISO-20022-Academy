@@ -397,8 +397,13 @@ html, body {
     transition: background-color 0.5s var(--ease-out), color 0.5s var(--ease-out);
 }
 
+html {
+    overflow-x: hidden; /* fallback */
+    overflow-x: clip;
+}
 body {
     overflow-x: hidden;
+    overflow-x: clip;
     position: relative;
 }
 
@@ -1413,6 +1418,12 @@ body {
 
 .story-section h2 {
     font-size: clamp(40px, 7vw, 96px);
+    max-width: 100%;
+}
+@media (max-width: 600px) {
+    .story-section h2 { font-size: clamp(30px, 9.4vw, 40px); }
+}
+.story-section h2 {
     line-height: 1.15;
     letter-spacing: -0.025em;
     margin-bottom: clamp(18px, 3vw, 24px);
