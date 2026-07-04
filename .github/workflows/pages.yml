@@ -50,4 +50,10 @@ jobs:
         run: node scripts/build-seo.js
 
       - name: Upload GitHub Pages artifact
-        uses: act
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
