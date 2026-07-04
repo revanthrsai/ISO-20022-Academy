@@ -6,7 +6,7 @@ summary: "From November 2026, a cross-border payment whose addresses are just fr
 minutes: 6
 updated: 2026-07-03
 tags: [structured address, pstladr, cbpr+, 2026 deadline, screening]
-related: [301-pacs-008, 207-the-end-of-mt, 601-remittance-information]
+related: [301-pacs-008, 208-the-end-of-mt, 601-remittance-information]
 earnedSkill: "Read a PstlAdr block on sight, tell a fully structured address from a hybrid one from a soon-to-be-rejected one, and explain why regulators care where your town name lives."
 status: published
 ---
@@ -54,7 +54,7 @@ The uncomfortable part: with months to go, industry surveys still found roughly 
 The phrase to keep: **the deadline is about databases wearing XML clothes.** A structured address is easy to write and hard to have.
 
 {{embed:explorer:PACS.008|See PstlAdr in a live pacs.008}}
-{{embed:article:207-the-end-of-mt|The previous deadline, and why this one follows it}}
+{{embed:article:208-the-end-of-mt|The previous deadline, and why this one follows it}}
 
 {{check:What is the minimum that must be structured in every CBPR+ address from November 2026?|Town name and country|Street name and building number|The postal code}}
 {{check:What distinguishes a hybrid address from a fully structured one?|Hybrid keeps up to two free-text AdrLine elements alongside structured town and country; fully structured has no AdrLine at all|Hybrid is only allowed for domestic payments|Hybrid addresses skip the country code}}

@@ -1,12 +1,12 @@
 ---
 title: "The End of MT: The Weekend the Old Language Retired"
 level: 200
-num: 207
+num: 208
 summary: "On 22 November 2025, after a two-decade goodbye, the MT payment messages stopped being accepted for cross-border payments. What actually changed that weekend, what didn't, and why 'the migration is done' is only half true."
 minutes: 5
 updated: 2026-07-03
 tags: [mt, mx, migration, coexistence, swift, deadline]
-related: [206-cbpr-and-hvps, 301-pacs-008, 303-camt-family]
+related: [207-cbpr-and-hvps, 301-pacs-008, 303-camt-family]
 earnedSkill: "Say precisely what ended in November 2025 and what didn't, map the retired MT messages to their ISO 20022 successors, and explain why translation-at-the-edge means the migration isn't truly finished inside many banks."
 status: published
 ---
@@ -51,7 +51,7 @@ Translation keeps you compliant, but it quietly costs you the whole point of the
 
 The phrase to keep: **the network moved; now the basements have to.** The weekend the old language retired was the end of the beginning, not the end.
 
-{{embed:article:206-cbpr-and-hvps|The rulebook that governed the retirement: CBPR+}}
+{{embed:article:207-cbpr-and-hvps|The rulebook that governed the retirement: CBPR+}}
 {{embed:article:601-remittance-information|What truncation destroys: the payment's own paperwork}}
 
 {{check:What exactly ended on 22 November 2025?|Acceptance of in-scope MT payment and cash messages for cross-border payments|All use of MT messages anywhere, including inside banks|The ISO 20022 standard itself, replaced by a newer version}}

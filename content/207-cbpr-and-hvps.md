@@ -1,7 +1,7 @@
 ---
 title: "CBPR+ and HVPS+: One Standard, Two Rulebooks"
 level: 200
-num: 206
+num: 207
 summary: "The same pacs.008 can be perfectly valid on one network and rejected on another. That's not a bug in ISO 20022. It's the difference between the standard and the rulebooks that govern how it's actually used."
 minutes: 5
 updated: 2026-07-03
