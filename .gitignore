@@ -9,3 +9,6 @@ node_modules/
 /library/
 /sitemap.xml
 /robots.txt
+
+# Personal planning doc (not shipped)
+docs/curriculum-roadmap.md
