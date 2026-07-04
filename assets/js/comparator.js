@@ -201,7 +201,8 @@ const MsgComparator = (function () {
     // STATE
     // -------------------------------------------------------------------------
     let activePair = 'amount';
-    let showSame = false;
+    let showSame = true;   // WinMerge-style: identical lines visible (dimmed) so
+                           // differences appear in their real document position.
     let mountId = 'cmp-root';
 
     function esc(s) {
@@ -314,27 +315,23 @@ const MsgComparator = (function () {
     // -------------------------------------------------------------------------
     // RENDER
     // -------------------------------------------------------------------------
+    // One aligned diff line, WinMerge-style: the field rendered as a document
+    // line on each side, full-row tint by status, identical lines dimmed.
+    // Hover a line to see its full structural path (title attribute).
     function rowHtml(r) {
         if (r.status === 'same' && !showSame) return '';
         const nm = nameOf(r.key);
-        const aCell = r.a == null
-            ? '<span class="cmp-empty">—</span>'
-            : `<code>${esc(r.a) || '<em>(empty)</em>'}</code>`;
-        const bCell = r.b == null
-            ? '<span class="cmp-empty">—</span>'
-            : `<code>${esc(r.b) || '<em>(empty)</em>'}</code>`;
-        const label = { changed: 'changed', added: 'added', removed: 'removed', same: 'same' }[r.status];
-        return `<div class="cmp-row cmp-${r.status}">
-            <div class="cmp-row-head">
-                <span class="cmp-status">${label}</span>
-                <span class="cmp-field">${esc(nm.field)}</span>
-                <span class="cmp-path">${esc(nm.trail)}</span>
-            </div>
-            <div class="cmp-vals">
-                <div class="cmp-val cmp-val-a">${aCell}</div>
-                <div class="cmp-arrow">${r.status === 'changed' ? '→' : ''}</div>
-                <div class="cmp-val cmp-val-b">${bCell}</div>
-            </div>
+        const isAttr = nm.field.charAt(0) === '@';
+        const depth = r.key.split('/').length - 1 + (isAttr ? 1 : 0);
+        const pad = `padding-left:${10 + depth * 13}px`;
+        const line = (v) => isAttr
+            ? `<span class="cmp-ln-tag">${esc(nm.field)}</span><span class="cmp-ln-eq">=</span><span class="cmp-ln-val">"${esc(v)}"</span>`
+            : `<span class="cmp-ln-tag">&lt;${esc(nm.field)}&gt;</span><span class="cmp-ln-val">${esc(v) || '<em>(empty)</em>'}</span><span class="cmp-ln-tag">&lt;/${esc(nm.field)}&gt;</span>`;
+        const mark = { changed: '&#8800;', added: '+', removed: '&minus;', same: '' }[r.status];
+        return `<div class="cmp-line cmp-${r.status}" title="${esc(r.key)}">
+            <div class="cmp-cell cmp-cell-a" style="${pad}">${r.a == null ? '' : line(r.a)}</div>
+            <div class="cmp-gutter">${mark}</div>
+            <div class="cmp-cell cmp-cell-b" style="${pad}">${r.b == null ? '' : line(r.b)}</div>
         </div>`;
     }
 
@@ -396,7 +393,7 @@ const MsgComparator = (function () {
             <span class="cmp-colhead-b">${esc(PAIRS[activePair] ? PAIRS[activePair].bLabel : 'B')}</span>
         </div>`;
 
-        return verdict + (totalDiff || showSame ? colhead : '') + `<div class="cmp-rows">${body || '<p class="cmp-hint">No differences to show.</p>'}</div>` + toggle;
+        return verdict + (totalDiff || showSame ? colhead : '') + (body ? `<div class="cmp-diffview">${body}</div>` : '<p class="cmp-hint">No differences to show.</p>') + toggle;
     }
 
     function chipHtml(key) {
@@ -443,8 +440,12 @@ const MsgComparator = (function () {
                 <span class="cmp-report-title">Field-level differences</span>
                 <span class="cmp-live">live</span>
             </div>
-            <div class="cmp-reportwrap" id="cmp-reportwrap">${reportHtml()}</div>
+            <div class="cmp-reportwrap" id="cmp-reportwrap"></div>
         `;
+        // Fill the report AFTER the new textareas are in the DOM — reportHtml()
+        // reads the live textarea values, so computing it inside the template
+        // above would diff the PREVIOUS pair's messages (stale DOM).
+        refreshReport();
     }
 
     function refreshReport() {
@@ -458,7 +459,7 @@ const MsgComparator = (function () {
     function load(key) {
         if (!PAIRS[key]) return;
         activePair = key;
-        showSame = false;
+        showSame = true;
         render();
     }
 
@@ -599,45 +600,43 @@ const MsgComparator = (function () {
         .cmp-colhead span { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
         .cmp-colhead-b { text-align: right; }
 
-        .cmp-rows { display: flex; flex-direction: column; gap: 8px; }
-        .cmp-row {
-            padding: 11px 13px; border-radius: var(--radius-sm);
-            background: var(--surface-alt); border: 1px solid var(--border);
-            border-left-width: 3px;
+        /* WinMerge-style aligned diff: two document columns + a marker gutter.
+           Full-line tints; identical lines dimmed; hover shows the full path. */
+        .cmp-diffview {
+            display: flex; flex-direction: column;
+            border: 1px solid var(--border); border-radius: var(--radius-sm);
+            background: var(--bg-deep); overflow-x: auto;
+            font-family: var(--font-mono); font-size: 12px; line-height: 1.75;
         }
-        .cmp-changed { border-left-color: var(--warning, #e3b341); }
-        .cmp-added { border-left-color: var(--success, #4ad6a0); }
-        .cmp-removed { border-left-color: var(--danger, #f1707a); }
-        .cmp-same { border-left-color: var(--border-hi); opacity: 0.78; }
-        .cmp-row-head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
-        .cmp-status {
-            font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.06em;
-            text-transform: uppercase; padding: 2px 8px; border-radius: var(--radius-pill);
-            font-weight: 700;
+        .cmp-line { display: grid; grid-template-columns: 1fr 26px 1fr; align-items: stretch; }
+        .cmp-cell { min-width: 0; padding: 1px 10px; word-break: break-all; }
+        .cmp-gutter {
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 12px; color: var(--text-faint);
+            background: var(--surface-alt);
+            border-left: 1px solid var(--border); border-right: 1px solid var(--border);
         }
-        .cmp-changed .cmp-status { background: var(--warning, #A96B00); color: #FFFFFF; }
-        .cmp-added .cmp-status { background: var(--success, #0B8A60); color: #FFFFFF; }
-        .cmp-removed .cmp-status { background: var(--danger, #C13543); color: #FFFFFF; }
-        .cmp-same .cmp-status { background: var(--border-hi); color: var(--bg-deep); }
-        .cmp-field { font-family: var(--font-display); font-weight: 700; font-size: 13.5px; color: var(--text); }
-        .cmp-path { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); letter-spacing: 0.01em; }
-
-        .cmp-vals { margin-top: 9px; display: grid; grid-template-columns: 1fr 26px 1fr; gap: 10px; align-items: center; }
-        @media (max-width: 620px) { .cmp-vals { grid-template-columns: 1fr; } .cmp-arrow { display: none; } }
-        .cmp-val { min-width: 0; }
-        .cmp-val-b { text-align: right; }
-        .cmp-val code {
-            font-family: var(--font-mono); font-size: 12px; color: var(--text);
-            background: var(--bg-deep); border: 1px solid var(--border);
-            padding: 3px 9px; border-radius: var(--radius-xs); word-break: break-all;
-            display: inline-block; max-width: 100%;
+        .cmp-ln-tag { color: var(--primary); }
+        .cmp-ln-eq { color: var(--text-faint); padding: 0 2px; }
+        .cmp-ln-val { color: var(--text); padding: 0 3px; }
+        .cmp-line.cmp-same { opacity: 0.5; }
+        .cmp-line.cmp-changed .cmp-cell-a { background: rgba(227, 179, 65, 0.10); }
+        .cmp-line.cmp-changed .cmp-cell-b { background: rgba(227, 179, 65, 0.18); }
+        .cmp-line.cmp-changed .cmp-gutter { color: var(--warning, #e3b341); }
+        .cmp-line.cmp-changed .cmp-cell-a .cmp-ln-val { color: var(--text-muted); text-decoration: line-through; }
+        .cmp-line.cmp-changed .cmp-cell-b .cmp-ln-val { color: var(--warning, #b58326); font-weight: 700; }
+        .cmp-line.cmp-added .cmp-cell-b { background: rgba(74, 214, 160, 0.15); }
+        .cmp-line.cmp-added .cmp-cell-b .cmp-ln-val { color: var(--success, #0B8A60); font-weight: 700; }
+        .cmp-line.cmp-added .cmp-gutter { color: var(--success, #4ad6a0); }
+        .cmp-line.cmp-added .cmp-cell-a { background: var(--surface-alt); }
+        .cmp-line.cmp-removed .cmp-cell-a { background: rgba(241, 112, 122, 0.15); }
+        .cmp-line.cmp-removed .cmp-cell-a .cmp-ln-val { color: var(--danger, #C13543); font-weight: 700; text-decoration: line-through; }
+        .cmp-line.cmp-removed .cmp-gutter { color: var(--danger, #f1707a); }
+        .cmp-line.cmp-removed .cmp-cell-b { background: var(--surface-alt); }
+        @media (max-width: 620px) {
+            .cmp-line { grid-template-columns: 1fr 20px 1fr; }
+            .cmp-cell { font-size: 10.5px; }
         }
-        .cmp-changed .cmp-val-a code { color: var(--text-muted); }
-        .cmp-changed .cmp-val-b code { color: var(--warning, #e3b341); border-color: rgba(227, 179, 65, 0.4); }
-        .cmp-added .cmp-val-b code { color: var(--success, #4ad6a0); border-color: rgba(74, 214, 160, 0.4); }
-        .cmp-removed .cmp-val-a code { color: var(--danger, #f1707a); border-color: rgba(241, 112, 122, 0.4); }
-        .cmp-arrow { text-align: center; color: var(--text-faint); font-family: var(--font-mono); font-size: 14px; }
-        .cmp-empty { color: var(--text-faint); font-family: var(--font-mono); font-size: 13px; }
 
         .cmp-toggle {
             align-self: flex-start; background: transparent; border: 1px solid var(--border);

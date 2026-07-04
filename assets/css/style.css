@@ -4234,4 +4234,62 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
 .learned-hint { color: var(--text-faint); font-size: 0.9em; }
 
 /* Learned badge on Library cards */
-.lea
+.learn-card-done {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: var(--radius-pill);
+    background: var(--glass-tint-strong); color: var(--primary);
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* =============================================================================
+   PLAYGROUND SHELL — page-level chrome shared by all Playground tools.
+   Lives here (not in a tool's injected styles) so it is styled the moment the
+   page renders, before any tool script initialises.
+   ============================================================================= */
+.pg-layout { margin-top: 8px; }
+.pg-stage { min-width: 0; }
+.pg-tool-intro {
+    max-width: 70ch; margin: 0 0 22px; color: var(--text-muted);
+    font-size: var(--fs-body); line-height: 1.7;
+}
+.pg-tool-intro strong { color: var(--text); font-weight: 600; }
+
+/* Back to the Sample Library (the Playground home) */
+.pg-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin: 0 0 16px; padding: 6px 14px;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: var(--radius-pill); cursor: pointer;
+    font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.03em;
+    color: var(--text-muted);
+    transition: border-color var(--dur-fast) var(--ease-out),
+                color var(--dur-fast) var(--ease-out),
+                background var(--dur-fast) var(--ease-out);
+}
+.pg-back:hover { border-color: var(--primary-deep); color: var(--text); background: var(--glass-tint-strong); }
+
+/* Workspace handoff bar (Session 4.6) — carries one message between tools */
+.pg-flow {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin: 0 0 22px; padding: 11px 16px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--glass-tint);
+}
+.pg-flow-lbl {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text-faint); white-space: nowrap;
+}
+.pg-flow-lbl::after { content: " \2192"; color: var(--primary); }
+.pg-flow-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.pg-flow-btn {
+    font-family: var(--font-display); font-weight: 600; font-size: 13px;
+    padding: 6px 14px; border-radius: var(--radius-xs);
+    border: 1px solid var(--border-hi); background: transparent;
+    color: var(--text-muted); cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease-out),
+                background var(--dur-fast) var(--ease-out),
+                color var(--dur-fast) var(--ease-out);
+}
+.pg-flow-btn:hover { border-color: var(--primary-deep); background: var(--glass-tint-strong); color: var(--text); }
+.pg-flow-btn.is-flash { border-color: var(--primary-deep); background: var(--glass-tint-strong); color: var(--text); }

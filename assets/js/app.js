@@ -135,36 +135,14 @@ const PAGES = {
     playground: `
         <div class="page">
             <div class="pg-layout">
-            <aside class="pg-rail" role="tablist" aria-label="Playground tools" aria-orientation="vertical" data-reveal="up">
-                <div class="pg-rail-label">Playground</div>
-                <button class="pg-tool-tab is-on" role="tab" data-tool="viewer" onclick="setPlaygroundTool('viewer', event)">
-                    <span class="pg-tool-tab-name">XML Viewer</span>
-                    <span class="pg-tool-tab-sub">Read any message</span>
-                </button>
-                <button class="pg-tool-tab" role="tab" data-tool="transformer" onclick="setPlaygroundTool('transformer', event)">
-                    <span class="pg-tool-tab-name">Transformer</span>
-                    <span class="pg-tool-tab-sub">MT103 &harr; pacs.008</span>
-                </button>
-                <button class="pg-tool-tab" role="tab" data-tool="validator" onclick="setPlaygroundTool('validator', event)">
-                    <span class="pg-tool-tab-name">Validator</span>
-                    <span class="pg-tool-tab-sub">Check a message</span>
-                </button>
-                <button class="pg-tool-tab" role="tab" data-tool="comparator" onclick="setPlaygroundTool('comparator', event)">
-                    <span class="pg-tool-tab-name">Comparator</span>
-                    <span class="pg-tool-tab-sub">Diff two messages</span>
-                </button>
-                <button class="pg-tool-tab" role="tab" data-tool="samples" onclick="setPlaygroundTool('samples', event)">
-                    <span class="pg-tool-tab-name">Sample Library</span>
-                    <span class="pg-tool-tab-sub">Load a real message</span>
-                </button>
-            </aside>
             <div class="pg-stage">
 
-            <!-- TOOL · XML Viewer (Session 4.1) -->
-            <section class="pg-tool-panel" id="pg-tool-viewer" data-reveal="up">
+            <!-- TOOL · XML Viewer / Reader (Session 4.1) — opened from the Sample Library -->
+            <section class="pg-tool-panel" id="pg-tool-viewer" hidden>
+                <button class="pg-back" onclick="setPlaygroundTool('samples', event)">&larr; Sample Library</button>
                 <p class="pg-tool-intro">
-                    Paste an ISO&nbsp;20022 message &mdash; or load a sample from any 300-level family below &mdash; and read it as a
-                    collapsible tree. Flip <strong>Plain English</strong> to rename every cryptic tag to what it actually means.
+                    Read the message as a collapsible tree &mdash; or paste your own over it. Flip
+                    <strong>Plain English</strong> to rename every cryptic tag to what it actually means.
                 </p>
                 <div class="pg-flow" role="group" aria-label="Send this message to another tool">
                     <span class="pg-flow-lbl">Continue with this message</span>
@@ -179,6 +157,7 @@ const PAGES = {
 
             <!-- TOOL · Message Transformer (Session 4.2) — bidirectional MT103 ⇄ pacs.008 -->
             <section class="pg-tool-panel" id="pg-tool-transformer" hidden>
+                <button class="pg-back" onclick="setPlaygroundTool('samples', event)">&larr; Sample Library</button>
                 <p class="pg-tool-intro">
                     The same payment, two languages. Edit <strong>either</strong> side and the other rebuilds
                     <strong>live</strong> &mdash; the legacy SWIFT <strong>MT103</strong> and the
@@ -198,6 +177,7 @@ const PAGES = {
 
             <!-- TOOL · Schema Validator (Session 4.3) — named failure modes, live -->
             <section class="pg-tool-panel" id="pg-tool-validator" hidden>
+                <button class="pg-back" onclick="setPlaygroundTool('samples', event)">&larr; Sample Library</button>
                 <p class="pg-tool-intro">
                     Paste a message &mdash; or load one of the broken samples below &mdash; and have it checked against the
                     mistakes that actually bite: a <strong>malformed BIC</strong>, an <strong>IBAN</strong> that fails its
@@ -217,6 +197,7 @@ const PAGES = {
             </section>
             <!-- TOOL · Message Comparator (Session 4.4) — field-level diff of two messages -->
             <section class="pg-tool-panel" id="pg-tool-comparator" hidden>
+                <button class="pg-back" onclick="setPlaygroundTool('samples', event)">&larr; Sample Library</button>
                 <p class="pg-tool-intro">
                     Two messages, side by side &mdash; or load a before/after pair below. The diff is
                     <strong>field-level</strong>, not line-by-line: both messages are parsed to their structural
@@ -234,14 +215,14 @@ const PAGES = {
                 </div>
                 <div class="cmp" id="cmp-root"></div>
             </section>
-            <!-- TOOL · Sample Message Library (Session 4.5) — the ISO 20022 catalogue tree -->
-            <section class="pg-tool-panel" id="pg-tool-samples" hidden>
+            <!-- TOOL · Sample Message Library (Session 4.5) — the ISO 20022 catalogue tree, the Playground home -->
+            <section class="pg-tool-panel" id="pg-tool-samples" data-reveal="up">
                 <p class="pg-tool-intro">
                     The <strong>ISO&nbsp;20022 catalogue</strong>, browsable as a tree &mdash;
                     <strong>Payments</strong>, <strong>Securities</strong>, <strong>Trade Finance</strong>,
                     <strong>Cards</strong>, and <strong>Foreign Exchange</strong>. Pick a business domain, pick a
-                    message, and send it straight into the <strong>Viewer</strong>, <strong>Validator</strong>, or
-                    (for the pacs.008 it speaks) the <strong>Transformer</strong> &mdash; no pasting required.
+                    message, and it opens in the reader with <strong>Transform</strong>, <strong>Validate</strong>,
+                    and <strong>Compare</strong> one click away &mdash; or paste your own message.
                 </p>
                 <div class="smp" id="smp-root"></div>
             </section>
@@ -270,8 +251,9 @@ const PAGES = {
 // Ordered top-level sections, for the prev/next header arrows.
 const NAV_ORDER = ['history', 'library', 'playground', 'glossary'];
 
-// Which Playground tool is showing ('viewer' | 'transformer' | 'validator'). Phase 4 adds more.
-let playgroundTool = 'viewer';
+// Which Playground tool is showing ('samples' | 'viewer' | 'transformer' | 'validator' | 'comparator').
+// 'samples' (the catalogue) is the Playground home; the viewer/reader is opened from it.
+let playgroundTool = 'samples';
 
 // Switch between Playground tools without leaving the section. Each tool's
 // panel is a sibling <section>; we just toggle which one is visible and lazily
@@ -279,9 +261,6 @@ let playgroundTool = 'viewer';
 function setPlaygroundTool(tool, evt) {
     if (evt) evt.preventDefault();
     playgroundTool = tool;
-    document.querySelectorAll('.pg-tool-tab').forEach(t => {
-        t.classList.toggle('is-on', t.getAttribute('data-tool') === tool);
-    });
     const viewer = document.getElementById('pg-tool-viewer');
     const transformer = document.getElementById('pg-tool-transformer');
     const validator = document.getElementById('pg-tool-validator');
@@ -316,7 +295,7 @@ const PG_TOOL_TO_SLUG = { viewer: 'xml-viewer', transformer: 'transformer', vali
 // Open the Playground at a specific tool (from a deep link or a glossary
 // cross-link). Ensures the Playground page is mounted, then switches tools.
 function openPlaygroundTool(slug){
-    const tool = PG_TOOL_SLUGS[slug] || 'viewer';
+    const tool = PG_TOOL_SLUGS[slug] || 'samples';
     if (currentNavPage() !== 'playground' || !document.getElementById('pg-tool-viewer')) {
         navigate('playground');
     }
@@ -445,8 +424,8 @@ function navigate(page, evt) {
         applyGlossaryHash();
         renderGlossary();
     } else if (page === 'playground') {
-        if (window.XmlViewer) XmlViewer.init('xv-root');
-        playgroundTool = 'viewer';
+        if (window.SampleLibrary) SampleLibrary.init('smp-root');
+        playgroundTool = 'samples';
     } else if (page === 'library') {
         renderArticleIndex();
     } else if (page === 'history') {

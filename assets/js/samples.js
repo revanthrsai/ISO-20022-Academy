@@ -648,16 +648,24 @@ const SampleLibrary = (function () {
 
         if (dest === 'viewer') {
             const ta = document.getElementById('xv-src');
-            if (ta && window.XmlViewer) { ta.value = s.xml; XmlViewer.onInput(); }
+            if (ta && window.XmlViewer) {
+                ta.value = s.xml; XmlViewer.onInput();
+                // Label the reader with the sample's own description, not "Pasted message".
+                const meta = document.querySelector('.xv-src-sub');
+                if (meta) meta.textContent = s.label + ' — ' + s.sub;
+            }
         } else if (dest === 'validator') {
             const ta = document.getElementById('val-src');
-            if (ta && window.SchemaValidator) { ta.value = s.xml; SchemaValidator.onInput(); }
+            if (ta && window.SchemaValidator) {
+                ta.value = s.xml; SchemaValidator.onInput();
+                const meta = document.querySelector('.val-src-sub');
+                if (meta) meta.textContent = s.label + ' — ' + s.sub;
+            }
         } else if (dest === 'transformer') {
             if (window.MsgTransformer && typeof MsgTransformer.loadModel === 'function') {
                 MsgTransformer.loadModel(pacsToModel(s.xml));
             }
         }
-        flash(key, dest);
     }
 
     // Pull the transformer's canonical model out of a pacs.008.
@@ -681,14 +689,6 @@ const SampleLibrary = (function () {
         // Drop empties so the transformer keeps its sensible defaults for anything absent.
         Object.keys(model).forEach(k => { if (!model[k]) delete model[k]; });
         return model;
-    }
-
-    // Brief "loaded" pulse on the button that was clicked.
-    function flash(key, dest) {
-        const btn = document.querySelector(`.smp-card[data-key="${CSS.escape(key)}"] .smp-load[data-dest="${dest}"]`);
-        if (!btn) return;
-        btn.classList.add('is-flash');
-        setTimeout(() => btn.classList.remove('is-flash'), 700);
     }
 
     // -------------------------------------------------------------------------
@@ -762,13 +762,13 @@ const SampleLibrary = (function () {
         return `${sel.id} — ${FAMILY_NAMES[sel.id] || ''}`;
     }
 
+    // The whole card is one action: open the message in the reader (viewer),
+    // where the Transform / Validate / Compare handoff bar takes over.
     function cardHtml(key) {
         const s = SAMPLES[key];
-        const buttons = s.dest.map(d =>
-            `<button class="smp-load" data-dest="${d}" onclick="SampleLibrary.loadInto('${d}', '${key}')">
-                <span class="smp-load-ar">&rarr;</span>${DEST_LABEL[d]}
-            </button>`).join('');
-        return `<article class="smp-card" data-key="${esc(key)}" data-fam="${s.family}">
+        return `<article class="smp-card" data-key="${esc(key)}" data-fam="${s.family}" role="button" tabindex="0"
+            onclick="SampleLibrary.open('${key}')"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();SampleLibrary.open('${key}');}">
             <header class="smp-card-head">
                 <span class="smp-fam smp-fam-${s.family}">${esc(s.family)}</span>
                 <span class="smp-kind">${esc(s.kind)}</span>
@@ -776,8 +776,21 @@ const SampleLibrary = (function () {
             <h3 class="smp-name">${esc(s.label)}</h3>
             <p class="smp-sub">${esc(s.sub)}</p>
             <p class="smp-note">${esc(s.note)}</p>
-            <div class="smp-actions">${buttons}</div>
+            <div class="smp-open"><span class="smp-open-ar">&rarr;</span>open in reader</div>
         </article>`;
+    }
+
+    // Open a sample in the reader (viewer). The card's single click-through.
+    function open(key) {
+        loadInto('viewer', key);
+    }
+
+    // "Paste your own" — an empty reader, cursor ready.
+    function pasteOwn() {
+        if (typeof window.setPlaygroundTool === 'function') window.setPlaygroundTool('viewer');
+        if (window.XmlViewer && typeof XmlViewer.clear === 'function') XmlViewer.clear();
+        const ta = document.getElementById('xv-src');
+        if (ta) ta.focus();
     }
 
     function render() {
@@ -792,6 +805,9 @@ const SampleLibrary = (function () {
                     <div class="smp-bar">
                         <span class="smp-heading">${esc(headingFor())}</span>
                         <span class="smp-count">${count} sample${count === 1 ? '' : 's'}</span>
+                        <button class="smp-paste" onclick="SampleLibrary.pasteOwn()">
+                            <span class="smp-paste-plus">+</span> Paste your own message
+                        </button>
                     </div>
                     <div class="smp-grid">${keys.map(cardHtml).join('')}</div>
                 </div>
@@ -882,7 +898,9 @@ const SampleLibrary = (function () {
             transition: border-color var(--dur-fast) var(--ease-out),
                         transform var(--dur-fast) var(--ease-out);
         }
-        .smp-card:hover { border-color: var(--border-hi); transform: translateY(-2px); }
+        .smp-card { cursor: pointer; }
+        .smp-card:hover { border-color: var(--primary-deep); transform: translateY(-2px); }
+        .smp-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .smp-card-head { display: flex; align-items: center; gap: 9px; }
         .smp-fam {
             font-family: var(--font-mono); font-size: 10px; font-weight: 700;
@@ -904,24 +922,28 @@ const SampleLibrary = (function () {
         .smp-sub { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.4; }
         .smp-note { font-size: 12.5px; color: var(--text-faint); margin: 0; line-height: 1.55; flex: 1; }
 
-        .smp-actions {
-            display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;
+        .smp-open {
+            display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
             padding-top: 14px; border-top: 1px solid var(--border);
+            font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.02em;
+            color: var(--text-faint);
+            transition: color var(--dur-fast) var(--ease-out);
         }
-        .smp-load {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 6px 13px; border-radius: var(--radius-sm);
-            background: transparent; border: 1px solid var(--border);
+        .smp-open-ar { color: var(--primary); font-weight: 700; transition: transform var(--dur-fast) var(--ease-out); }
+        .smp-card:hover .smp-open { color: var(--text); }
+        .smp-card:hover .smp-open-ar { transform: translateX(3px); }
+        .smp-paste {
+            display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
+            padding: 6px 14px; border-radius: var(--radius-pill);
+            background: transparent; border: 1px dashed var(--border-hi);
             color: var(--text-muted); cursor: pointer;
             font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.02em;
             transition: border-color var(--dur-fast) var(--ease-out),
                         color var(--dur-fast) var(--ease-out),
                         background var(--dur-fast) var(--ease-out);
         }
-        .smp-load:hover { border-color: var(--primary-deep); color: var(--text); background: var(--glass-tint-strong); }
-        .smp-load-ar { color: var(--primary); font-weight: 700; }
-        .smp-load.is-flash { border-color: var(--primary); background: var(--primary); color: #FFFFFF; }
-        .smp-load.is-flash .smp-load-ar { color: #FFFFFF; }
+        .smp-paste:hover { border-color: var(--primary-deep); border-style: solid; color: var(--text); background: var(--glass-tint-strong); }
+        .smp-paste-plus { color: var(--primary); font-weight: 700; }
         `;
         const style = document.createElement('style');
         style.id = 'smp-styles';
@@ -938,7 +960,7 @@ const SampleLibrary = (function () {
         render();
     }
 
-    return { init, setFilter, select, toggleDomain, loadInto };
+    return { init, setFilter, select, toggleDomain, loadInto, open, pasteOwn };
 })();
 
 window.SampleLibrary = SampleLibrary;

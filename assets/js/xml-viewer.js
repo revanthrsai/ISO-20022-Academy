@@ -480,25 +480,11 @@ const XmlViewer = (function () {
     // -------------------------------------------------------------------------
     // FULL RENDER
     // -------------------------------------------------------------------------
-    function chipHtml(key) {
-        const s = SAMPLES[key];
-        const on = key === activeSample ? ' is-on' : '';
-        return `<button class="xv-chip${on}" data-fam="${s.family}" onclick="XmlViewer.load('${key}')">
-            <span class="xv-chip-fam">${esc(s.family)}</span>
-            <span class="xv-chip-name">${esc(s.label)}</span>
-        </button>`;
-    }
-
     function render() {
         const root = document.getElementById(mountId);
         if (!root) return;
         const active = SAMPLES[activeSample];
         root.innerHTML = `
-            <div class="xv-samplebar">
-                <span class="xv-samplebar-label">Load a message</span>
-                <div class="xv-chips">${SAMPLE_ORDER.map(chipHtml).join('')}</div>
-            </div>
-
             <div class="xv-grid">
                 <div class="xv-pane xv-pane-src">
                     <div class="xv-pane-bar">
@@ -552,7 +538,6 @@ const XmlViewer = (function () {
         activeSample = null;
         const meta = document.querySelector('.xv-src-sub');
         if (meta) meta.textContent = 'Pasted message';
-        document.querySelectorAll('.xv-chip').forEach(c => c.classList.remove('is-on'));
         refreshTree();
     }
 
@@ -596,26 +581,6 @@ const XmlViewer = (function () {
         if (document.getElementById('xv-styles')) return;
         const css = `
         .xv { display: flex; flex-direction: column; gap: 18px; }
-        .xv-samplebar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-        .xv-samplebar-label {
-            font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
-            text-transform: uppercase; color: var(--text-faint);
-        }
-        .xv-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-        .xv-chip {
-            display: inline-flex; align-items: baseline; gap: 7px;
-            padding: 7px 13px; border-radius: var(--radius-pill);
-            background: var(--surface); border: 1px solid var(--border);
-            color: var(--text-muted); cursor: pointer; font-family: var(--font-mono);
-            transition: border-color var(--dur-fast) var(--ease-out),
-                        color var(--dur-fast) var(--ease-out),
-                        background var(--dur-fast) var(--ease-out);
-        }
-        .xv-chip:hover { border-color: var(--border-hi); color: var(--text); }
-        .xv-chip.is-on { border-color: var(--primary-deep); background: var(--glass-tint-strong); color: var(--text); }
-        .xv-chip-fam { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--primary); }
-        .xv-chip.is-on .xv-chip-fam { color: var(--primary-bright); }
-        .xv-chip-name { font-size: 12.5px; font-weight: 600; }
 
         .xv-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 18px; }
         @media (max-width: 880px) { .xv-grid { grid-template-columns: 1fr; } }
@@ -722,77 +687,6 @@ const XmlViewer = (function () {
         }
         .xv-error-msg { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; }
 
-        /* Playground shell: left tool rail + working stage (columns) */
-        .pg-layout {
-            display: grid; grid-template-columns: 210px minmax(0, 1fr);
-            gap: 28px; align-items: start; margin-top: 8px;
-        }
-        .pg-rail {
-            position: sticky; top: 96px;
-            display: flex; flex-direction: column; gap: 8px;
-            padding-right: 20px; border-right: 1px solid var(--border);
-        }
-        .pg-rail-label {
-            font-family: var(--font-mono); font-size: 10.5px;
-            letter-spacing: 0.14em; text-transform: uppercase;
-            color: var(--text-faint); padding: 2px 0 8px 2px;
-        }
-        .pg-stage { min-width: 0; }
-        .pg-tool-tab {
-            display: flex; flex-direction: column; gap: 1px; text-align: left;
-            width: 100%;
-            padding: 10px 14px; border-radius: var(--radius-sm);
-            background: var(--surface); border: 1px solid var(--border);
-            color: var(--text-muted); cursor: pointer;
-            transition: border-color var(--dur-fast) var(--ease-out),
-                        background var(--dur-fast) var(--ease-out),
-                        color var(--dur-fast) var(--ease-out);
-        }
-        .pg-tool-tab:hover { border-color: var(--border-hi); color: var(--text); }
-        .pg-tool-tab.is-on { border-color: var(--primary-deep); background: var(--glass-tint-strong); color: var(--text); }
-        .pg-tool-tab-name { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
-        .pg-tool-tab-sub { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.03em; color: var(--text-faint); }
-        .pg-tool-tab.is-on .pg-tool-tab-sub { color: var(--primary); }
-        @media (max-width: 900px) {
-            .pg-layout { display: block; }
-            .pg-rail {
-                position: static; flex-direction: row; flex-wrap: wrap;
-                border-right: none; border-bottom: 1px solid var(--border);
-                padding: 0 0 14px; margin-bottom: 22px;
-            }
-            .pg-rail-label { width: 100%; }
-            .pg-tool-tab { width: auto; }
-        }
-        .pg-tool-intro {
-            max-width: 70ch; margin: 0 0 22px; color: var(--text-muted);
-            font-size: var(--fs-body); line-height: 1.7;
-        }
-        .pg-tool-intro strong { color: var(--text); font-weight: 600; }
-
-        /* Workspace handoff bar (Session 4.6) — carries one message between tools */
-        .pg-flow {
-            display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-            margin: 0 0 22px; padding: 11px 16px;
-            border: 1px solid var(--border); border-radius: var(--radius-sm);
-            background: var(--glass-tint);
-        }
-        .pg-flow-lbl {
-            font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
-            text-transform: uppercase; color: var(--text-faint); white-space: nowrap;
-        }
-        .pg-flow-lbl::after { content: " \\2192"; color: var(--primary); }
-        .pg-flow-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-        .pg-flow-btn {
-            font-family: var(--font-display); font-weight: 600; font-size: 13px;
-            padding: 6px 14px; border-radius: var(--radius-xs);
-            border: 1px solid var(--border-hi); background: transparent;
-            color: var(--text-muted); cursor: pointer;
-            transition: border-color var(--dur-fast) var(--ease-out),
-                        background var(--dur-fast) var(--ease-out),
-                        color var(--dur-fast) var(--ease-out);
-        }
-        .pg-flow-btn:hover { border-color: var(--primary-deep); background: var(--glass-tint-strong); color: var(--text); }
-        .pg-flow-btn.is-flash { border-color: var(--primary-deep); background: var(--glass-tint-strong); color: var(--text); }
         `;
         const style = document.createElement('style');
         style.id = 'xv-styles';
