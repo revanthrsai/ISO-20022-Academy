@@ -204,6 +204,9 @@ const MsgComparator = (function () {
     let showSame = true;   // WinMerge-style: identical lines visible (dimmed) so
                            // differences appear in their real document position.
     let mountId = 'cmp-root';
+    let editing = false;                 // false → aligned A/B diff panes; true → paste boxes
+    let srcA = PAIRS[activePair] ? PAIRS[activePair].a : '';
+    let srcB = PAIRS[activePair] ? PAIRS[activePair].b : '';
 
     function esc(s) {
         return String(s == null ? '' : s)
@@ -211,8 +214,8 @@ const MsgComparator = (function () {
             .replace(/"/g, '&quot;');
     }
 
-    function valA() { const el = document.getElementById('cmp-a'); return el ? el.value : (PAIRS[activePair] ? PAIRS[activePair].a : ''); }
-    function valB() { const el = document.getElementById('cmp-b'); return el ? el.value : (PAIRS[activePair] ? PAIRS[activePair].b : ''); }
+    function valA() { const el = document.getElementById('cmp-a'); return el ? el.value : srcA; }
+    function valB() { const el = document.getElementById('cmp-b'); return el ? el.value : srcB; }
 
     // -------------------------------------------------------------------------
     // FLATTEN — parse XML into an ordered map of structural path -> value.
@@ -387,13 +390,15 @@ const MsgComparator = (function () {
                </button>`
             : '';
 
+        const aLbl = 'Original' + (PAIRS[activePair] && PAIRS[activePair].aLabel ? ' · ' + PAIRS[activePair].aLabel : '');
+        const bLbl = 'Corrected' + (PAIRS[activePair] && PAIRS[activePair].bLabel ? ' · ' + PAIRS[activePair].bLabel : '');
         const colhead = `<div class="cmp-colhead">
-            <span class="cmp-colhead-a">${esc(PAIRS[activePair] ? PAIRS[activePair].aLabel : 'A')}</span>
+            <span class="cmp-colhead-a"><span class="cmp-side-tag cmp-tag-a">A</span> ${esc(aLbl)}</span>
             <span></span>
-            <span class="cmp-colhead-b">${esc(PAIRS[activePair] ? PAIRS[activePair].bLabel : 'B')}</span>
+            <span class="cmp-colhead-b"><span class="cmp-side-tag cmp-tag-b">B</span> ${esc(bLbl)}</span>
         </div>`;
 
-        return verdict + (totalDiff || showSame ? colhead : '') + (body ? `<div class="cmp-diffview">${body}</div>` : '<p class="cmp-hint">No differences to show.</p>') + toggle;
+        return verdict + colhead + (body ? `<div class="cmp-diffview">${body}</div>` : '<p class="cmp-hint">No differences to show.</p>') + toggle;
     }
 
     function chipHtml(key) {
@@ -408,44 +413,39 @@ const MsgComparator = (function () {
         const root = document.getElementById(mountId);
         if (!root) return;
         const p = PAIRS[activePair];
+        const editView = `
+            <div class="cmp-grid">
+                <div class="cmp-pane">
+                    <div class="cmp-pane-bar">
+                        <span class="cmp-side-tag cmp-tag-a">A</span>
+                        <span class="cmp-pane-name">Original${p && p.aLabel ? ' · ' + esc(p.aLabel) : ''}</span>
+                    </div>
+                    <textarea id="cmp-a" class="cmp-src" spellcheck="false"
+                        oninput="MsgComparator.onEdit()"
+                        placeholder="Paste the original message…">${esc(srcA)}</textarea>
+                </div>
+                <div class="cmp-pane">
+                    <div class="cmp-pane-bar">
+                        <span class="cmp-side-tag cmp-tag-b">B</span>
+                        <span class="cmp-pane-name">Corrected${p && p.bLabel ? ' · ' + esc(p.bLabel) : ''}</span>
+                    </div>
+                    <textarea id="cmp-b" class="cmp-src" spellcheck="false"
+                        oninput="MsgComparator.onEdit()"
+                        placeholder="Paste the corrected message…">${esc(srcB)}</textarea>
+                </div>
+            </div>`;
         root.innerHTML = `
             <div class="cmp-samplebar">
                 <span class="cmp-samplebar-label">Compare a pair</span>
                 <div class="cmp-chips">${PAIR_ORDER.map(chipHtml).join('')}</div>
             </div>
             ${p ? `<p class="cmp-pair-sub">${esc(p.sub)}</p>` : ''}
-
-            <div class="cmp-grid">
-                <div class="cmp-pane">
-                    <div class="cmp-pane-bar">
-                        <span class="cmp-side-tag cmp-tag-a">A</span>
-                        <span class="cmp-pane-name">${esc(p ? p.aLabel : 'Message A')}</span>
-                    </div>
-                    <textarea id="cmp-a" class="cmp-src" spellcheck="false"
-                        oninput="MsgComparator.onInput()"
-                        placeholder="Paste the first message…">${esc(p ? p.a : '')}</textarea>
-                </div>
-                <div class="cmp-pane">
-                    <div class="cmp-pane-bar">
-                        <span class="cmp-side-tag cmp-tag-b">B</span>
-                        <span class="cmp-pane-name">${esc(p ? p.bLabel : 'Message B')}</span>
-                    </div>
-                    <textarea id="cmp-b" class="cmp-src" spellcheck="false"
-                        oninput="MsgComparator.onInput()"
-                        placeholder="Paste the second message…">${esc(p ? p.b : '')}</textarea>
-                </div>
+            <div class="cmp-modebar">
+                <span class="cmp-mode-hint">${editing ? 'Edit or paste each message, then Compare.' : 'Differences show in the A (Original) vs B (Corrected) panes below.'}</span>
+                <button class="cmp-editbtn" onclick="MsgComparator.toggleEdit()">${editing ? 'Compare &rarr;' : 'Edit messages'}</button>
             </div>
-
-            <div class="cmp-report-head">
-                <span class="cmp-report-title">Field-level differences</span>
-                <span class="cmp-live">live</span>
-            </div>
-            <div class="cmp-reportwrap" id="cmp-reportwrap"></div>
+            ${editing ? editView : `<div class="cmp-reportwrap" id="cmp-reportwrap">${reportHtml()}</div>`}
         `;
-        // Fill the report AFTER the new textareas are in the DOM — reportHtml()
-        // reads the live textarea values, so computing it inside the template
-        // above would diff the PREVIOUS pair's messages (stale DOM).
-        refreshReport();
     }
 
     function refreshReport() {
@@ -459,18 +459,29 @@ const MsgComparator = (function () {
     function load(key) {
         if (!PAIRS[key]) return;
         activePair = key;
-        showSame = true;
+        srcA = PAIRS[key].a; srcB = PAIRS[key].b;
+        showSame = true; editing = false;
         render();
     }
 
-    function onInput() { refreshReport(); }
+    function onEdit() {
+        const a = document.getElementById('cmp-a'); if (a) srcA = a.value;
+        const b = document.getElementById('cmp-b'); if (b) srcB = b.value;
+    }
+    function onInput() { onEdit(); }
+    function toggleEdit() {
+        if (editing) onEdit();
+        editing = !editing;
+        render();
+    }
 
-    // Workspace handoff (Session 4.6) — pane A is the "current" message; a message
-    // arriving from another tool lands in A and leaves B free to diff against.
-    function getXml() { const ta = document.getElementById('cmp-a'); return ta ? ta.value : ''; }
+    // Workspace handoff (Session 4.6) — a message arriving from another tool lands
+    // in A (Original) and leaves B free to diff against.
+    function getXml() { return valA(); }
     function loadXml(xml) {
-        const ta = document.getElementById('cmp-a');
-        if (ta) { ta.value = xml || ''; activePair = null; refreshReport(); }
+        srcA = xml || ''; activePair = null;
+        editing = !(srcA.trim() && (srcB || '').trim());
+        render();
     }
 
     function toggleSame() {
@@ -485,6 +496,14 @@ const MsgComparator = (function () {
         if (document.getElementById('cmp-styles')) return;
         const css = `
         .cmp { display: flex; flex-direction: column; gap: 16px; }
+        .cmp-modebar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .cmp-mode-hint { font-size: 12.5px; color: var(--text-muted); }
+        .cmp-editbtn {
+            margin-left: auto; font-family: var(--font-mono); font-size: 12px; cursor: pointer;
+            padding: 7px 14px; border-radius: var(--radius-md);
+            border: 1px solid var(--border); background: transparent; color: var(--text-muted);
+        }
+        .cmp-editbtn:hover { color: var(--text); border-color: var(--border-hi); }
         .cmp-samplebar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
         .cmp-samplebar-label {
             font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
@@ -664,7 +683,7 @@ const MsgComparator = (function () {
         render();
     }
 
-    return { init, load, onInput, toggleSame, getXml, loadXml };
+    return { init, load, onInput, onEdit, toggleEdit, toggleSame, getXml, loadXml };
 })();
 
 window.MsgComparator = MsgComparator;

@@ -623,7 +623,7 @@ const SampleLibrary = (function () {
     // -------------------------------------------------------------------------
     // STATE — one selected tree node: whole catalogue, a domain, or one family.
     // -------------------------------------------------------------------------
-    let sel = { type: 'domain', id: 'payments' };   // 'all' | 'domain' | 'family'
+    let sel = { type: 'none', id: null };   // 'none' | 'all' | 'domain' | 'family'
     let openDomains = { payments: true };
     let mountId = 'smp-root';
 
@@ -702,6 +702,7 @@ const SampleLibrary = (function () {
     }
     function toggleDomain(id) {
         openDomains[id] = !openDomains[id];
+        sel = { type: 'domain', id };   // select the domain too, so its cards filter in (and others drop out)
         render();
     }
     // Back-compat shim (old chip API): map family/all onto the tree selection.
@@ -796,12 +797,16 @@ const SampleLibrary = (function () {
     function render() {
         const root = document.getElementById(mountId);
         if (!root) return;
-        const keys = visibleKeys();
-        const count = keys.length;
-        root.innerHTML = `
-            <div class="smp-layout">
-                ${treeHtml()}
-                <div class="smp-main">
+        let main;
+        if (sel.type === 'none') {
+            main = `<div class="smp-empty">
+                    <p class="smp-empty-text">Paste your own XML message, or pick one from the catalogue to explore.</p>
+                    <button class="smp-paste smp-empty-btn" onclick="SampleLibrary.pasteOwn()"><span class="smp-paste-plus">+</span> Paste your own message</button>
+                </div>`;
+        } else {
+            const keys = visibleKeys();
+            const count = keys.length;
+            main = `
                     <div class="smp-bar">
                         <span class="smp-heading">${esc(headingFor())}</span>
                         <span class="smp-count">${count} sample${count === 1 ? '' : 's'}</span>
@@ -809,8 +814,12 @@ const SampleLibrary = (function () {
                             <span class="smp-paste-plus">+</span> Paste your own message
                         </button>
                     </div>
-                    <div class="smp-grid">${keys.map(cardHtml).join('')}</div>
-                </div>
+                    <div class="smp-grid">${keys.map(cardHtml).join('')}</div>`;
+        }
+        root.innerHTML = `
+            <div class="smp-layout">
+                ${treeHtml()}
+                <div class="smp-main">${main}</div>
             </div>
         `;
     }
@@ -822,6 +831,15 @@ const SampleLibrary = (function () {
         if (document.getElementById('smp-styles')) return;
         const css = `
         .smp { display: flex; flex-direction: column; gap: 20px; }
+        .smp-empty {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 20px; min-height: 360px; text-align: center; padding: 46px;
+            border: 1.5px solid var(--primary); border-radius: var(--radius-lg);
+            background: linear-gradient(180deg, rgba(16,185,129,0.06), rgba(16,185,129,0.015));
+            box-shadow: 0 0 0 4px rgba(16,185,129,0.08), 0 12px 36px rgba(16,185,129,0.16), inset 0 1px 0 rgba(255,255,255,0.65);
+        }
+        .smp-empty-text { font-size: 15px; color: var(--text-muted); max-width: 400px; line-height: 1.55; margin: 0; }
+        .smp-empty .smp-empty-btn { margin-left: auto; margin-right: auto; }
 
         /* Catalogue tree (left) + samples (right) */
         .smp-layout {

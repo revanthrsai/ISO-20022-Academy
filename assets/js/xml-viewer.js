@@ -508,6 +508,7 @@ const XmlViewer = (function () {
                                 <button class="xv-toggle-btn ${!plain ? 'is-on' : ''}" onclick="XmlViewer.setPlain(false)">Tags</button>
                                 <button class="xv-toggle-btn ${plain ? 'is-on' : ''}" onclick="XmlViewer.setPlain(true)">Plain English</button>
                             </div>
+                            <button class="xv-mini" onclick="XmlViewer.copyDerived(this)" title="Copy the readable output">copy</button>
                         </div>
                     </div>
                     <div class="xv-treewrap" id="xv-treewrap">${renderTree(active ? active.xml : '')}</div>
@@ -564,6 +565,25 @@ const XmlViewer = (function () {
         document.querySelectorAll('#xv-tree .xv-node').forEach(n => {
             n.classList.toggle('is-collapsed', !open);
         });
+    }
+
+    // Copy the DERIVED output (the readable tree, respecting Tags / Plain English) —
+    // not the source, since a user who pasted already has the raw XML.
+    function copyDerived(btn) {
+        const wrap = document.getElementById('xv-treewrap');
+        const text = wrap ? (wrap.innerText || wrap.textContent || '') : '';
+        const flash = function () {
+            if (!btn) return;
+            if (!btn.getAttribute('data-lbl')) btn.setAttribute('data-lbl', btn.textContent);
+            btn.textContent = 'copied'; btn.classList.add('is-on');
+            clearTimeout(btn._t); btn._t = setTimeout(function () { btn.textContent = btn.getAttribute('data-lbl') || 'copy'; btn.classList.remove('is-on'); }, 1300);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(flash).catch(function () { copyFallback(text); flash(); });
+        } else { copyFallback(text); flash(); }
+    }
+    function copyFallback(text) {
+        try { const ta = document.createElement('textarea'); ta.value = text || ''; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); } catch (e) { /* blocked */ }
     }
 
     // Workspace handoff (Session 4.6) — read/write the current message so the
@@ -714,7 +734,7 @@ const XmlViewer = (function () {
         render();
     }
 
-    return { init, load, onInput, clear, setPlain, toggle, expandAll, getXml, loadXml };
+    return { init, load, onInput, clear, setPlain, toggle, expandAll, copyDerived, getXml, loadXml };
 })();
 
 window.XmlViewer = XmlViewer;
