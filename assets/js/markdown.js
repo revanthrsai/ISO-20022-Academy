@@ -270,6 +270,7 @@ const Articles = (function () {
                         </div>${shelfProgress}
                     </div>
                     <div class="learn-grid">${cards}</div>
+                    ${(typeof Quiz !== 'undefined' && Quiz.ctaHtml) ? Quiz.ctaHtml(lvl) : ''}
                 </section>`;
         }).join('');
 

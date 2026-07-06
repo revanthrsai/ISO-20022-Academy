@@ -75,7 +75,7 @@ A pacs.002 reporting a healthy, credited payment:
 </FIToFIPmtStsRpt>
 ```
 
-Two things to see. First, the `Orgnl*` references — `OrgnlMsgId`, `OrgnlEndToEndId`, `OrgnlUETR` — are how a status report **finds its way home**. It doesn't repeat the payment; it *points* at it, using the same identifiers from the [four-identifiers chapter](#/library). Second, `OrgnlMsgNmId` names the exact message and version being reported on — which is why the version awareness from the ISO 20022 chapter matters even here.
+Two things to see. First, the `Orgnl*` references — `OrgnlMsgId`, `OrgnlEndToEndId`, `OrgnlUETR` — are how a status report **finds its way home**. It doesn't repeat the payment; it *points* at it, using the same identifiers from the {{link:article:309-the-four-identifiers|four-identifiers chapter}}. Second, `OrgnlMsgNmId` names the exact message and version being reported on — which is why the version awareness from the ISO 20022 chapter matters even here.
 
 When the status is `RJCT`, one more block appears — the `StsRsnInf` carrying a reason code — which is exactly the reject chapter's territory.
 
@@ -83,7 +83,7 @@ When the status is `RJCT`, one more block appears — the `StsRsnInf` carrying a
 
 For years, a sender knew a payment left and hoped it landed. The blind spot in the middle — is it stuck at a correspondent? was it credited? — is what **Swift gpi** set out to close, and status confirmations are the fuel. Under gpi's **universal confirmations**, banks confirm when they credit the beneficiary, and those confirmations — the same "settlement completed, creditor credited" meaning as an `ACCC`/`ACSC` — feed the **gpi Tracker** so the payment's `UETR` shows a live, end-to-end status the whole chain can see.
 
-In other words, the humble status report stopped being a private receipt between two parties and became a **network-wide tracking signal**. "Where is my payment?" is answerable today largely because every hop now reports its status against a shared UETR. That is also the thread the new [investigations model](#/library) pulls on when a payment goes quiet.
+In other words, the humble status report stopped being a private receipt between two parties and became a **network-wide tracking signal**. "Where is my payment?" is answerable today largely because every hop now reports its status against a shared UETR. That is also the thread the new {{link:article:409-new-investigations|investigations model}} pulls on when a payment goes quiet.
 
 ## What breaks
 

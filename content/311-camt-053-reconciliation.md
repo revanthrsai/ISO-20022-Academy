@@ -14,7 +14,7 @@ status: published
 
 > **The problem first.** It's 6am. Overnight, Sweety's company received 43 payments and made 88. Nobody is going to eyeball 131 lines. Her accounting system will open one file, and by the time she has coffee it should have matched every incoming payment to an open invoice, flagged the three it couldn't, and confirmed the closing balance equals what the ledger expected — untouched by human hands. That file is a **camt.053**, and whether the morning is quiet or a fire depends entirely on how well the fields inside it were populated. So let's read one the way the machine does.
 
-The [camt family chapter](#/library) told you *what* a camt.053 is: the authoritative end-of-day statement, the replacement for MT940. This chapter is about *using* it — because "statement" undersells it. A camt.053 is the input to **reconciliation**, the single process that decides whether a finance team spends its morning on exceptions or on coffee. It is also, quietly, the best argument for ISO 20022 that exists: get the structure right and the reconciliation is free.
+The {{link:article:303-camt-family|camt family chapter}} told you *what* a camt.053 is: the authoritative end-of-day statement, the replacement for MT940. This chapter is about *using* it — because "statement" undersells it. A camt.053 is the input to **reconciliation**, the single process that decides whether a finance team spends its morning on exceptions or on coffee. It is also, quietly, the best argument for ISO 20022 that exists: get the structure right and the reconciliation is free.
 
 ## The two things a statement must do
 
@@ -91,7 +91,7 @@ Notice `RmtInf`. It appears in two shapes, and the shape is everything:
 - **`Ustrd`** — unstructured, free text: *"payment for June invoice thx"*. A human can read it. A machine mostly can't, so the entry drops into an "unapplied cash" queue for someone to match by hand.
 - **`Strd`** — structured, with a `CdtrRefInf/Ref` like `RF18INV0042` (an ISO 11649 creditor reference). The ERP reads it, finds the exact open invoice, marks it paid. No human involved.
 
-This is the whole ballgame. A finance team's **auto-reconciliation rate** — the percentage of entries matched without a human — rises and falls almost entirely on whether the money arrived with a structured reference. That's why the [remittance chapter](#/library) calls this the field closest to ISO 20022's reason for existing.
+This is the whole ballgame. A finance team's **auto-reconciliation rate** — the percentage of entries matched without a human — rises and falls almost entirely on whether the money arrived with a structured reference. That's why the {{link:article:601-remittance-information|remittance chapter}} calls this the field closest to ISO 20022's reason for existing.
 
 ## How the match actually happens
 
@@ -106,7 +106,7 @@ The metric that matters is how few reach step 4. Everything about good statement
 
 ## The batch trap: one entry, many payments
 
-When Sweety's company runs [payroll](#/library), the bank may post the whole debit as **one** entry — a single 4,400,000 INR line — rather than 200 separate ones. That single `Ntry` then carries a **batch**: `NtryDtls` with an entry-level summary (`Btch` with `NbOfTxs` and total) and **many `TxDtls`**, one per employee. Reconciliation has to **explode** that entry into its components to match each salary to each staff record. A system that reconciles at entry level only will see one giant payment and mismatch all 200. Read to the transaction level, always — the same lesson the `PART` status taught in the [status-reports chapter](#/library), now on the reporting side.
+When Sweety's company runs {{link:article:502-payroll|payroll}}, the bank may post the whole debit as **one** entry — a single 4,400,000 INR line — rather than 200 separate ones. That single `Ntry` then carries a **batch**: `NtryDtls` with an entry-level summary (`Btch` with `NbOfTxs` and total) and **many `TxDtls`**, one per employee. Reconciliation has to **explode** that entry into its components to match each salary to each staff record. A system that reconciles at entry level only will see one giant payment and mismatch all 200. Read to the transaction level, always — the same lesson the `PART` status taught in the {{link:article:310-status-reports|status-reports chapter}}, now on the reporting side.
 
 ## Why camt.053 beats the statement it replaced
 

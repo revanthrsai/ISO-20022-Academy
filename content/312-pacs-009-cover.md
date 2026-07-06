@@ -12,9 +12,9 @@ earnedSkill: "Tell pacs.009 from pacs.008 (bank's own money vs a customer's), na
 status: published
 ---
 
-> **The problem first.** In the [cross-border case study](#/library), Bob's $400 crossed from Dubai to Bangalore as *two* messages: a pacs.008 carrying the information, and a pacs.009 COV settling the funds between correspondents. You saw them run in parallel. But we never opened the second one. What *is* a pacs.009, why does a payment sometimes need a whole separate message just to move the money, and why does that message have to name Bob and Sweety — two people neither correspondent has ever heard of?
+> **The problem first.** In the {{link:article:503-cross-border-payment|cross-border case study}}, Bob's $400 crossed from Dubai to Bangalore as *two* messages: a pacs.008 carrying the information, and a pacs.009 COV settling the funds between correspondents. You saw them run in parallel. But we never opened the second one. What *is* a pacs.009, why does a payment sometimes need a whole separate message just to move the money, and why does that message have to name Bob and Sweety — two people neither correspondent has ever heard of?
 
-The [pacs family chapter](#/library) introduced two workhorses. You've done pacs.008 field by field. This is its sibling: **pacs.009, the Financial Institution Credit Transfer**. It looks almost identical, and that similarity hides the single most useful distinction in interbank payments.
+The {{link:article:302-pacs-family|pacs family chapter}} introduced two workhorses. You've done pacs.008 field by field. This is its sibling: **pacs.009, the Financial Institution Credit Transfer**. It looks almost identical, and that similarity hides the single most useful distinction in interbank payments.
 
 ## The one distinction: whose money is it?
 
@@ -27,7 +27,7 @@ That's the whole idea. When a bank funds a nostro account, moves liquidity, sett
 
 The same pacs.009 does two quite different things depending on whether it carries an *underlying* customer payment:
 
-- **pacs.009 CORE — the bank's own transfer.** No customer behind it. A treasury movement, a liquidity transfer, funding a nostro. This is the message doing the work in the [treasury case study](#/library): the bank moving its own money to keep tomorrow's payments flowing.
+- **pacs.009 CORE — the bank's own transfer.** No customer behind it. A treasury movement, a liquidity transfer, funding a nostro. This is the message doing the work in the {{link:article:504-treasury|treasury case study}}: the bank moving its own money to keep tomorrow's payments flowing.
 - **pacs.009 COV — the cover.** This one *does* have a customer payment behind it. It is the funds leg that settles behind a customer's cross-border pacs.008, and it carries a copy of that customer payment's details in a dedicated block so the two can be matched and screened. Same message, one extra block — and that block has a history.
 
 ## Serial vs cover: two ways to cross a border

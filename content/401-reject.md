@@ -29,7 +29,7 @@ Either way the bank stops, and instead of forwarding the payment, it sends back 
 
 ## Which messages carry a reject
 
-A reject is never its own dedicated message. It's a **status** carried inside the status-report messages from the [status-reports deep-dive](#/library) in Level 300:
+A reject is never its own dedicated message. It's a **status** carried inside the status-report messages from the {{link:article:310-status-reports|status-reports deep-dive}} in Level 300:
 
 - **pain.002, Customer Payment Status Report.** When Bob's *own* bank rejects his instruction, it answers his pain.001 with a pain.002 carrying status `RJCT`. This is the red cross in Bob's app.
 - **pacs.002, FI Payment Status Report.** When a payment is rejected *between banks*, say an intermediary or Sweety's bank refuses the pacs.008, that bank sends a pacs.002 back up the chain carrying the same `RJCT` status.
