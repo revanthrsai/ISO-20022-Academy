@@ -6,7 +6,7 @@ summary: "Every customer payment you've followed quietly drains money out of one
 minutes: 9
 updated: 2026-06-29
 tags: [case-study, treasury, liquidity, pacs.009, camt.052, nostro]
-related: [504-treasury, 501-customer-transfer, 101-nostro-vostro, 303-camt-family]
+related: [504-treasury, 501-customer-transfer, 101-nostro-vostro, 303-camt-family, 312-pacs-009-cover]
 earnedSkill: "Explain why a bank moves its own money (funding nostro positions and managing intraday liquidity), name the message that does it (pacs.009, no customer attached) and the camt reports the treasurer reads to decide, and tell a treasury payment apart from a customer payment by asking the one question: whose money is moving, and to pay whom?"
 num: 504
 status: published

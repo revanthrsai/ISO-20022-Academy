@@ -6,7 +6,7 @@ summary: "The money moved. But how do you actually find out? The camt family is 
 minutes: 8
 updated: 2026-06-29
 tags: [camt, reporting, camt.053, camt.054, camt.052, reconciliation, cash-management]
-related: [303-camt-family, 302-pacs-family, 305-message-lifecycle, 103-payment-lifecycle]
+related: [303-camt-family, 302-pacs-family, 305-message-lifecycle, 103-payment-lifecycle, 311-camt-053-reconciliation]
 earnedSkill: "Explain what the camt family is for, tell a statement (camt.053) from an intraday report (camt.052) from a single-payment notification (camt.054), and say where reporting sits in the life of a payment."
 num: 303
 status: published
@@ -84,5 +84,7 @@ Read it as a sentence: a **credit** (`CdtDbtInd = CRDT`) of **33,000 INR** was *
 You can explain what the camt family is for (reporting, not moving), tell camt.053 (end-of-day statement) from camt.052 (intraday report) from camt.054 (single-entry notification), say which legacy MT messages each one replaced, and place reporting at its proper spot in the life of a payment: the step that finally closes the loop.
 
 {{check:What is the camt family for?|Cash management — statements, intraday reports, notifications, and cancellation requests|Initiating customer payments|Settling between central banks}}
+
+{{embed:article:311-camt-053-reconciliation|Now use one: camt.053 reconciliation, line by line}}
 
 {{check:Which one is the authoritative end-of-day record?|camt.053 — the statement|camt.052 — the intraday report|camt.054 — the single-entry notification}}

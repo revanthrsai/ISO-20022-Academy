@@ -6,7 +6,7 @@ summary: "Bob in Dubai pays Sweety in Bangalore. Their banks have no account wit
 minutes: 10
 updated: 2026-06-29
 tags: [case-study, cross-border, correspondent, pacs.008, pacs.009, cover-payment, FX]
-related: [503-cross-border-payment, 501-customer-transfer, 302-pacs-family, 101-nostro-vostro]
+related: [503-cross-border-payment, 501-customer-transfer, 302-pacs-family, 101-nostro-vostro, 312-pacs-009-cover]
 earnedSkill: "Walk a cross-border payment through correspondent banks, explaining why intermediaries appear, the difference between the customer leg (pacs.008) and the cover leg (pacs.009 COV), where FX happens, and how the same UETR keeps a payment readable across a chain of banks that have never met."
 num: 503
 status: published
@@ -48,6 +48,7 @@ Somewhere along that chain, dirhams become rupees. **FX conversion** happens at 
 7. **camt.053: the books close** on both sides at end of day. *(Family: camt.)*
 
 {{embed:explorer:PACS.009|Open the pacs.009 cover payment}}
+{{embed:article:312-pacs-009-cover|The cover leg, field by field: pacs.009 up close}}
 
 ## What changed from a single transfer
 

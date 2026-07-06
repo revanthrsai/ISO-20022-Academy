@@ -4,10 +4,10 @@ level: 200
 num: 209
 summary: "You've been reading pacs.008s and camt.053s for a whole Library. But what actually IS ISO 20022? Not a format. Not a network. A dictionary and a method, and once you see that, the whole standard stops feeling arbitrary."
 minutes: 6
-updated: 2026-07-04
-tags: [iso 20022, standard, data dictionary, registry, meta-model]
+updated: 2026-07-06
+tags: [iso 20022, standard, data dictionary, registry, meta-model, versions, maintenance cycle]
 related: [201-payment-systems, 208-the-end-of-mt, 302-pacs-family]
-earnedSkill: "Say precisely what ISO 20022 is (and is not), name its three layers, explain what the data dictionary and registry do, and understand why one standard can serve payments, securities, cards, and trade at once."
+earnedSkill: "Say precisely what ISO 20022 is (and is not), name its three layers, explain what the data dictionary and registry do, read the version suffix on a message id and say why it matters, and understand why one standard can serve payments, securities, cards, and trade at once."
 status: published
 ---
 
@@ -41,6 +41,20 @@ Read that flow backwards and you understand something quietly profound: when a p
 
 This layering is also why message identifiers are structured instead of arbitrary. `pacs.008.001.08` is a catalogue reference into the registry: the business area (pacs, payments clearing and settlement), the message (008), the variant and version. Nobody memorizes formats; everybody looks up the same registry. New messages are proposed, evaluated, and registered through a public process, which is how the catalogue grew from payments into securities and beyond, and how it keeps evolving (an annual maintenance cycle produces the new versions).
 
+## Which version am I on? (and why the answer bites)
+
+Look again at `pacs.008.001.08`. That final `08` is the **version**, and it is not decoration: it is the single most overlooked source of "but we're both ISO 20022, why did it reject?" in production.
+
+Here is why it moves. Once a year, the standard runs a **maintenance cycle**. Implementers submit change requests, the Registration Authority evaluates them, and the accepted changes ship as a new version of affected messages: a new element added, a cardinality tightened, a code list extended. `pacs.008.001.08` becomes `.09`, then `.10`, and onward. The *meaning* is stable; the *schema around it* is not. A message valid against one version can fail validation against another, because the newer schema expects something the older one never had, or forbids something the older one allowed.
+
+Now layer the rulebooks on top, because this is where it gets practical:
+
+- **You don't pick your version. Your usage guideline does.** CBPR+ pins cross-border traffic to a specific version — `pacs.008.001.08` has been the cross-border workhorse since the migration — and *uplifts* it on Swift's annual release cycle, on a date the whole network moves together. HVPS+ and domestic market infrastructures pin their *own* versions, which may not match CBPR+.
+- **Same message name, different version, real rejection.** The same `pacs.008` that sails through on one network can be refused on another that expects a different version of the schema. "We support pacs.008" is therefore an incomplete sentence. The complete one is *"we support pacs.008.001.08 under the CBPR+ usage guideline"* — message, **version**, and rulebook.
+- **The dangerous window is coexistence.** During an annual uplift, senders and receivers cross over the boundary at slightly different moments. For a short window, a bank still emitting the old version talks to one already expecting the new. That gap is exactly where migration incidents cluster, and it is why "which version, from when" is a question every integration owner should be able to answer without looking it up.
+
+The habit worth building: whenever you read or write "pacs.008," reach for the full identifier, version and all. The three digits you were tempted to ignore are the ones an integration lives or dies on.
+
 ## What ISO 20022 is not
 
 Three confusions cause most of the muddle around the standard, and you can now dissolve all three:
@@ -63,3 +77,4 @@ The phrase to keep: **ISO 20022 is a dictionary, not a phrasebook.** A phraseboo
 {{check:What is ISO 20022, most precisely?|A shared data dictionary of financial concepts plus a method for building messages from it|A messaging network operated by Swift|A single XML file format for payments}}
 {{check:Why are the standard's three layers (business, logical, physical) separated?|So the meaning survives even if the wire syntax changes|To make messages longer|Because XML requires three layers}}
 {{check:Two systems both claim ISO 20022 compliance but can't interoperate. What's the most likely reason?|They implement different versions or usage guidelines; the standard alone doesn't guarantee interoperability|One of them is lying|ISO 20022 doesn't support interoperability}}
+{{check:In `pacs.008.001.08`, what does the final `08` tell you?|The message version, which advances through the annual maintenance cycle and can differ between rulebooks|How many transactions the message carries|The number of times the message has been forwarded}}

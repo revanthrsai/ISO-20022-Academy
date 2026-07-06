@@ -6,7 +6,7 @@ summary: "Once your bank accepts your instruction, it has to get real money to a
 minutes: 9
 updated: 2026-06-29
 tags: [pacs, clearing, settlement, pacs.008, pacs.002, pacs.004, interbank]
-related: [302-pacs-family, 301-pain-family, 301-pacs-008, 105-payment-participants]
+related: [302-pacs-family, 301-pain-family, 301-pacs-008, 105-payment-participants, 312-pacs-009-cover, 310-status-reports]
 earnedSkill: "Explain what the pacs family is for, tell pacs.008 from pacs.009, describe the round trip from instruction to confirmation or return, and point to the single reference that proves a pacs.008 came from a particular pain.001."
 num: 302
 status: published

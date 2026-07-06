@@ -4,9 +4,9 @@ level: 400
 category: Exceptions
 summary: "Sometimes nothing is rejected, returned, or reversed. The payment simply vanishes or arrives wrong, and someone has to open a case. Investigations are the structured conversation that finds the money."
 minutes: 8
-updated: 2026-06-29
+updated: 2026-07-06
 tags: [investigations, camt.026, camt.027, camt.028, camt.029, case-management, R-transactions]
-related: [405-investigations, 403-recall, 402-return, 305-message-lifecycle]
+related: [405-investigations, 403-recall, 402-return, 305-message-lifecycle, 409-new-investigations]
 earnedSkill: "Explain what an investigation is and when it's needed, name the case-management messages (camt.027 claim non-receipt, camt.026 unable to apply, camt.028 additional info, camt.029 resolution), describe how a case opens and closes, and tell an investigation apart from the clean exceptions."
 num: 405
 status: published
@@ -17,6 +17,8 @@ status: published
 The last three chapters were tidy. A reject, a return, a reversal each has a clear cause and a single message that puts it right. **Investigations** are the messy reality: a payment that didn't fail cleanly. It's late, lost, applied to the wrong account, missing its remittance information, or stuck at a correspondent, and finding out *why* takes a back-and-forth conversation between banks.
 
 An investigation is **case management for payments**: open a case, ask a question, get an answer, close the case. ISO 20022 gives that conversation its own family of messages so it can happen machine-to-machine instead of over email.
+
+> **Heads up: this model is being rebuilt.** The camt.026/027/028/029 conversation below is the *classic* investigation, and it's the right place to learn the mechanics. But the industry is replacing this fragmented set (and the free-text MT199 that quietly did most of the real work) with two new messages, **camt.110** and **camt.111**, on a 2026/2027 clock. Learn the classic model here first; the next chapter covers what's replacing it and why.
 
 ## When you need an investigation
 
@@ -72,6 +74,8 @@ The thread through all of it is the same `UETR` (`eb6305c9-…`) from the origin
 The other four exceptions answer *"what's the right action?"* An investigation answers the prior question: *"what actually happened?"* It's a **conversation**, not a single message, and it often **ends** by triggering one of the clean exceptions (a camt.029 that authorises a pacs.004 return, say). Think of investigations as the layer that sits above reject/return/recall/reversal, used whenever the situation is too unclear to act on directly.
 
 {{embed:playground|Trace a payment end-to-end in the Playground}}
+
+{{embed:article:409-new-investigations|What's replacing all of this: camt.110, camt.111 and Case Management}}
 
 ## Where Level 400 leaves you
 

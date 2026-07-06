@@ -6,7 +6,7 @@ summary: "Not every payment makes it through. A reject is the cleanest failure t
 minutes: 7
 updated: 2026-06-29
 tags: [reject, RJCT, pacs.002, pain.002, status, R-transactions]
-related: [401-reject, 402-return, 302-pacs-family, 301-pain-family]
+related: [401-reject, 402-return, 302-pacs-family, 301-pain-family, 310-status-reports]
 earnedSkill: "Tell a reject apart from a return, name the message that carries a reject (pain.002 to the customer, pacs.002 between banks), read the RJCT status and its reason code, and explain why a reject never needs money sent back."
 num: 401
 status: published
@@ -29,7 +29,7 @@ Either way the bank stops, and instead of forwarding the payment, it sends back 
 
 ## Which messages carry a reject
 
-A reject is never its own dedicated message. It's a **status** carried inside the status-report messages you already met in Level 300:
+A reject is never its own dedicated message. It's a **status** carried inside the status-report messages from the [status-reports deep-dive](#/library) in Level 300:
 
 - **pain.002, Customer Payment Status Report.** When Bob's *own* bank rejects his instruction, it answers his pain.001 with a pain.002 carrying status `RJCT`. This is the red cross in Bob's app.
 - **pacs.002, FI Payment Status Report.** When a payment is rejected *between banks*, say an intermediary or Sweety's bank refuses the pacs.008, that bank sends a pacs.002 back up the chain carrying the same `RJCT` status.
@@ -84,5 +84,7 @@ The whole of Level 400 hinges on this: **a reject happens before settlement, so 
 You can tell a reject apart from the other three exceptions by the single question *has it settled yet?*, name the message that carries a reject (pain.002 to the customer, pacs.002 between banks), read the `RJCT` status and its reason code, point to the `OrgnlEndToEndId` that ties a rejection back to the payment it killed, and explain why a reject is the only Level 400 exception that never sends money back.
 
 {{check:What is a reject?|A payment turned away before settlement — no money has moved|Money sent back after it settled|A customer cancelling a subscription}}
+
+{{embed:article:310-status-reports|The full status vocabulary a reject lives inside: pain.002 & pacs.002}}
 
 {{check:What should a reject always carry?|A reason code that says exactly why it was refused|The sender’s current account balance|An automatic replacement payment}}
