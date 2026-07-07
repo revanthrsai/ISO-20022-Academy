@@ -75,6 +75,7 @@ const Signup = (function () {
         if (typeof document === 'undefined' || !document.head) return;
         if (document.getElementById('signup-styles')) return;
         const css = `
+        .site-footer-col{display:flex;flex-direction:column;gap:var(--space-xl,32px)}
         .site-footer-signup{max-width:360px}
         .su-label{font-size:var(--fs-eyebrow,12px);text-transform:uppercase;letter-spacing:.08em;color:var(--primary);font-weight:var(--fw-semibold,600);margin-bottom:8px}
         .su-title{font-size:var(--fs-h4,19px);font-weight:var(--fw-semibold,600);color:var(--text);margin:0 0 6px;line-height:var(--lh-snug,1.3)}
