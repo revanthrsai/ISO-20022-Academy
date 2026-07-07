@@ -7,3 +7,14 @@ assets/video/
 docs/curriculum-roadmap.md
 docs/ENGINE-SPEC.md
 /assets/cheatsheets
+
+# Build artifacts — regenerated on every deploy by scripts/build-seo.js.
+# Source of truth is /content; never edit these by hand.
+/library/
+/sitemap.xml
+/robots.txt
+
+# Internal planning docs — kept local, not published to the public site.
+/BACKLOG.md
+/LAUNCH-KIT-v2.md
+/LAUNCH-KIT.md
