@@ -64,6 +64,11 @@
         </div>
 
         <div class="header-right">
+			<button class="nav-search" id="nav-search" onclick="openSearch()" aria-label="Search the Academy" title="Search (Ctrl/⌘ K)">
+				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+				<span class="nav-search-label">Search</span>
+				<span class="nav-search-kbd">⌘K</span>
+			</button>
 			<div class="nav-arrows" role="group" aria-label="Previous and next section">
 				<button class="nav-arrow" id="nav-prev" onclick="stepNav(-1)" aria-label="Previous section" title="Previous section">
 					<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 L8 12 L15 19"/></svg>
@@ -117,6 +122,18 @@
                 <a href="#/playground" onclick="navigate('playground', event)">Playground</a>
                 <a href="#/glossary" onclick="navigate('glossary', event)">Glossary</a>
             </nav>
+            <div class="site-footer-signup">
+                <div class="su-label">Stay in the loop</div>
+                <p class="su-title">New lessons, now and then.</p>
+                <p class="su-sub">Get an email when a new lesson or tool lands. No spam, unsubscribe anytime.</p>
+                <form id="signup-form" novalidate>
+                    <div class="su-row">
+                        <input class="su-input" type="email" name="email" placeholder="you@work.com" aria-label="Email address" autocomplete="email" required />
+                        <button class="su-btn" type="submit">Notify me</button>
+                    </div>
+                    <p class="su-note" role="status" aria-live="polite"></p>
+                </form>
+            </div>
         </div>
         <div class="site-footer-base">
             <span>ISO&nbsp;20022 Academy</span>
@@ -142,6 +159,10 @@
     <script src="assets/js/samples.js"></script>
     <script src="assets/js/quiz.data.js"></script>
     <script src="assets/js/quiz.js"></script>
+    <script src="assets/js/deadlines.data.js"></script>
+    <script src="assets/js/deadlines.js"></script>
+    <script src="assets/js/signup.js"></script>
+    <script src="assets/js/search.js"></script>
     <script src="assets/js/ui.js"></script>
     <script src="assets/js/app.js"></script>
     <script src="assets/js/preloader.js"></script>

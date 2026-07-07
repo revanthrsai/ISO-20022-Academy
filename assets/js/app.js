@@ -881,6 +881,8 @@ function historyChapterCardsHtml(){
 function renderHistoryChapterIndex(){
     const pageEl = document.querySelector('#content .page');
     if (!pageEl || document.getElementById('history-chapter-grid')) return;
+    // Compliance calendar (Track 2 / task 11) — appended above the chapter index.
+    if (typeof Deadlines !== 'undefined' && Deadlines.mount) Deadlines.mount(pageEl);
     const section = document.createElement('section');
     section.className = 'reveal-section';
     section.style.cssText = 'max-width:1180px; margin:clamp(90px,16vw,160px) auto 0;';
