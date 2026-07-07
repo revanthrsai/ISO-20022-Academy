@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Favicon and assets are open to crawlers
+Allow: /favicon.ico
+Allow: /assets/
+
+Sitemap: https://iso20022academy.in/sitemap.xml

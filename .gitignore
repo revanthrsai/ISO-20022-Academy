@@ -4,11 +4,6 @@ Thumbs.db
 .vscode/
 
 assets/video/
-node_modules/
-# generated at deploy time by scripts/build-seo.js
-/library/
-/sitemap.xml
-/robots.txt
-
-# Personal planning doc (not shipped)
 docs/curriculum-roadmap.md
+docs/ENGINE-SPEC.md
+/assets/cheatsheets

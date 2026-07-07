@@ -3835,6 +3835,41 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
 }
 .md-inline-link:hover { color: var(--primary-bright); }
 
+/* ---- Article top bar: back link + share (Track 2) ----------------------- */
+.article-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.article-share {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill, 999px);
+    padding: 7px 14px;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: var(--fs-small, 14px);
+    font-weight: var(--fw-semibold, 600);
+    cursor: pointer;
+    transition: border-color var(--dur-fast, .15s), color var(--dur-fast, .15s), transform var(--dur-fast, .15s);
+}
+.article-share:hover { border-color: var(--primary); color: var(--primary); }
+.article-share:active { transform: scale(0.97); }
+.article-share.is-copied { border-color: var(--success, #0B8A60); color: var(--success, #0B8A60); }
+
+/* ---- Premium reading: text is not selectable (deters casual copy) -------
+   Form fields, editable areas and the Playground XML viewers stay usable. */
+body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea, select, [contenteditable="true"], .xml-readonly {
+    -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text;
+    -webkit-touch-callout: default;
+}
+
 /* Embed card (from a block {{embed:...}}) — hands off to interactive surfaces */
 .md-embed {
     display: flex;

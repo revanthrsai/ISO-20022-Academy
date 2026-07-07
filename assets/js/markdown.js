@@ -370,10 +370,16 @@ const Articles = (function () {
         return `
             <div class="article-layout${tocHtml ? ' has-toc' : ''}">
             <article class="article-page">
-                <button class="article-back" onclick="navigate('library')">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
-                    The Library
-                </button>
+                <div class="article-topbar">
+                    <button class="article-back" onclick="navigate('library')">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+                        The Library
+                    </button>
+                    <button class="article-share" onclick="shareArticle('${entry.id}', this)" aria-label="Share this lesson" title="Copy a link to this lesson">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
+                        <span class="article-share-label">Share</span>
+                    </button>
+                </div>
 
                 <header class="article-head">
                     <div class="article-kicker">
@@ -498,6 +504,42 @@ function initArticleToc() {
     }, { rootMargin: '-20% 0px -60% 0px', threshold: [0, 1] });
     heads.forEach(h => __tocObserver.observe(h));
     if (heads[0]) setActive(heads[0].id);
+}
+
+// ---- Share a lesson by link (Track 2) -------------------------------------
+// Builds the deep link (#/library/<id>) that routeOnLoad/hashchange resolve to
+// this exact article. Uses the native share sheet on mobile, clipboard on
+// desktop, with inline "Copied" feedback.
+function shareArticle(id, btn) {
+    const url = location.origin + location.pathname + '#/library/' + id;
+    const titleEl = document.querySelector('.article-title');
+    const title = (titleEl ? titleEl.textContent.trim() : 'ISO 20022 Academy') + ' — ISO 20022 Academy';
+    const flash = (text) => {
+        const label = btn && btn.querySelector('.article-share-label');
+        if (!label) return;
+        const prev = label.textContent;
+        label.textContent = text;
+        btn.classList.add('is-copied');
+        setTimeout(() => { label.textContent = prev; btn.classList.remove('is-copied'); }, 1800);
+    };
+    const copy = () => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => flash('Link copied ✓')).catch(() => legacyCopy());
+        } else legacyCopy();
+    };
+    const legacyCopy = () => {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            document.execCommand('copy'); document.body.removeChild(ta); flash('Link copied ✓');
+        } catch (e) { flash('Copy failed'); }
+    };
+    if (navigator.share) {
+        navigator.share({ title, url }).catch(() => { /* user dismissed — no-op */ });
+    } else {
+        copy();
+    }
 }
 
 // ---- Knowledge check + learned toggle handlers (Session 7.5) --------------
