@@ -3862,6 +3862,28 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
 .article-share:active { transform: scale(0.97); }
 .article-share.is-copied { border-color: var(--success, #0B8A60); color: var(--success, #0B8A60); }
 
+/* ---- Timeline chronometer (History "The Story" pin — desktop) ----------- */
+.scrub-chrono { display: none; }
+.chrono-svg { width: 100%; max-width: 300px; overflow: visible; }
+.chrono-ring { fill: none; stroke: var(--border); stroke-width: 1.5; }
+.chrono-ring2 { fill: none; stroke: var(--border); stroke-width: 1; opacity: .5; }
+.chrono-tick { stroke: var(--border-hi, var(--border)); stroke-width: 2; stroke-linecap: round; transition: stroke .5s var(--ease-out, ease), stroke-width .5s var(--ease-out, ease); }
+.chrono-tick.is-active { stroke: var(--primary); stroke-width: 3; }
+.chrono-label { font-family: var(--font-sans); font-size: 12px; font-weight: 500; fill: var(--text-muted); transition: fill .5s var(--ease-out, ease), font-size .5s var(--ease-out, ease); }
+.chrono-label.is-active { fill: var(--primary); font-weight: 700; font-size: 14px; }
+.chrono-hand { transform-box: view-box; transform-origin: 150px 150px; transition: transform .7s cubic-bezier(.22, 1, .36, 1); }
+.chrono-hand-main { stroke: var(--primary); stroke-width: 2.5; stroke-linecap: round; }
+.chrono-hand-tail { stroke: var(--primary); stroke-width: 3.5; stroke-linecap: round; opacity: .85; }
+.chrono-hub { fill: var(--primary); }
+.chrono-hub-dot { fill: var(--surface); }
+.chrono-eyebrow { font-family: var(--font-mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; fill: var(--primary); }
+.chrono-year { font-family: var(--font-display, var(--font-sans)); font-size: 21px; font-weight: 800; fill: var(--text); }
+.chrono-count { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; fill: var(--text-muted); }
+@media (min-width: 900px) {
+    .scrub-chrono { display: block; }
+    .scrub-pin-eyebrow, .scrub-pin-year, .scrub-pin-track, .scrub-pin-count { display: none; }
+}
+
 /* ---- History chapter illustration video (YouTube embed) ----------------- */
 .chapter-video {
     position: relative;

@@ -483,6 +483,52 @@ function initScrollCue() {
 
 // Pinned-scrub timeline: as each entry crosses the vertical center of the
 // viewport, mark it active and sync the pinned year/progress display.
+// Build the chronometer dial into the sticky "The Story" pin. A slender hand
+// sweeps to the active era as the reader scrolls; the year shows in the centre.
+// (Desktop only — CSS hides it on narrow screens, where the text pin remains.)
+function buildChronometer(pin, items){
+    const n = items.length, per = 360 / n, cx = 150, cy = 150, tickR = 116, labR = 138;
+    function pt(i, r){ const a = (-90 + i * per) * Math.PI / 180; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
+    let ticks = '', labels = '';
+    for (let i = 0; i < n; i++){
+        const p1 = pt(i, tickR - 10), p2 = pt(i, tickR);
+        ticks += '<line class="chrono-tick" data-i="' + i + '" x1="' + p1[0].toFixed(1) + '" y1="' + p1[1].toFixed(1) + '" x2="' + p2[0].toFixed(1) + '" y2="' + p2[1].toFixed(1) + '"/>';
+        const lp = pt(i, labR);
+        const anchor = lp[0] > cx + 4 ? 'start' : (lp[0] < cx - 4 ? 'end' : 'middle');
+        labels += '<text class="chrono-label" data-i="' + i + '" x="' + lp[0].toFixed(1) + '" y="' + (lp[1] + 4).toFixed(1) + '" text-anchor="' + anchor + '">' + (items[i].label || '') + '</text>';
+    }
+    const svg =
+        '<svg class="chrono-svg" viewBox="0 0 300 300" role="img" aria-label="Timeline chronometer">' +
+        '<circle class="chrono-ring" cx="150" cy="150" r="140"/>' +
+        '<circle class="chrono-ring2" cx="150" cy="150" r="120"/>' +
+        '<g class="chrono-ticks">' + ticks + '</g>' +
+        '<g class="chrono-labels">' + labels + '</g>' +
+        '<g class="chrono-hand" id="chrono-hand"><line x1="150" y1="150" x2="150" y2="44" class="chrono-hand-main"/><line x1="150" y1="150" x2="150" y2="172" class="chrono-hand-tail"/></g>' +
+        '<circle class="chrono-hub" cx="150" cy="150" r="6.5"/><circle class="chrono-hub-dot" cx="150" cy="150" r="2.6"/>' +
+        '<text class="chrono-eyebrow" x="150" y="206" text-anchor="middle">The Story</text>' +
+        '<text class="chrono-year" id="chrono-year" x="150" y="233" text-anchor="middle">' + (items[0] ? (items[0].year || '') : '') + '</text>' +
+        '<text class="chrono-count" id="chrono-count" x="150" y="252" text-anchor="middle">01 / ' + String(n).padStart(2, '0') + '</text>' +
+        '</svg>';
+    const wrap = document.createElement('div');
+    wrap.className = 'scrub-chrono';
+    wrap.innerHTML = svg;
+    pin.insertBefore(wrap, pin.firstChild);
+    const hand = wrap.querySelector('#chrono-hand');
+    const yearEl = wrap.querySelector('#chrono-year');
+    const countEl = wrap.querySelector('#chrono-count');
+    const labelEls = wrap.querySelectorAll('.chrono-label');
+    const tickEls = wrap.querySelectorAll('.chrono-tick');
+    return {
+        set: function(i){
+            if (hand) hand.style.transform = 'rotate(' + (i * per) + 'deg)';
+            if (yearEl) yearEl.textContent = (items[i] && items[i].year) || '';
+            if (countEl) countEl.textContent = String(i + 1).padStart(2, '0') + ' / ' + String(n).padStart(2, '0');
+            labelEls.forEach(function(el){ el.classList.toggle('is-active', +el.getAttribute('data-i') === i); });
+            tickEls.forEach(function(el){ el.classList.toggle('is-active', +el.getAttribute('data-i') === i); });
+        }
+    };
+}
+
 function initScrubTimeline() {
     const entries = document.querySelectorAll('.scrub-entry[data-history]');
     if (!entries.length) return;
@@ -492,6 +538,17 @@ function initScrubTimeline() {
     const pinProgress = document.getElementById('scrub-pin-progress');
     const total = entries.length;
 
+    // Build the chronometer once, into the sticky pin (desktop shows it via CSS).
+    const pin = document.querySelector('.scrub-pin');
+    let chrono = null;
+    if (pin && !pin.querySelector('.scrub-chrono')) {
+        const items = Array.prototype.map.call(entries, function (e) {
+            const y = e.querySelector('.scrub-entry-year');
+            return { label: e.dataset.year || '', year: y ? y.textContent : '' };
+        });
+        chrono = buildChronometer(pin, items);
+    }
+
     function setActive(target) {
         entries.forEach(el => el.classList.remove('active'));
         target.classList.add('active');
@@ -500,6 +557,7 @@ function initScrubTimeline() {
         if (pinYear) pinYear.textContent = target.dataset.year || '';
         if (pinIndex) pinIndex.textContent = String(idx + 1).padStart(2, '0');
         if (pinProgress) pinProgress.style.width = `${((idx + 1) / total) * 100}%`;
+        if (chrono) chrono.set(idx);
     }
 
     // Drive the focused entry from scroll position: the active (unblurred)
@@ -883,8 +941,6 @@ function historyChapterCardsHtml(){
 function renderHistoryChapterIndex(){
     const pageEl = document.querySelector('#content .page');
     if (!pageEl || document.getElementById('history-chapter-grid')) return;
-    // Compliance calendar (Track 2 / task 11) — appended above the chapter index.
-    if (typeof Deadlines !== 'undefined' && Deadlines.mount) Deadlines.mount(pageEl);
     const section = document.createElement('section');
     section.className = 'reveal-section';
     section.style.cssText = 'max-width:1180px; margin:clamp(90px,16vw,160px) auto 0;';
@@ -896,6 +952,8 @@ function renderHistoryChapterIndex(){
         + '</div>'
         + '<div class="learn-grid" style="margin-top:32px;" id="history-chapter-grid">' + historyChapterCardsHtml() + '</div>';
     pageEl.appendChild(section);
+    // Compliance calendar is the LAST section — the "what's next" coda after the history.
+    if (typeof Deadlines !== 'undefined' && Deadlines.mount) Deadlines.mount(pageEl);
 }
 
 // Build the prev/next reader nav (shared `pager` control, added 1.4).
