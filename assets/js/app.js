@@ -148,8 +148,6 @@ const PAGES = {
                     <span class="pg-flow-lbl">Continue with this message</span>
                     <div class="pg-flow-btns">
                         <button class="pg-flow-btn" onclick="sendMessageTo('transformer', event)">Transform</button>
-                        <button class="pg-flow-btn" onclick="sendMessageTo('validator', event)">Validate</button>
-                        <button class="pg-flow-btn" onclick="sendMessageTo('comparator', event)">Compare</button>
                     </div>
                 </div>
                 <div class="xv" id="xv-root"></div>
@@ -168,61 +166,19 @@ const PAGES = {
                     <span class="pg-flow-lbl">Continue with this pacs.008</span>
                     <div class="pg-flow-btns">
                         <button class="pg-flow-btn" onclick="sendMessageTo('viewer', event)">View</button>
-                        <button class="pg-flow-btn" onclick="sendMessageTo('validator', event)">Validate</button>
-                        <button class="pg-flow-btn" onclick="sendMessageTo('comparator', event)">Compare</button>
                     </div>
                 </div>
                 <div class="mxt" id="mxt-root"></div>
             </section>
 
-            <!-- TOOL · Schema Validator (Session 4.3) — named failure modes, live -->
-            <section class="pg-tool-panel" id="pg-tool-validator" hidden>
-                <button class="pg-back" onclick="setPlaygroundTool('samples', event)">&larr; Sample Library</button>
-                <p class="pg-tool-intro">
-                    Paste a message &mdash; or load one of the broken samples below &mdash; and have it checked against the
-                    mistakes that actually bite: a <strong>malformed BIC</strong>, an <strong>IBAN</strong> that fails its
-                    checksum, an <strong>amount</strong> with the wrong decimals or currency, an <strong>overlong field</strong>,
-                    a <strong>missing required element</strong>, a <strong>count</strong> that doesn't add up. The report
-                    rebuilds <strong>live</strong> and names the rule, the element, and the value that broke it.
-                </p>
-                <div class="pg-flow" role="group" aria-label="Send this message to another tool">
-                    <span class="pg-flow-lbl">Continue with this message</span>
-                    <div class="pg-flow-btns">
-                        <button class="pg-flow-btn" onclick="sendMessageTo('viewer', event)">View</button>
-                        <button class="pg-flow-btn" onclick="sendMessageTo('transformer', event)">Transform</button>
-                        <button class="pg-flow-btn" onclick="sendMessageTo('comparator', event)">Compare</button>
-                    </div>
-                </div>
-                <div class="val" id="val-root"></div>
-            </section>
-            <!-- TOOL · Message Comparator (Session 4.4) — field-level diff of two messages -->
-            <section class="pg-tool-panel" id="pg-tool-comparator" hidden>
-                <button class="pg-back" onclick="setPlaygroundTool('samples', event)">&larr; Sample Library</button>
-                <p class="pg-tool-intro">
-                    Two messages, side by side &mdash; or load a before/after pair below. The diff is
-                    <strong>field-level</strong>, not line-by-line: both messages are parsed to their structural
-                    tree, so a re-ordered or re-formatted message shows <strong>zero</strong> false differences and
-                    every real change is named against its element &mdash; <strong>changed</strong>, <strong>added</strong>,
-                    or <strong>removed</strong>. Updates <strong>live</strong> as you edit either side.
-                </p>
-                <div class="pg-flow" role="group" aria-label="Send message A to another tool">
-                    <span class="pg-flow-lbl">Continue with message A</span>
-                    <div class="pg-flow-btns">
-                        <button class="pg-flow-btn" onclick="sendMessageTo('viewer', event)">View</button>
-                        <button class="pg-flow-btn" onclick="sendMessageTo('transformer', event)">Transform</button>
-                        <button class="pg-flow-btn" onclick="sendMessageTo('validator', event)">Validate</button>
-                    </div>
-                </div>
-                <div class="cmp" id="cmp-root"></div>
-            </section>
             <!-- TOOL · Sample Message Library (Session 4.5) — the ISO 20022 catalogue tree, the Playground home -->
             <section class="pg-tool-panel" id="pg-tool-samples" data-reveal="up">
                 <p class="pg-tool-intro">
                     The <strong>ISO&nbsp;20022 catalogue</strong>, browsable as a tree &mdash;
                     <strong>Payments</strong>, <strong>Securities</strong>, <strong>Trade Finance</strong>,
                     <strong>Cards</strong>, and <strong>Foreign Exchange</strong>. Pick a business domain, pick a
-                    message, and it opens in the reader with <strong>Transform</strong>, <strong>Validate</strong>,
-                    and <strong>Compare</strong> one click away &mdash; or paste your own message.
+                    message, and it opens in the reader with <strong>Transform</strong> one click
+                    away &mdash; or paste your own message.
                 </p>
                 <div class="smp" id="smp-root"></div>
             </section>
@@ -251,7 +207,7 @@ const PAGES = {
 // Ordered top-level sections, for the prev/next header arrows.
 const NAV_ORDER = ['history', 'library', 'playground', 'glossary'];
 
-// Which Playground tool is showing ('samples' | 'viewer' | 'transformer' | 'validator' | 'comparator').
+// Which Playground tool is showing ('samples' | 'viewer' | 'transformer').
 // 'samples' (the catalogue) is the Playground home; the viewer/reader is opened from it.
 let playgroundTool = 'samples';
 
@@ -263,18 +219,12 @@ function setPlaygroundTool(tool, evt) {
     playgroundTool = tool;
     const viewer = document.getElementById('pg-tool-viewer');
     const transformer = document.getElementById('pg-tool-transformer');
-    const validator = document.getElementById('pg-tool-validator');
-    const comparator = document.getElementById('pg-tool-comparator');
     const samples = document.getElementById('pg-tool-samples');
     if (viewer) viewer.hidden = (tool !== 'viewer');
     if (transformer) transformer.hidden = (tool !== 'transformer');
-    if (validator) validator.hidden = (tool !== 'validator');
-    if (comparator) comparator.hidden = (tool !== 'comparator');
     if (samples) samples.hidden = (tool !== 'samples');
     if (tool === 'viewer' && window.XmlViewer) XmlViewer.init('xv-root');
     if (tool === 'transformer' && window.MsgTransformer) MsgTransformer.init('mxt-root');
-    if (tool === 'validator' && window.SchemaValidator) SchemaValidator.init('val-root');
-    if (tool === 'comparator' && window.MsgComparator) MsgComparator.init('cmp-root');
     if (tool === 'samples' && window.SampleLibrary) SampleLibrary.init('smp-root');
 
     // Keep the URL on the active tool so a chosen tool is shareable / reload-safe
@@ -289,8 +239,8 @@ function setPlaygroundTool(tool, evt) {
 
 // Route slugs for the five Playground tools (docs/HANDBOOK.md (IA) §3) ⇄ the internal
 // tool keys setPlaygroundTool understands.
-const PG_TOOL_SLUGS = { 'xml-viewer': 'viewer', viewer: 'viewer', transformer: 'transformer', validator: 'validator', comparator: 'comparator', samples: 'samples' };
-const PG_TOOL_TO_SLUG = { viewer: 'xml-viewer', transformer: 'transformer', validator: 'validator', comparator: 'comparator', samples: 'samples' };
+const PG_TOOL_SLUGS = { 'xml-viewer': 'viewer', viewer: 'viewer', transformer: 'transformer', samples: 'samples' };
+const PG_TOOL_TO_SLUG = { viewer: 'xml-viewer', transformer: 'transformer', samples: 'samples' };
 
 // Open the Playground at a specific tool (from a deep link or a glossary
 // cross-link). Ensures the Playground page is mounted, then switches tools.
@@ -308,15 +258,11 @@ function openPlaygroundTool(slug){
 // re-initialises the destination), then load the message into it.
 const PG_GET = {
     viewer:      () => (window.XmlViewer && XmlViewer.getXml()) || '',
-    transformer: () => (window.MsgTransformer && MsgTransformer.getXml()) || '',
-    validator:   () => (window.SchemaValidator && SchemaValidator.getXml()) || '',
-    comparator:  () => (window.MsgComparator && MsgComparator.getXml()) || ''
+    transformer: () => (window.MsgTransformer && MsgTransformer.getXml()) || ''
 };
 const PG_LOAD = {
     viewer:      (xml) => window.XmlViewer && XmlViewer.loadXml(xml),
-    transformer: (xml) => window.MsgTransformer && MsgTransformer.loadXml(xml),
-    validator:   (xml) => window.SchemaValidator && SchemaValidator.loadXml(xml),
-    comparator:  (xml) => window.MsgComparator && MsgComparator.loadXml(xml)
+    transformer: (xml) => window.MsgTransformer && MsgTransformer.loadXml(xml)
 };
 function sendMessageTo(dest, evt) {
     if (evt) evt.preventDefault();

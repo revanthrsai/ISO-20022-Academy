@@ -34,7 +34,7 @@ const SampleLibrary = (function () {
             family: 'pain', label: 'pain.001', kind: 'Initiation',
             sub: 'Customer Credit Transfer Initiation',
             note: 'Bob tells his bank to pay Sweety $400. Where the whole story starts.',
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.09">
@@ -77,7 +77,7 @@ const SampleLibrary = (function () {
             family: 'pain', label: 'pain.002', kind: 'Status',
             sub: 'Customer Payment Status Report',
             note: "Bob's bank answers his instruction: accepted, on its way.",
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.002.001.10">
@@ -108,7 +108,7 @@ const SampleLibrary = (function () {
             family: 'pain', label: 'pain.008', kind: 'Direct debit',
             sub: 'Customer Direct Debit Initiation',
             note: "The mirror image — a biller pulling funds instead of a payer pushing them.",
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.008.001.08">
@@ -145,7 +145,7 @@ const SampleLibrary = (function () {
             family: 'pacs', label: 'pacs.008', kind: 'Credit transfer',
             sub: 'FI-to-FI Customer Credit Transfer',
             note: "Bob's bank to Sweety's bank, on the wire. The one the Transformer speaks.",
-            dest: ['viewer', 'validator', 'transformer'],
+            dest: ['viewer', 'transformer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
@@ -180,7 +180,7 @@ const SampleLibrary = (function () {
             family: 'pacs', label: 'pacs.002', kind: 'Status',
             sub: 'FI-to-FI Payment Status Report',
             note: "Sweety's bank confirms back up the wire: settled, accepted.",
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.002.001.10">
@@ -205,7 +205,7 @@ const SampleLibrary = (function () {
             family: 'pacs', label: 'pacs.004', kind: 'Return',
             sub: 'Payment Return',
             note: 'The unhappy path — the $400 sent back, settled funds returned with a reason.',
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.004.001.09">
@@ -233,7 +233,7 @@ const SampleLibrary = (function () {
             family: 'camt', label: 'camt.054', kind: 'Notification',
             sub: 'Bank-to-Customer Debit/Credit Notification',
             note: "Sweety's bank pings her the moment the $400 lands.",
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.08">
@@ -267,7 +267,7 @@ const SampleLibrary = (function () {
             family: 'camt', label: 'camt.053', kind: 'Statement',
             sub: 'Bank-to-Customer Statement',
             note: "End-of-day: the same credit, now a line on Sweety's statement.",
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08">
@@ -305,7 +305,7 @@ const SampleLibrary = (function () {
             family: 'camt', label: 'camt.056', kind: 'Cancellation',
             sub: 'FI-to-FI Payment Cancellation Request',
             note: 'Second thoughts — a request to recall the transfer before it is spent.',
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.056.001.08">
@@ -334,7 +334,7 @@ const SampleLibrary = (function () {
             family: 'head', label: 'head.001', kind: 'BAH · over pacs.008',
             sub: 'Business Application Header',
             note: 'The envelope wrapped around the pacs.008 — who, to whom, which message.',
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <AppHdr xmlns="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
@@ -351,7 +351,7 @@ const SampleLibrary = (function () {
             family: 'head', label: 'head.001', kind: 'BAH · over camt.054',
             sub: 'Business Application Header',
             note: 'The same envelope, this time around the notification flowing the other way.',
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <AppHdr xmlns="urn:iso:std:iso:20022:tech:xsd:head.001.001.02">
@@ -370,7 +370,7 @@ const SampleLibrary = (function () {
             family: 'admi', label: 'admi.004', kind: 'System event',
             sub: 'System Event Notification',
             note: 'The network talking to itself — a value cut-off has been reached.',
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:admi.004.001.02">
@@ -389,7 +389,7 @@ const SampleLibrary = (function () {
             family: 'admi', label: 'admi.002', kind: 'Message reject',
             sub: 'Message Reject',
             note: 'The network refusing a malformed message at the door, before any business logic.',
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:admi.002.001.01">
@@ -410,7 +410,7 @@ const SampleLibrary = (function () {
             family: 'sese', label: 'sese.023', kind: 'Settlement instruction',
             sub: 'Securities Settlement Transaction Instruction',
             note: "Bob's pension fund buys 500 UAE government bonds — the instruction that tells the custodian to receive them against payment.",
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:sese.023.001.11">
@@ -450,7 +450,7 @@ const SampleLibrary = (function () {
             family: 'semt', label: 'semt.002', kind: 'Custody statement',
             sub: 'Securities Balance Custody Report',
             note: "Month-end: the custodian reports what the pension fund actually holds — the camt.053 of the securities world.",
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:semt.002.001.11">
@@ -480,7 +480,7 @@ const SampleLibrary = (function () {
             family: 'tsin', label: 'tsin.001', kind: 'Invoice financing',
             sub: 'Invoice Financing Request',
             note: "Sweety's employer waits 60 days for a customer to pay a ₹42 lakh invoice — so it asks its bank to advance the cash against it today.",
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:tsin.001.001.01">
@@ -514,7 +514,7 @@ const SampleLibrary = (function () {
             family: 'caaa', label: 'caaa.001', kind: 'Card authorisation',
             sub: 'Acceptor Authorisation Request',
             note: 'Bob taps his card for coffee. Before the till beeps, this question races to the issuer: can he spend AED 18.50?',
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:caaa.001.001.13">
@@ -550,7 +550,7 @@ const SampleLibrary = (function () {
             family: 'fxtr', label: 'fxtr.014', kind: 'FX trade',
             sub: 'Foreign Exchange Trade Instruction',
             note: "Behind Bob's $400 sits a bigger machine: his bank sells USD for INR in the interbank market to cover the day's remittance flow.",
-            dest: ['viewer', 'validator'],
+            dest: ['viewer'],
             xml:
 `<?xml version="1.0" encoding="UTF-8"?>
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:fxtr.014.001.04">
@@ -618,7 +618,7 @@ const SampleLibrary = (function () {
         return d ? d.id : 'payments';
     }
 
-    const DEST_LABEL = { viewer: 'View', validator: 'Validate', transformer: 'Transform' };
+    const DEST_LABEL = { viewer: 'View', transformer: 'Transform' };
 
     // -------------------------------------------------------------------------
     // STATE — one selected tree node: whole catalogue, a domain, or one family.
@@ -652,13 +652,6 @@ const SampleLibrary = (function () {
                 ta.value = s.xml; XmlViewer.onInput();
                 // Label the reader with the sample's own description, not "Pasted message".
                 const meta = document.querySelector('.xv-src-sub');
-                if (meta) meta.textContent = s.label + ' — ' + s.sub;
-            }
-        } else if (dest === 'validator') {
-            const ta = document.getElementById('val-src');
-            if (ta && window.SchemaValidator) {
-                ta.value = s.xml; SchemaValidator.onInput();
-                const meta = document.querySelector('.val-src-sub');
                 if (meta) meta.textContent = s.label + ' — ' + s.sub;
             }
         } else if (dest === 'transformer') {
