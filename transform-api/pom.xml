@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>in.iso20022academy</groupId>
+    <artifactId>transform-api</artifactId>
+    <version>0.1.0</version>
+    <name>ISO 20022 Academy — Transform API</name>
+    <description>Spring Boot service that transforms between legacy SWIFT MT and ISO 20022 MX messages (MT103 &lt;-&gt; pacs.008), using Prowide Core for MT parsing/building.</description>
+
+    <properties>
+        <java.version>17</java.version>
+        <!-- Prowide Core: open source (Apache 2.0), FIN MT parser/builder.
+             Check https://central.sonatype.com/artifact/com.prowidesoftware/pw-swift-core for the current SRU. -->
+        <prowide.version>SRU2025-10.3.13</prowide.version>
+        <!-- Prowide 10.3.13 uses org.apache.commons.lang3.Strings, added in
+             commons-lang3 3.18.0. Spring Boot pins an older version, so bump it
+             here or Prowide throws NoClassDefFoundError at runtime. -->
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Prowide Core — MT message parsing & building (Apache 2.0). -->
+        <dependency>
+            <groupId>com.prowidesoftware</groupId>
+            <artifactId>pw-swift-core</artifactId>
+            <version>${prowide.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

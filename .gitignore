@@ -14,6 +14,15 @@ docs/ENGINE-SPEC.md
 /sitemap.xml
 /robots.txt
 
+# Playground sample manifest — regenerated from /samples/*.json by build-samples.js.
+# The /samples/*.json files themselves ARE source and stay tracked.
+/samples/manifest.json
+
+# Transform API (Java/Spring Boot) lives in this repo, but it does NOT run on
+# GitHub Pages — deploy it separately to a Java host (Cloud Run / Render) from
+# the /transform-api subfolder. Its own build output is ignored via
+# transform-api/.gitignore. The source is tracked here.
+
 # Internal planning docs — kept local, not published to the public site.
 /BACKLOG.md
 /LAUNCH-KIT-v2.md

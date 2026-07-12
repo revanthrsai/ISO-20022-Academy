@@ -49,6 +49,9 @@ jobs:
       - name: Generate SEO pages, sitemap, robots
         run: node scripts/build-seo.js
 
+      - name: Generate Playground sample manifest
+        run: node scripts/build-samples.js
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

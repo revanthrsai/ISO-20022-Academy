@@ -279,9 +279,9 @@ const Articles = (function () {
                 <div class="eyebrow" data-reveal="fade">The Library</div>
                 <h2 class="section-title" data-reveal="up">Read your way up.</h2>
                 <p class="section-description" data-reveal="up">
-                    Long-form articles, each starting with a problem — never a tag. Climb from how money
-                    physically moves (100) through the standard's architecture (200), into message-by-message
-                    deep dives (300), and out to the exceptions that break payments in the real world (400).
+                    Long-form articles that build a deep, structured understanding of payments and ISO&nbsp;20022 —
+                    from the fundamentals of how money moves, through the message families and the exceptions that
+                    break them, all the way to full end-to-end case studies.
                 </p>
             </div>
             ${progressNote()}
