@@ -27,6 +27,10 @@ const MsgTransformer = (function () {
     const MSG_ID = 'EBILAEAD-20260627-000400';
     const INSTR_ID = 'EBILAEAD-INSTR-0400';
 
+    // ── Phase 4 · the live transform engine (Spring Boot + Prowide, on Render).
+    // Swap to 'http://localhost:8080' to test against a local server.
+    const TRANSFORM_API = 'https://iso20022academy-transform-api.onrender.com';
+
     // The canonical payment — the meaning both formats agree on. Each key is the
     // single source of truth; both renderings (MT103 and pacs.008) read from here,
     // and every editable control on either side writes back here.
@@ -340,6 +344,7 @@ const MsgTransformer = (function () {
                 </div>
                 <span class="mxt-note">${note}</span>
                 <button class="mxt-reset" onclick="MsgTransformer.reset()">&#8635; Reset to Bob &rarr; Sweety</button>
+                <button class="mxt-engine-btn" id="mxt-engine-btn" onclick="MsgTransformer.runLiveEngine()">&#9889; Run through the live engine &rarr;</button>
             </div>
 
             <div class="mxt-grid">
@@ -351,6 +356,8 @@ const MsgTransformer = (function () {
             <div class="mxt-foot">
                 <span class="mxt-foot-k">12</span> business fields, one meaning &mdash; both formats stay in lock-step. Edit either side; the other follows.
             </div>
+
+            <div class="mxt-engine" id="mxt-engine-out" hidden></div>
         `;
     }
 
@@ -561,11 +568,112 @@ const MsgTransformer = (function () {
 
         @keyframes mxtFlow { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }
         @keyframes mxtPulse { 0% { background: var(--primary); } 100% { background: transparent; } }
+
+        /* Live engine (Phase 4) */
+        .mxt-engine-btn { margin-left: auto; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-pill); padding: 8px 16px; font: inherit; font-size: var(--fs-small); font-weight: 700; cursor: pointer; transition: background .15s, transform .15s; }
+        .mxt-engine-btn:hover { background: var(--primary-hover, var(--primary-deep, var(--primary))); }
+        .mxt-engine-btn:active { transform: scale(.97); }
+        .mxt-engine-btn:disabled { opacity: .55; cursor: default; }
+        .mxt-engine { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--surface); }
+        .mxt-engine.is-loading { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); }
+        .mxt-engine.is-ok { border-color: color-mix(in srgb, var(--success, #0B8A60) 45%, var(--border)); }
+        .mxt-engine.is-err { border-color: color-mix(in srgb, var(--danger, #C13543) 45%, var(--border)); }
+        .mxt-engine-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+        .mxt-engine.is-loading .mxt-engine-head, .mxt-engine.is-err .mxt-engine-head { border-bottom: none; }
+        .mxt-engine-badge { font-size: var(--fs-micro, 11px); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #fff; background: var(--primary); border-radius: var(--radius-pill); padding: 3px 10px; white-space: nowrap; }
+        .mxt-engine-badge.is-ok { background: var(--success, #0B8A60); }
+        .mxt-engine-badge.is-err { background: var(--danger, #C13543); }
+        .mxt-engine-status { flex: 1; min-width: 160px; font-size: var(--fs-small, 13px); color: var(--text-muted); }
+        .mxt-engine-copy, .mxt-engine-retry { background: none; border: 1px solid var(--border-hi, var(--border)); border-radius: var(--radius-pill); padding: 4px 12px; font: inherit; font-size: var(--fs-small, 13px); font-weight: 600; color: var(--text); cursor: pointer; }
+        .mxt-engine-copy:hover, .mxt-engine-retry:hover { border-color: var(--primary); color: var(--primary); }
+        .mxt-engine-body { margin: 0; padding: 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre; background: var(--bg-deep, var(--surface-alt)); }
         `;
         const style = document.createElement('style');
         style.id = 'mxt-styles';
         style.textContent = css;
         document.head.appendChild(style);
+    }
+
+    // -------------------------------------------------------------------------
+    // LIVE ENGINE (Phase 4) — send the current source message to the real
+    // Spring Boot + Prowide service and show its result. The instant client
+    // transform above is untouched; this is an explicit "run the real engine"
+    // action, with a warming state for cold starts and a graceful fallback.
+    // -------------------------------------------------------------------------
+    function getMtText() {
+        const d = state.valDate || '';
+        const ymd = d.length === 10 ? d.slice(2, 4) + d.slice(5, 7) + d.slice(8, 10) : '';
+        const amt = String(state.amount || '').replace('.', ',');
+        const chrgMt = state.chrg === 'SHAR' ? 'SHA' : (state.chrg || 'SHA');
+        const L = [];
+        L.push(':20:' + (state.ref || ''));
+        L.push(':23B:CRED');
+        L.push(':32A:' + ymd + (state.ccy || '') + amt);
+        L.push(':50K:' + (state.dbtrNm || ''));
+        if (state.dbtrAgt) L.push(':52A:' + state.dbtrAgt);
+        if (state.cdtrAgt) L.push(':57A:' + state.cdtrAgt);
+        L.push(':59:' + (state.cdtrNm || ''));
+        if (state.rmt) L.push(':70:' + state.rmt);
+        L.push(':71A:' + chrgMt);
+        return L.join('\n');
+    }
+
+    function engineError(out, msg) {
+        out.className = 'mxt-engine is-err';
+        out.innerHTML = '<div class="mxt-engine-head"><span class="mxt-engine-badge is-err">Live engine</span>'
+            + '<span class="mxt-engine-status">' + esc(msg) + '</span>'
+            + '<button class="mxt-engine-retry" onclick="MsgTransformer.runLiveEngine()">Retry</button></div>';
+    }
+
+    function runLiveEngine() {
+        const out = document.getElementById('mxt-engine-out');
+        const btn = document.getElementById('mxt-engine-btn');
+        if (!out) return;
+        const mt2mx = direction === 'mt2mx';
+        const source = mt2mx ? getMtText() : getXml();
+        const apiDir = mt2mx ? 'MT_TO_MX' : 'MX_TO_MT';
+        out.hidden = false;
+        out.className = 'mxt-engine is-loading';
+        out.innerHTML = '<div class="mxt-engine-head"><span class="mxt-engine-badge">Live engine</span>'
+            + '<span class="mxt-engine-status">Waking the engine&hellip; the first run can take ~30s.</span></div>';
+        if (btn) btn.disabled = true;
+
+        const url = TRANSFORM_API.replace(/\/+$/, '') + '/api/transform';
+        const ctrl = new AbortController();
+        const timer = setTimeout(function () { ctrl.abort(); }, 75000);
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source: source, direction: apiDir }),
+            signal: ctrl.signal
+        }).then(function (r) { return r.json(); }).then(function (j) {
+            clearTimeout(timer);
+            if (btn) btn.disabled = false;
+            if (!j || j.ok === false || !j.result) { engineError(out, (j && j.message) || 'The engine returned an error.'); return; }
+            out.className = 'mxt-engine is-ok';
+            out.innerHTML = '<div class="mxt-engine-head">'
+                + '<span class="mxt-engine-badge is-ok">Live engine &#10003;</span>'
+                + '<span class="mxt-engine-status">' + esc(j.sourceFormat || '') + ' &rarr; ' + esc(j.targetFormat || '')
+                + ' &middot; transformed by a live Java + Prowide server</span>'
+                + '<button class="mxt-engine-copy" onclick="MsgTransformer.copyEngine()">Copy</button></div>'
+                + '<pre class="mxt-engine-body" id="mxt-engine-pre">' + esc(j.result) + '</pre>';
+        }).catch(function (err) {
+            clearTimeout(timer);
+            if (btn) btn.disabled = false;
+            const msg = (err && err.name === 'AbortError')
+                ? 'The engine is waking up and took too long &mdash; give it a few seconds and hit Retry.'
+                : 'Couldn&rsquo;t reach the live engine (it may be asleep). The instant preview above still works.';
+            engineError(out, msg);
+        });
+    }
+
+    function copyEngine() {
+        const pre = document.getElementById('mxt-engine-pre');
+        if (!pre) return;
+        const txt = pre.textContent || '';
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt);
+        const b = document.querySelector('.mxt-engine-copy');
+        if (b) { const o = b.textContent; b.textContent = 'Copied ✓'; setTimeout(function () { b.textContent = o; }, 1500); }
     }
 
     // -------------------------------------------------------------------------
@@ -580,7 +688,7 @@ const MsgTransformer = (function () {
         render();
     }
 
-    return { init, edit, editFromMx, hover, setDir, setPlain, reset, loadModel, getXml, loadXml };
+    return { init, edit, editFromMx, hover, setDir, setPlain, reset, loadModel, getXml, loadXml, runLiveEngine, copyEngine };
 })();
 
 window.MsgTransformer = MsgTransformer;
