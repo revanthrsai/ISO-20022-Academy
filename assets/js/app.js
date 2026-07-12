@@ -544,7 +544,10 @@ function initScrubTimeline() {
     if (pin && !pin.querySelector('.scrub-chrono')) {
         const items = Array.prototype.map.call(entries, function (e) {
             const y = e.querySelector('.scrub-entry-year');
-            return { label: e.dataset.year || '', year: y ? y.textContent : '' };
+            // Strip a leading "circa" (c.) so the dial reads a clean year;
+            // the article body keeps the precise "c. 3200 BCE".
+            const yr = y ? y.textContent.trim().replace(/^c\.\s*/i, '') : '';
+            return { label: e.dataset.year || '', year: yr };
         });
         chrono = buildChronometer(pin, items);
     }
