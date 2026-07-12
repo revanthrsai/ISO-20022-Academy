@@ -3862,6 +3862,32 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
 .article-share:active { transform: scale(0.97); }
 .article-share.is-copied { border-color: var(--success, #0B8A60); color: var(--success, #0B8A60); }
 
+/* ---- History chapter illustration video (YouTube embed) ----------------- */
+.chapter-video {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin: 4px 0 30px;
+    border-radius: var(--radius-lg, 16px);
+    overflow: hidden;
+    background: #000;
+    box-shadow: var(--shadow-md);
+}
+.chapter-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.learn-card-watch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: var(--fw-semibold, 600);
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    border-radius: var(--radius-pill, 999px);
+    padding: 3px 9px;
+    margin-left: 6px;
+}
+
 /* ---- Premium reading: text is not selectable (deters casual copy) -------
    Form fields, editable areas and the Playground XML viewers stay usable. */
 body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; }

@@ -686,6 +686,7 @@ function initStatCounters() {
 const HISTORY_CHAPTERS = [
   {
     num: '01', slug: 'evolution-of-payments', status: 'ready', minutes: 7,
+    youtube: '', // paste a YouTube video ID here to show an illustration player atop this chapter
     title: 'The Evolution of Payments',
     hook: 'Hand cash to someone standing in front of you and the payment is finished before you let go. Send the same amount to someone you will never meet, on the other side of the world, and it still has to arrive — and you both have to know that it did. How?',
     summary: 'Money stopped being a thing you move and became information you describe. Coins, ledgers, the telegraph — five thousand years of pulling value and its proof apart, and why the description matters as much as the money.',
@@ -859,6 +860,7 @@ function historyChapterCardsHtml(){
     const arrow = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
     return HISTORY_CHAPTERS.map(function(ch){
         const ready = ch.status === 'ready';
+        const watch = ch.youtube ? '<span class="learn-card-watch">&#9654; Watch</span>' : '';
         const top = ready
             ? '<span class="learn-card-min">' + ch.minutes + ' min read</span>'
             : '<span class="learn-card-status">Coming soon</span>';
@@ -870,7 +872,7 @@ function historyChapterCardsHtml(){
             + '<div class="learn-card-top"><span class="learn-card-num">' + ch.num + '</span>' + top + '</div>'
             + '<h4 class="learn-card-title">' + ch.title + '</h4>'
             + '<p class="learn-card-summary">' + ch.summary + '</p>'
-            + '<div class="learn-card-foot"><div class="learn-tags"><span class="learn-tag">Chapter ' + ch.num + '</span></div>'
+            + '<div class="learn-card-foot"><div class="learn-tags"><span class="learn-tag">Chapter ' + ch.num + '</span>' + watch + '</div>'
             + (ready ? '<span class="learn-card-go" aria-hidden="true">' + arrow + '</span>' : '')
             + '</div></article>';
     }).join('');
@@ -915,6 +917,18 @@ function historyPagerHtml(index){
     return '<nav class="pager" aria-label="History chapters">' + side(prev, 'prev') + side(next, 'next') + '</nav>';
 }
 
+// A chapter can carry an illustration video. Set `youtube: '<videoId>'` on the
+// chapter in HISTORY_CHAPTERS and a privacy-friendly player appears at the top.
+function historyVideoHtml(ch){
+    if (!ch.youtube) return '';
+    const id = String(ch.youtube).trim();
+    return '<div class="chapter-video">'
+        + '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '" title="' + ch.title + ' — illustrated"'
+        + ' loading="lazy" frameborder="0"'
+        + ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"'
+        + ' referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>';
+}
+
 function historyChapterHtml(ch, index){
     const back = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>';
     return ''
@@ -927,6 +941,7 @@ function historyChapterHtml(ch, index){
         +       '<h1 class="article-title">' + ch.title + '</h1>'
         +       '<p class="article-standfirst">' + ch.hook + '</p>'
         +     '</header>'
+        +     historyVideoHtml(ch)
         +     '<div class="md-body">' + ch.body + '</div>'
         +     '<div class="article-earned"><div class="article-earned-badge">You can now</div><p>' + ch.earned + '</p></div>'
         +     historyPagerHtml(index)
