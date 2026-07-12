@@ -1,0 +1,12 @@
+{
+  "code": "camt.053",
+  "family": "camt",
+  "label": "camt.053",
+  "kind": "Statement",
+  "sub": "Bank-to-Customer Statement",
+  "note": "End-of-day: the same credit, now a line on Sweety's statement.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:camt.053.001.08\">\n  <BkToCstmrStmt>\n    <GrpHdr>\n      <MsgId>HDFCINBB-STMT-20260627</MsgId>\n      <CreDtTm>2026-06-27T23:59:00+05:30</CreDtTm>\n    </GrpHdr>\n    <Stmt>\n      <Id>STMT-20260627-IN52</Id>\n      <Acct>\n        <Id><IBAN>IN52HDFC0000123456789012</IBAN></Id>\n        <Ownr><Nm>Sweety Rao</Nm></Ownr>\n      </Acct>\n      <Bal>\n        <Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp>\n        <Amt Ccy=\"USD\">400.00</Amt>\n        <CdtDbtInd>CRDT</CdtDbtInd>\n        <Dt><Dt>2026-06-27</Dt></Dt>\n      </Bal>\n      <Ntry>\n        <Amt Ccy=\"USD\">400.00</Amt>\n        <CdtDbtInd>CRDT</CdtDbtInd>\n        <Sts><Cd>BOOK</Cd></Sts>\n        <BookgDt><Dt>2026-06-27</Dt></BookgDt>\n        <NtryDtls><TxDtls>\n          <Refs><EndToEndId>BOB-INV0042</EndToEndId><UETR>eb6305c9-1f7c-4a9b-9b1e-2c2f4e7a91d4</UETR></Refs>\n        </TxDtls></NtryDtls>\n      </Ntry>\n    </Stmt>\n  </BkToCstmrStmt>\n</Document>"
+}

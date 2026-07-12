@@ -1,0 +1,12 @@
+{
+  "code": "camt.056",
+  "family": "camt",
+  "label": "camt.056",
+  "kind": "Cancellation",
+  "sub": "FI-to-FI Payment Cancellation Request",
+  "note": "Second thoughts — a request to recall the transfer before it is spent.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:camt.056.001.08\">\n  <FIToFIPmtCxlReq>\n    <Assgnmt>\n      <Id>EBILAEAD-CXL-0400</Id>\n      <Assgnr><Agt><FinInstnId><BICFI>EBILAEAD</BICFI></FinInstnId></Agt></Assgnr>\n      <Assgne><Agt><FinInstnId><BICFI>HDFCINBB</BICFI></FinInstnId></Agt></Assgne>\n      <CreDtTm>2026-06-27T16:40:00+04:00</CreDtTm>\n    </Assgnmt>\n    <Undrlyg>\n      <TxInf>\n        <CxlId>EBILAEAD-CXL-TX-0400</CxlId>\n        <OrgnlEndToEndId>BOB-INV0042</OrgnlEndToEndId>\n        <UETR>eb6305c9-1f7c-4a9b-9b1e-2c2f4e7a91d4</UETR>\n        <OrgnlIntrBkSttlmAmt Ccy=\"USD\">400.00</OrgnlIntrBkSttlmAmt>\n        <CxlRsnInf><Rsn><Cd>DUPL</Cd></Rsn></CxlRsnInf>\n      </TxInf>\n    </Undrlyg>\n  </FIToFIPmtCxlReq>\n</Document>"
+}

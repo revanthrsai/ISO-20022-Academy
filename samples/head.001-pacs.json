@@ -1,0 +1,12 @@
+{
+  "code": "head.001-pacs",
+  "family": "head",
+  "label": "head.001",
+  "kind": "BAH · over pacs.008",
+  "sub": "Business Application Header",
+  "note": "The envelope wrapped around the pacs.008 — who, to whom, which message.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<AppHdr xmlns=\"urn:iso:std:iso:20022:tech:xsd:head.001.001.02\">\n  <Fr><FIId><FinInstnId><BICFI>EBILAEAD</BICFI></FinInstnId></FIId></Fr>\n  <To><FIId><FinInstnId><BICFI>HDFCINBB</BICFI></FinInstnId></FIId></To>\n  <BizMsgIdr>EBILAEAD-20260627-000400</BizMsgIdr>\n  <MsgDefIdr>pacs.008.001.08</MsgDefIdr>\n  <BizSvc>swift.cbprplus.02</BizSvc>\n  <CreDt>2026-06-27T09:30:00+04:00</CreDt>\n  <Prty>NORM</Prty>\n</AppHdr>"
+}

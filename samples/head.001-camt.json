@@ -1,0 +1,12 @@
+{
+  "code": "head.001-camt",
+  "family": "head",
+  "label": "head.001",
+  "kind": "BAH · over camt.054",
+  "sub": "Business Application Header",
+  "note": "The same envelope, this time around the notification flowing the other way.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<AppHdr xmlns=\"urn:iso:std:iso:20022:tech:xsd:head.001.001.02\">\n  <Fr><FIId><FinInstnId><BICFI>HDFCINBB</BICFI></FinInstnId></FIId></Fr>\n  <To><FIId><FinInstnId><BICFI>HDFCINBB</BICFI></FinInstnId></FIId></To>\n  <BizMsgIdr>HDFCINBB-NTF-20260627-77</BizMsgIdr>\n  <MsgDefIdr>camt.054.001.08</MsgDefIdr>\n  <BizSvc>swift.cbprplus.02</BizSvc>\n  <CreDt>2026-06-27T15:02:11+05:30</CreDt>\n  <Prty>NORM</Prty>\n</AppHdr>"
+}

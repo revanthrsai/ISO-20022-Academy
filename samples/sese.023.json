@@ -1,0 +1,12 @@
+{
+  "code": "sese.023",
+  "family": "sese",
+  "label": "sese.023",
+  "kind": "Settlement instruction",
+  "sub": "Securities Settlement Transaction Instruction",
+  "note": "Bob's pension fund buys 500 UAE government bonds — the instruction that tells the custodian to receive them against payment.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:sese.023.001.11\">\n  <SctiesSttlmTxInstr>\n    <TxId>PFND-SETT-20260627-081</TxId>\n    <SttlmTpAndAddtlParams>\n      <SctiesMvmntTp>RECE</SctiesMvmntTp>\n      <Pmt>APMT</Pmt>\n    </SttlmTpAndAddtlParams>\n    <TradDtls>\n      <TradDt><Dt><Dt>2026-06-25</Dt></Dt></TradDt>\n      <SttlmDt><Dt><Dt>2026-06-27</Dt></Dt></SttlmDt>\n    </TradDtls>\n    <FinInstrmId>\n      <ISIN>AEG000000AB12</ISIN>\n      <Desc>UAE Government Bond 3.2% 2031</Desc>\n    </FinInstrmId>\n    <QtyAndAcctDtls>\n      <SttlmQty><Qty><Unit>500</Unit></Qty></SttlmQty>\n      <SfkpgAcct><Id>SAFE-778341</Id></SfkpgAcct>\n    </QtyAndAcctDtls>\n    <SttlmParams>\n      <SctiesTxTp><Cd>TRAD</Cd></SctiesTxTp>\n    </SttlmParams>\n    <RcvgSttlmPties>\n      <Dpstry><Id><AnyBIC>CSDAAEA0XXX</AnyBIC></Id></Dpstry>\n      <Pty1><Id><AnyBIC>EMIRAEADXXX</AnyBIC></Id></Pty1>\n    </RcvgSttlmPties>\n    <SttlmAmt>\n      <Amt Ccy=\"AED\">498750.00</Amt>\n      <CdtDbtInd>DBIT</CdtDbtInd>\n    </SttlmAmt>\n  </SctiesSttlmTxInstr>\n</Document>"
+}

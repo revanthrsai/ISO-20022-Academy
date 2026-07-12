@@ -1,0 +1,12 @@
+{
+  "code": "tsin.001",
+  "family": "tsin",
+  "label": "tsin.001",
+  "kind": "Invoice financing",
+  "sub": "Invoice Financing Request",
+  "note": "Sweety's employer waits 60 days for a customer to pay a ₹42 lakh invoice — so it asks its bank to advance the cash against it today.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:tsin.001.001.01\">\n  <InvcFincgReq>\n    <ReqGrpInf>\n      <GrpId>BNGL-FIN-20260627-003</GrpId>\n      <CreDtTm>2026-06-27T11:05:00+05:30</CreDtTm>\n      <NbOfInvcReqs>1</NbOfInvcReqs>\n      <TtlBlkInvcAmt Ccy=\"INR\">4200000.00</TtlBlkInvcAmt>\n      <FincgAgrmtList>\n        <Vndr><Nm>Karnataka Textile Works Pvt Ltd</Nm></Vndr>\n        <FincgPty><Nm>Bangalore Mercantile Bank</Nm></FincgPty>\n      </FincgAgrmtList>\n    </ReqGrpInf>\n    <InvcReqInf>\n      <InvcGnlInf>\n        <InvcNb>KTW-INV-2026-1188</InvcNb>\n        <InvcDt>2026-06-20</InvcDt>\n      </InvcGnlInf>\n      <InvcTtlAmt Ccy=\"INR\">4200000.00</InvcTtlAmt>\n      <InvcDueDt>2026-08-19</InvcDueDt>\n      <ReqdFincgAmt Ccy=\"INR\">3780000.00</ReqdFincgAmt>\n      <Buyr><Nm>Gulf Retail Group LLC</Nm></Buyr>\n    </InvcReqInf>\n  </InvcFincgReq>\n</Document>"
+}

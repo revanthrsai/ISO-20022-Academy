@@ -1,0 +1,12 @@
+{
+  "code": "camt.054",
+  "family": "camt",
+  "label": "camt.054",
+  "kind": "Notification",
+  "sub": "Bank-to-Customer Debit/Credit Notification",
+  "note": "Sweety's bank pings her the moment the $400 lands.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:camt.054.001.08\">\n  <BkToCstmrDbtCdtNtfctn>\n    <GrpHdr>\n      <MsgId>HDFCINBB-NTF-20260627-77</MsgId>\n      <CreDtTm>2026-06-27T15:02:11+05:30</CreDtTm>\n    </GrpHdr>\n    <Ntfctn>\n      <Id>NTF-77-0042</Id>\n      <Acct>\n        <Id><IBAN>IN52HDFC0000123456789012</IBAN></Id>\n        <Ownr><Nm>Sweety Rao</Nm></Ownr>\n      </Acct>\n      <Ntry>\n        <Amt Ccy=\"USD\">400.00</Amt>\n        <CdtDbtInd>CRDT</CdtDbtInd>\n        <Sts><Cd>BOOK</Cd></Sts>\n        <BookgDt><DtTm>2026-06-27T15:02:00+05:30</DtTm></BookgDt>\n        <ValDt><Dt>2026-06-27</Dt></ValDt>\n        <NtryDtls><TxDtls>\n          <Refs><EndToEndId>BOB-INV0042</EndToEndId><UETR>eb6305c9-1f7c-4a9b-9b1e-2c2f4e7a91d4</UETR></Refs>\n          <RmtInf><Ustrd>Invoice 0042 - June freelance</Ustrd></RmtInf>\n        </TxDtls></NtryDtls>\n      </Ntry>\n    </Ntfctn>\n  </BkToCstmrDbtCdtNtfctn>\n</Document>"
+}

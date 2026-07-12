@@ -1,0 +1,12 @@
+{
+  "code": "semt.002",
+  "family": "semt",
+  "label": "semt.002",
+  "kind": "Custody statement",
+  "sub": "Securities Balance Custody Report",
+  "note": "Month-end: the custodian reports what the pension fund actually holds — the camt.053 of the securities world.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:semt.002.001.11\">\n  <SctiesBalCtdyRpt>\n    <Pgntn><PgNb>1</PgNb><LastPgInd>true</LastPgInd></Pgntn>\n    <StmtGnlDtls>\n      <RptNb><Shrt>047</Shrt></RptNb>\n      <StmtDtTm><Dt>2026-06-30</Dt></StmtDtTm>\n      <Frqcy><Cd>MNTH</Cd></Frqcy>\n      <UpdTp><Cd>COMP</Cd></UpdTp>\n    </StmtGnlDtls>\n    <SfkpgAcct><Id>SAFE-778341</Id></SfkpgAcct>\n    <BalForAcct>\n      <FinInstrmId>\n        <ISIN>AEG000000AB12</ISIN>\n        <Desc>UAE Government Bond 3.2% 2031</Desc>\n      </FinInstrmId>\n      <AggtBal><Qty><Qty><Qty><Unit>500</Unit></Qty></Qty></Qty></AggtBal>\n      <AcctBaseCcyAmts><HldgVal><Amt Ccy=\"AED\">501200.00</Amt></HldgVal></AcctBaseCcyAmts>\n    </BalForAcct>\n  </SctiesBalCtdyRpt>\n</Document>"
+}

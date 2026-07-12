@@ -1,0 +1,12 @@
+{
+  "code": "caaa.001",
+  "family": "caaa",
+  "label": "caaa.001",
+  "kind": "Card authorisation",
+  "sub": "Acceptor Authorisation Request",
+  "note": "Bob taps his card for coffee. Before the till beeps, this question races to the issuer: can he spend AED 18.50?",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:caaa.001.001.13\">\n  <AccptrAuthstnReq>\n    <Hdr>\n      <MsgFctn>AUTQ</MsgFctn>\n      <PrtcolVrsn>13.0</PrtcolVrsn>\n      <XchgId>100482</XchgId>\n      <CreDtTm>2026-06-27T08:12:44+04:00</CreDtTm>\n      <InitgPty><Id>POS-DXB-00417</Id></InitgPty>\n    </Hdr>\n    <AuthstnReq>\n      <Envt>\n        <Mrchnt><Id><Id>MRCH-772100</Id></Id><CmonNm>Marina Beans Coffee</CmonNm></Mrchnt>\n        <POI><Id><Id>TERM-0031</Id></Id></POI>\n        <Card><PlainCardData><PAN>4539578763621486</PAN><XpryDt>2027-09</XpryDt></PlainCardData></Card>\n      </Envt>\n      <Tx>\n        <TxId><TxDtTm>2026-06-27T08:12:44+04:00</TxDtTm><TxRef>POS-100482</TxRef></TxId>\n        <TxDtls>\n          <Ccy>AED</Ccy>\n          <TtlAmt>18.50</TtlAmt>\n          <OnLineRsn>ICCF</OnLineRsn>\n        </TxDtls>\n      </Tx>\n    </AuthstnReq>\n  </AccptrAuthstnReq>\n</Document>"
+}

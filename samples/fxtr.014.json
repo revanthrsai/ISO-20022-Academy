@@ -1,0 +1,12 @@
+{
+  "code": "fxtr.014",
+  "family": "fxtr",
+  "label": "fxtr.014",
+  "kind": "FX trade",
+  "sub": "Foreign Exchange Trade Instruction",
+  "note": "Behind Bob's $400 sits a bigger machine: his bank sells USD for INR in the interbank market to cover the day's remittance flow.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:fxtr.014.001.04\">\n  <FXTradInstr>\n    <TradInf>\n      <TradDt>2026-06-27</TradDt>\n      <OrgtrRef>EMIR-FX-20260627-115</OrgtrRef>\n    </TradInf>\n    <TradgSdId>\n      <SubmitgPty><AnyBIC><AnyBIC>EMIRAEADXXX</AnyBIC></AnyBIC></SubmitgPty>\n    </TradgSdId>\n    <CtrPtySdId>\n      <SubmitgPty><AnyBIC><AnyBIC>HDFCINBBXXX</AnyBIC></AnyBIC></SubmitgPty>\n    </CtrPtySdId>\n    <TradAmts>\n      <TradgSdBuyAmt Ccy=\"INR\">8305000.00</TradgSdBuyAmt>\n      <TradgSdSellAmt Ccy=\"USD\">100000.00</TradgSdSellAmt>\n      <SttlmDt>2026-06-29</SttlmDt>\n    </TradAmts>\n    <AgrdRate>\n      <XchgRate>83.05</XchgRate>\n      <UnitCcy>USD</UnitCcy>\n      <QtdCcy>INR</QtdCcy>\n    </AgrdRate>\n  </FXTradInstr>\n</Document>"
+}

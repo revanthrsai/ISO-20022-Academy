@@ -1,0 +1,12 @@
+{
+  "code": "admi.004",
+  "family": "admi",
+  "label": "admi.004",
+  "kind": "System event",
+  "sub": "System Event Notification",
+  "note": "The network talking to itself — a value cut-off has been reached.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:admi.004.001.02\">\n  <SysEvtNtfctn>\n    <EvtInf>\n      <EvtCd>CUSC</EvtCd>\n      <EvtParam>2026-06-27</EvtParam>\n      <EvtParam>17:00:00+01:00</EvtParam>\n      <EvtDesc>Same-day value cut-off reached; later items value tomorrow</EvtDesc>\n      <EvtTm>2026-06-27T17:00:00+01:00</EvtTm>\n    </EvtInf>\n  </SysEvtNtfctn>\n</Document>"
+}

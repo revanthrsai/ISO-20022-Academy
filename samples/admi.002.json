@@ -1,0 +1,12 @@
+{
+  "code": "admi.002",
+  "family": "admi",
+  "label": "admi.002",
+  "kind": "Message reject",
+  "sub": "Message Reject",
+  "note": "The network refusing a malformed message at the door, before any business logic.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:admi.002.001.01\">\n  <Admi.002.001.01>\n    <RltdRef><Ref>EBILAEAD-20260627-000400</Ref></RltdRef>\n    <Rsn>\n      <RjctgPtyRsn>X09</RjctgPtyRsn>\n      <RjctnDtTm>2026-06-27T09:30:05+04:00</RjctnDtTm>\n      <ErrLctn>/Document/FIToFICstmrCdtTrf/CdtTrfTxInf/IntrBkSttlmAmt</ErrLctn>\n      <AddtlData>Amount currency attribute missing</AddtlData>\n    </Rsn>\n  </Admi.002.001.01>\n</Document>"
+}

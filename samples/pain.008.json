@@ -1,0 +1,12 @@
+{
+  "code": "pain.008",
+  "family": "pain",
+  "label": "pain.008",
+  "kind": "Direct debit",
+  "sub": "Customer Direct Debit Initiation",
+  "note": "The mirror image — a biller pulling funds instead of a payer pushing them.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pain.008.001.08\">\n  <CstmrDrctDbtInitn>\n    <GrpHdr>\n      <MsgId>UTIL-DD-20260627-0007</MsgId>\n      <CreDtTm>2026-06-27T06:00:00+04:00</CreDtTm>\n      <NbOfTxs>1</NbOfTxs>\n      <CtrlSum>120.00</CtrlSum>\n      <InitgPty><Nm>Dubai Electricity Co</Nm></InitgPty>\n    </GrpHdr>\n    <PmtInf>\n      <PmtInfId>UTIL-PMT-0007</PmtInfId>\n      <PmtMtd>DD</PmtMtd>\n      <ReqdColltnDt>2026-06-30</ReqdColltnDt>\n      <Cdtr><Nm>Dubai Electricity Co</Nm></Cdtr>\n      <CdtrAcct><Id><IBAN>AE980331000000000099887</IBAN></Id></CdtrAcct>\n      <CdtrAgt><FinInstnId><BICFI>EBILAEAD</BICFI></FinInstnId></CdtrAgt>\n      <DrctDbtTxInf>\n        <PmtId><EndToEndId>UTIL-JUN-0007</EndToEndId></PmtId>\n        <InstdAmt Ccy=\"AED\">120.00</InstdAmt>\n        <DbtrAgt><FinInstnId><BICFI>EBILAEAD</BICFI></FinInstnId></DbtrAgt>\n        <Dbtr><Nm>Bob Marsh</Nm></Dbtr>\n        <DbtrAcct><Id><IBAN>AE070331234567890123456</IBAN></Id></DbtrAcct>\n        <RmtInf><Ustrd>Electricity - June</Ustrd></RmtInf>\n      </DrctDbtTxInf>\n    </PmtInf>\n  </CstmrDrctDbtInitn>\n</Document>"
+}

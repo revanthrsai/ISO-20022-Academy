@@ -1,0 +1,12 @@
+{
+  "code": "pain.002",
+  "family": "pain",
+  "label": "pain.002",
+  "kind": "Status",
+  "sub": "Customer Payment Status Report",
+  "note": "Bob's bank answers his instruction: accepted, on its way.",
+  "dest": [
+    "viewer"
+  ],
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pain.002.001.10\">\n  <CstmrPmtStsRpt>\n    <GrpHdr>\n      <MsgId>EBILAEAD-STS-20260627-01</MsgId>\n      <CreDtTm>2026-06-27T09:29:02+04:00</CreDtTm>\n      <InitgPty><Nm>Emirates Islamic Bank</Nm></InitgPty>\n    </GrpHdr>\n    <OrgnlGrpInfAndSts>\n      <OrgnlMsgId>BOB-MSG-20260627-0001</OrgnlMsgId>\n      <OrgnlMsgNmId>pain.001.001.09</OrgnlMsgNmId>\n      <GrpSts>ACCP</GrpSts>\n    </OrgnlGrpInfAndSts>\n    <OrgnlPmtInfAndSts>\n      <OrgnlPmtInfId>BOB-PMT-0042</OrgnlPmtInfId>\n      <TxInfAndSts>\n        <OrgnlEndToEndId>BOB-INV0042</OrgnlEndToEndId>\n        <UETR>eb6305c9-1f7c-4a9b-9b1e-2c2f4e7a91d4</UETR>\n        <TxSts>ACCP</TxSts>\n        <StsRsnInf><Rsn><Cd>G000</Cd></Rsn></StsRsnInf>\n      </TxInfAndSts>\n    </OrgnlPmtInfAndSts>\n  </CstmrPmtStsRpt>\n</Document>"
+}
