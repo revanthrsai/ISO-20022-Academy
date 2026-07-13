@@ -185,6 +185,52 @@ const Articles = (function () {
         });
     }
 
+    // ---- {{think}} … {{reveal}} … {{/think}} — Socratic derive-it-first ---
+    // A challenge the reader reasons through before the reasoning unlocks. Both
+    // halves are full markdown (rendered here, then passed through marked as an
+    // opaque block). This is the spine of the Fundamentals hub.
+    function expandThink(body) {
+        return body.replace(
+            /\{\{think\}\}\s*\n([\s\S]*?)\n\s*\{\{reveal\}\}\s*\n([\s\S]*?)\n\s*\{\{\/think\}\}/g,
+            (full, prompt, reveal) => {
+                const p = toHtml(expandEmbeds(prompt.trim()));
+                const r = toHtml(expandEmbeds(reveal.trim()));
+                return '\n\n<div class="md-think">'
+                    + '<div class="md-think-head"><span class="md-think-badge">Your turn</span>'
+                    + '<span class="md-think-hint">reason it out before you open it</span></div>'
+                    + '<div class="md-think-prompt">' + p + '</div>'
+                    + '<button type="button" class="md-think-btn" onclick="revealAnswer(this)">'
+                    + 'Reveal the reasoning'
+                    + '<span class="md-think-caret" aria-hidden="true">&darr;</span></button>'
+                    + '<div class="md-think-reveal" hidden>' + r + '</div>'
+                    + '</div>\n\n';
+            });
+    }
+
+    // ---- {{aside:kind|Title}} … {{/aside}} — reference-grade hub callouts --
+    // kind ∈ model | chair | breaks | map | ref. Inner is full markdown.
+    const ASIDE_IC = {
+        model:  '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>',
+        chair:  '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 8 9 12 5 16"/><line x1="12" y1="16" x2="19" y2="16"/></svg>',
+        breaks: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 20h19L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><line x1="12" y1="17" x2="12" y2="17.1"/></svg>',
+        map:    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="17" r="2"/><path d="M8 7h6a3 3 0 0 1 3 3v5"/></svg>',
+        ref:    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>'
+    };
+    function expandAsides(body) {
+        return body.replace(
+            /\{\{aside:([a-z]+)\|([^}\n]*)\}\}\s*\n([\s\S]*?)\n\s*\{\{\/aside\}\}/g,
+            (full, kind, title, inner) => {
+                const ic = ASIDE_IC[kind] || '';
+                const t = esc((title || '').trim());
+                const bodyHtml = toHtml(expandEmbeds(inner.trim()));
+                return '\n\n<div class="md-aside is-' + esc(kind) + '">'
+                    + '<div class="md-aside-head"><span class="md-aside-ic" aria-hidden="true">' + ic + '</span>'
+                    + '<span class="md-aside-title">' + t + '</span></div>'
+                    + '<div class="md-aside-body">' + bodyHtml + '</div>'
+                    + '</div>\n\n';
+            });
+    }
+
     // ---- marked.js (with a tiny offline fallback) -------------------------
     function toHtml(md) {
         if (window.marked) {
@@ -234,7 +280,10 @@ const Articles = (function () {
         if (!res.ok) throw new Error('Could not load ' + entry.file + ' (' + res.status + ')');
         const raw = await res.text();
         const { meta, body } = splitFrontmatter(raw);
-        const html = toHtml(expandChecks(expandFlows(expandEmbeds(body)), id));
+        // Socratic + hub blocks first (they render their own inner markdown),
+        // then the inline/flow/check tokens, then marked for the rest.
+        const pre = expandAsides(expandThink(body));
+        const html = toHtml(expandChecks(expandFlows(expandEmbeds(pre)), id));
         cache[id] = { entry, meta, html };
         return cache[id];
     }
@@ -540,6 +589,16 @@ function shareArticle(id, btn) {
     } else {
         copy();
     }
+}
+
+// ---- Socratic reveal (Fundamentals hub) -----------------------------------
+function revealAnswer(btn) {
+    const card = btn.closest('.md-think');
+    if (!card) return;
+    const rev = card.querySelector('.md-think-reveal');
+    if (rev) rev.hidden = false;
+    card.classList.add('is-open');
+    btn.setAttribute('hidden', '');
 }
 
 // ---- Knowledge check + learned toggle handlers (Session 7.5) --------------

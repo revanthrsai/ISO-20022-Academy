@@ -4228,6 +4228,64 @@ input, textarea, select, [contenteditable="true"], .xml-readonly {
    badge on Library cards, and the Library progress note. Token-driven so
    both themes work untouched.
    ========================================================================== */
+/* ── Socratic "think → reveal" card (Fundamentals hub) ─────────────────────── */
+.md-think {
+    margin: var(--space-xl) 0;
+    padding: var(--space-lg);
+    background: var(--glass-tint);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: var(--radius-md);
+}
+.md-think-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: var(--space-sm); flex-wrap: wrap; }
+.md-think-badge {
+    font-family: var(--font-mono); font-size: var(--fs-eyebrow); letter-spacing: var(--ls-eyebrow);
+    text-transform: uppercase; color: #fff; background: var(--primary);
+    border-radius: var(--radius-pill); padding: 3px 10px;
+}
+.md-think-hint { font-size: var(--fs-small); color: var(--text-faint); font-style: italic; }
+.md-think-prompt { color: var(--text); }
+.md-think-prompt > :first-child { margin-top: 0; }
+.md-think-prompt > :last-child { margin-bottom: 0; }
+.md-think-btn {
+    margin-top: var(--space-md); display: inline-flex; align-items: center; gap: 8px;
+    font: inherit; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-small);
+    cursor: pointer; color: var(--primary-deep); background: var(--surface);
+    border: 1px solid var(--primary); border-radius: var(--radius-pill); padding: 8px 16px;
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.md-think-btn:hover { background: var(--primary); color: #fff; }
+.md-think-caret { font-size: 12px; }
+.md-think-reveal {
+    margin-top: var(--space-md); padding-top: var(--space-md);
+    border-top: 1px dashed var(--border-hi); animation: mdReveal 0.3s var(--ease-out);
+}
+.md-think-reveal > :first-child { margin-top: 0; }
+.md-think-reveal > :last-child { margin-bottom: 0; }
+@keyframes mdReveal { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+/* ── Reference-grade hub callouts (model / chair / breaks / map / ref) ─────── */
+.md-aside {
+    --accent: var(--primary);
+    margin: var(--space-xl) 0; padding: var(--space-md) var(--space-lg);
+    background: var(--surface-alt); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent); border-radius: var(--radius-md);
+}
+.md-aside-head { display: flex; align-items: center; gap: 8px; margin-bottom: var(--space-sm); }
+.md-aside-ic { display: inline-flex; color: var(--accent); }
+.md-aside-title {
+    font-family: var(--font-mono); font-size: var(--fs-eyebrow); letter-spacing: var(--ls-eyebrow);
+    text-transform: uppercase; color: var(--accent); font-weight: 700;
+}
+.md-aside-body { color: var(--text); }
+.md-aside-body > :first-child { margin-top: 0; }
+.md-aside-body > :last-child { margin-bottom: 0; }
+.md-aside.is-model  { --accent: var(--primary);     background: var(--glass-tint); }
+.md-aside.is-chair  { --accent: var(--text);         background: var(--surface-alt); }
+.md-aside.is-breaks { --accent: var(--danger);       background: color-mix(in srgb, var(--danger) 7%, var(--surface)); }
+.md-aside.is-map    { --accent: var(--text-muted);   background: var(--surface-alt); }
+.md-aside.is-ref    { --accent: var(--primary-deep); background: var(--bg-deep); border-color: var(--border-hi); }
+
 .kc-card {
     margin: var(--space-xl) 0;
     padding: var(--space-lg);
