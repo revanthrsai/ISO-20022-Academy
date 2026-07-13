@@ -246,7 +246,8 @@ function ensureTransformDrawer() {
         + '<span class="pg2-drawer-title">Live transform</span>'
         + '<span class="pg2-drawer-sub">Java&nbsp;+&nbsp;Prowide engine</span>'
         + '</div>'
-        + '<button class="pg2-drawer-x" type="button" aria-label="Close">&times;</button>'
+        + '<span class="pg2-drawer-esc">Esc</span>'
+        + '<button class="pg2-drawer-x" type="button" aria-label="Close (Esc)">&times;</button>'
         + '</div>'
         + '<div class="pg2-drawer-body" id="pg2-drawer-body"></div>';
 

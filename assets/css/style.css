@@ -4379,12 +4379,12 @@ input, textarea, select, [contenteditable="true"], .xml-readonly {
 
 /* SLIDE-OVER — the live transform panel */
 .pg2-scrim {
-    position: fixed; inset: 0; z-index: 60; background: rgba(10, 20, 15, 0.32);
+    position: fixed; inset: 0; z-index: 4000; background: rgba(10, 20, 15, 0.32);
     opacity: 0; transition: opacity var(--dur, 0.28s) var(--ease-out); backdrop-filter: blur(2px);
 }
 .pg2-scrim.is-open { opacity: 1; }
 .pg2-drawer {
-    position: fixed; top: 0; right: 0; z-index: 61; height: 100vh; max-height: 100vh;
+    position: fixed; top: 0; right: 0; z-index: 4001; height: 100vh; max-height: 100vh;
     width: min(640px, 96vw); display: flex; flex-direction: column;
     background: var(--surface); border-left: 1px solid var(--border);
     box-shadow: -18px 0 48px rgba(10, 20, 15, 0.16);
@@ -4398,8 +4398,13 @@ input, textarea, select, [contenteditable="true"], .xml-readonly {
 .pg2-drawer-t { display: flex; flex-direction: column; gap: 2px; }
 .pg2-drawer-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--text); }
 .pg2-drawer-sub { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); letter-spacing: 0.02em; }
+.pg2-drawer-esc {
+    margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em;
+    color: var(--text-faint); border: 1px solid var(--border); border-radius: var(--radius-xs);
+    padding: 2px 7px; align-self: center;
+}
 .pg2-drawer-x {
-    margin-left: auto; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
     background: transparent; border: 1px solid var(--border); border-radius: var(--radius-pill);
     color: var(--text-muted); font-size: 18px; line-height: 1; cursor: pointer;
     transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
