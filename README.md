@@ -14,7 +14,7 @@ It is deliberately not the largest financial knowledge base. It is meant to be t
 
 ## ✨ Highlights
 
-- **A live MT ⇄ MX transformation engine.** Paste an `MT103` and a real backend converts it to `pacs.008` (and back) — parsed with **Prowide Core** on a **Spring Boot** service, deployed and monitored. Not a client-side toy; an actual API.
+- **A live MT ⇄ MX transformation engine.** Pick any of nine payment & cash-management messages and a real backend converts it to its SWIFT MT equivalent — `pacs.008 → MT103`, `pain.001 → MT101`, `camt.053 → MT940`, and more — parsed with **Prowide Core** on a **Spring Boot** service, deployed and monitored. Not a client-side toy; an actual API.
 - **44 long-form lessons** that always open with a human problem and only reach XML at the very end — from "what is money" to `camt.110/111`, the new investigations model, and the November 2026 structured-address deadline.
 - **An interactive Playground** — browse the ISO 20022 catalogue as cards, open any message in a collapsible reader, and transform it two ways (instant in-browser, or through the live engine).
 - **A live compliance calendar** counting down to the real 2026/2027 migration deadlines, and a **chronometer** timeline that sweeps across 5,000 years of payments history as you scroll.
@@ -54,9 +54,22 @@ The **frontend is static** — GitHub Pages can't run code, so the site stays fa
 
 The headline feature, and the reason there's a backend at all.
 
-- **What it does:** converts a legacy SWIFT **MT103** (the payment message that moved the world's money for a generation) into an **ISO 20022 `pacs.008`**, and back the other way.
-- **How:** MT parsing uses [**Prowide Core**](https://www.prowidesoftware.com/development-tools/core) (Apache 2.0) — the genuinely hard part. The field mapping is coded explicitly and auditably, so no commercial translator is required.
-- **Where it lives:** [`/transform-api`](./transform-api) — a Spring Boot service with a clean REST surface.
+- **What it does:** detects the ISO 20022 message type and converts it to its legacy SWIFT MT equivalent. Nine payment & cash-management messages are covered today:
+
+  | ISO 20022 | → | SWIFT MT |
+  |---|---|---|
+  | `pacs.008` FI-to-FI credit transfer | → | `MT103` |
+  | `pacs.004` payment return | → | `MT103 RETN` |
+  | `pain.001` credit transfer initiation | → | `MT101` |
+  | `pain.008` direct debit initiation | → | `MT104` |
+  | `camt.053` statement | → | `MT940` |
+  | `camt.054` debit/credit notification | → | `MT900 / MT910` |
+  | `camt.056` cancellation request | → | `MT192` |
+  | `pacs.002` / `pain.002` status report | → | `MT199` |
+
+  The reverse direction (`MT103 → pacs.008`) is live; the other reverse mappings are the next tranche. Messages with no MT counterpart (securities, cards, FX, trade, headers, network admin) are rejected with a clear message rather than a wrong guess.
+- **How:** MT parsing uses [**Prowide Core**](https://www.prowidesoftware.com/development-tools/core) (Apache 2.0) — the genuinely hard part. Every field mapping is coded explicitly and auditably, so no commercial translator is required.
+- **Where it lives:** [`/transform-api`](./transform-api) — a Spring Boot service with a clean REST surface. The `MX_TO_MT` path dispatches on the detected message type; adding a pair is one mapping method.
 
 ```bash
 curl -X POST https://iso20022academy-transform-api.onrender.com/api/transform \
@@ -75,7 +88,7 @@ Returns a full, well-formed `pacs.008` with a freshly generated UETR. In the Pla
 |---|---|
 | **History** | A five-chapter documentary of how money became information, with a live compliance-deadline calendar and a scroll-driven chronometer. |
 | **Library** | 44 long-form lessons across six levels — fundamentals → architecture → message deep-dives → exceptions → case studies → field guides. |
-| **Playground** | The ISO 20022 catalogue as cards → open any of 18 sample messages in a reader → transform MT ⇄ MX (instant + live engine). |
+| **Playground** | The ISO 20022 catalogue as cards → open any of 18 sample messages in the XML viewer → hit Transform to run it through the live engine in a slide-over (nine MT ⇄ MX message types). |
 | **Glossary** | 87 cross-linked terms, from IBAN to settlement, filterable and searchable. |
 | **Extras** | ⌘K search, per-level quizzes, per-lesson SEO pages, email capture, and a live status page. |
 

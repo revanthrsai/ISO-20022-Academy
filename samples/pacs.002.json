@@ -6,7 +6,8 @@
   "sub": "FI-to-FI Payment Status Report",
   "note": "Sweety's bank confirms back up the wire: settled, accepted.",
   "dest": [
-    "viewer"
+    "viewer",
+    "transformer"
   ],
   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.002.001.10\">\n  <FIToFIPmtStsRpt>\n    <GrpHdr>\n      <MsgId>HDFCINBB-STS-20260627-400</MsgId>\n      <CreDtTm>2026-06-27T15:01:40+05:30</CreDtTm>\n      <InstgAgt><FinInstnId><BICFI>HDFCINBB</BICFI></FinInstnId></InstgAgt>\n      <InstdAgt><FinInstnId><BICFI>EBILAEAD</BICFI></FinInstnId></InstdAgt>\n    </GrpHdr>\n    <TxInfAndSts>\n      <OrgnlInstrId>EBILAEAD-INSTR-0400</OrgnlInstrId>\n      <OrgnlEndToEndId>BOB-INV0042</OrgnlEndToEndId>\n      <UETR>eb6305c9-1f7c-4a9b-9b1e-2c2f4e7a91d4</UETR>\n      <TxSts>ACSC</TxSts>\n      <OrgnlTxRef><IntrBkSttlmAmt Ccy=\"USD\">400.00</IntrBkSttlmAmt></OrgnlTxRef>\n    </TxInfAndSts>\n  </FIToFIPmtStsRpt>\n</Document>"
 }

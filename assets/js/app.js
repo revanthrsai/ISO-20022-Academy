@@ -246,12 +246,20 @@ function ensureTransformDrawer() {
         + '<span class="pg2-drawer-title">Live transform</span>'
         + '<span class="pg2-drawer-sub">Java&nbsp;+&nbsp;Prowide engine</span>'
         + '</div>'
-        + '<button class="pg2-drawer-x" onclick="closeTransform()" aria-label="Close">&times;</button>'
+        + '<button class="pg2-drawer-x" type="button" aria-label="Close">&times;</button>'
         + '</div>'
         + '<div class="pg2-drawer-body" id="pg2-drawer-body"></div>';
 
     document.body.appendChild(scrim);
     document.body.appendChild(drawer);
+
+    // Wire the close affordances directly (not via inline onclick) so they work
+    // regardless of scope, plus Escape while the drawer is open.
+    const x = drawer.querySelector('.pg2-drawer-x');
+    if (x) x.addEventListener('click', closeTransform);
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !drawer.hidden) closeTransform();
+    });
     return drawer;
 }
 

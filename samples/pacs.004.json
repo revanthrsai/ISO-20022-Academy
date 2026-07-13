@@ -6,7 +6,8 @@
   "sub": "Payment Return",
   "note": "The unhappy path — the $400 sent back, settled funds returned with a reason.",
   "dest": [
-    "viewer"
+    "viewer",
+    "transformer"
   ],
   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.004.001.09\">\n  <PmtRtr>\n    <GrpHdr>\n      <MsgId>HDFCINBB-RTR-20260628-009</MsgId>\n      <CreDtTm>2026-06-28T11:14:00+05:30</CreDtTm>\n      <NbOfTxs>1</NbOfTxs>\n      <SttlmInf><SttlmMtd>INDA</SttlmMtd></SttlmInf>\n    </GrpHdr>\n    <TxInf>\n      <RtrId>HDFCINBB-RTR-0400</RtrId>\n      <OrgnlEndToEndId>BOB-INV0042</OrgnlEndToEndId>\n      <UETR>eb6305c9-1f7c-4a9b-9b1e-2c2f4e7a91d4</UETR>\n      <RtrdIntrBkSttlmAmt Ccy=\"USD\">400.00</RtrdIntrBkSttlmAmt>\n      <IntrBkSttlmDt>2026-06-28</IntrBkSttlmDt>\n      <RtrRsnInf><Rsn><Cd>AC04</Cd></Rsn><AddtlInf>Closed account</AddtlInf></RtrRsnInf>\n    </TxInf>\n  </PmtRtr>\n</Document>"
 }

@@ -6,7 +6,8 @@
   "sub": "Customer Credit Transfer Initiation",
   "note": "Bob tells his bank to pay Sweety $400. Where the whole story starts.",
   "dest": [
-    "viewer"
+    "viewer",
+    "transformer"
   ],
   "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pain.001.001.09\">\n  <CstmrCdtTrfInitn>\n    <GrpHdr>\n      <MsgId>BOB-MSG-20260627-0001</MsgId>\n      <CreDtTm>2026-06-27T09:28:14+04:00</CreDtTm>\n      <NbOfTxs>1</NbOfTxs>\n      <CtrlSum>400.00</CtrlSum>\n      <InitgPty><Nm>Bob Marsh</Nm></InitgPty>\n    </GrpHdr>\n    <PmtInf>\n      <PmtInfId>BOB-PMT-0042</PmtInfId>\n      <PmtMtd>TRF</PmtMtd>\n      <BtchBookg>false</BtchBookg>\n      <ReqdExctnDt><Dt>2026-06-27</Dt></ReqdExctnDt>\n      <Dbtr>\n        <Nm>Bob Marsh</Nm>\n        <PstlAdr><StrtNm>Marina View</StrtNm><TwnNm>Dubai</TwnNm><Ctry>AE</Ctry></PstlAdr>\n      </Dbtr>\n      <DbtrAcct><Id><IBAN>AE070331234567890123456</IBAN></Id></DbtrAcct>\n      <DbtrAgt><FinInstnId><BICFI>EBILAEAD</BICFI></FinInstnId></DbtrAgt>\n      <ChrgBr>SHAR</ChrgBr>\n      <CdtTrfTxInf>\n        <PmtId><EndToEndId>BOB-INV0042</EndToEndId><UETR>eb6305c9-1f7c-4a9b-9b1e-2c2f4e7a91d4</UETR></PmtId>\n        <Amt><InstdAmt Ccy=\"USD\">400.00</InstdAmt></Amt>\n        <CdtrAgt><FinInstnId><BICFI>HDFCINBB</BICFI></FinInstnId></CdtrAgt>\n        <Cdtr>\n          <Nm>Sweety Rao</Nm>\n          <PstlAdr><StrtNm>MG Road</StrtNm><TwnNm>Bengaluru</TwnNm><Ctry>IN</Ctry></PstlAdr>\n        </Cdtr>\n        <CdtrAcct><Id><IBAN>IN52HDFC0000123456789012</IBAN></Id></CdtrAcct>\n        <RmtInf><Ustrd>Invoice 0042 - June freelance</Ustrd></RmtInf>\n      </CdtTrfTxInf>\n    </PmtInf>\n  </CstmrCdtTrfInitn>\n</Document>"
 }

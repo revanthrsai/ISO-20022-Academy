@@ -231,9 +231,9 @@ assets/js/markdown.js      lesson engine: frontmatter, marked.js, {{embed}}/{{ch
 assets/js/flow-diagram.js  beat-4 business-terms flow diagram
 assets/js/data.js          glossary terms (87) + message metadata + Progress store
 assets/js/ui.js            glossary rendering, detail panel/modal
-assets/js/xml-viewer.js    Playground: the message reader (View)
-assets/js/transformer.js   Playground: MT ⇄ MX — instant in-browser + live-engine button (§9)
-assets/js/samples.js       Playground: the catalogue of cards, fetches /samples/<code>.json
+assets/js/xml-viewer.js    Playground: the single XML message viewer (right pane)
+assets/js/transformer.js   Playground: MsgTransformer.callEngine() → the live MT ⇄ MX engine (§9)
+assets/js/samples.js       Playground: the catalogue of cards (left pane), fetches /samples/<code>.json
 assets/js/quiz.data.js / quiz.js       per-level quizzes (31 questions) + CTA
 assets/js/deadlines.data.js / deadlines.js   the live compliance calendar
 assets/js/search.js        ⌘K command palette (indexes lessons, glossary, messages, pages)
@@ -244,11 +244,13 @@ assets/js/preloader.js     one-time intro animation
 transform-api/             the Spring Boot + Prowide backend — see §9
 ```
 
-The Playground is three tools — **View** (reader), **Transform** (MT ⇄ MX), and
-the **Sample Library** catalogue. The old Validate and Compare tools were retired
-in the 2026-07 refactor. Each Playground JS module is an IIFE that assigns a
-`const` and then exposes it on `window` (e.g. `window.SampleLibrary = …`) — that
-exposure line is load-bearing; app.js guards on `if (window.SampleLibrary)`.
+The Playground is one workspace: the **catalogue cards** (left) load a message
+into the single **XML viewer** (right), and **Transform** runs it through the live
+engine in a **slide-over** (§9). The old Validate and Compare tools, and the tool-
+tab model, were retired in the 2026-07 refactor. Each Playground JS module is an
+IIFE that assigns a `const` and then exposes it on `window` (e.g.
+`window.SampleLibrary = …`) — that exposure line is load-bearing; app.js guards on
+`if (window.SampleLibrary)`.
 
 **The hybrid content model:** `data.js` powers the *interactive* surfaces
 (Playground, Message Explorer, Glossary); `content/*.md` + the generated TOC
@@ -443,9 +445,9 @@ independently deployed halves in one repository.
                                             │  fetch (CORS)
                                             ▼
                             ┌─────────────────────────────────────────────┐
-      "Run the live         │  TRANSFORM API  ·  Render (Docker)           │
-       engine" button ─────▶│  Spring Boot 3 · Java 17 · Prowide Core      │
-                            │  POST /api/transform  (MT103 ⇄ pacs.008)     │
+      "Transform"          │  TRANSFORM API  ·  Render (Docker)           │
+       button ────────────▶│  Spring Boot 3 · Java 17 · Prowide Core      │
+                            │  POST /api/transform  (9 MT ⇄ MX types)      │
                             └─────────────────────────────────────────────┘
                                             ▲
                      UptimeRobot ───────────┘  pings /api/health every 10 min
@@ -453,16 +455,26 @@ independently deployed halves in one repository.
 
 ### The transform backend (`/transform-api`)
 
-A Spring Boot 3.3 service on Java 17 that converts a legacy SWIFT **MT103** to an
-ISO 20022 **`pacs.008`** and back. The MT parsing is done with **Prowide Core**
-(`pw-swift-core` `SRU2025-10.3.13`, Apache 2.0); the field mapping is hand-coded
-and auditable, so no commercial translator is needed.
+A Spring Boot 3.3 service on Java 17 that detects an ISO 20022 message type and
+converts it to its legacy SWIFT MT equivalent (and, for MT103, back). The MT
+parsing is done with **Prowide Core** (`pw-swift-core` `SRU2025-10.3.13`, Apache
+2.0); every field mapping is hand-coded and auditable, so no commercial
+translator is needed.
 
-- **Layout:** `TransformController` (REST) → `TransformService` (the mapping) →
-  `dto/TransformRequest` + `TransformResponse`; `config/WebConfig` sets CORS
-  (allows `iso20022academy.in` + `localhost:5500`). Packaged with a multi-stage
-  `Dockerfile` (Maven build → JRE runtime) and reads `$PORT`.
-- **Endpoints:** `POST /api/transform` — body `{ direction: "MT_TO_MX" | "MX_TO_MT", source }`;
+- **Coverage (MX → MT):** nine payment & cash-management messages —
+  `pacs.008 → MT103`, `pacs.004 → MT103 RETN`, `pain.001 → MT101`,
+  `pain.008 → MT104`, `camt.053 → MT940`, `camt.054 → MT900/910`,
+  `camt.056 → MT192`, and `pacs.002` / `pain.002 → MT199`. The `MX_TO_MT` path
+  dispatches on the type detected from the schema namespace (`detectIsoType`);
+  each pair is one mapping method, so adding a pair is a localized change.
+  Reverse (`MT → MX`) currently covers `MT103 → pacs.008`. Messages with no MT
+  counterpart (securities, cards, FX, trade, headers, admin) are rejected with a
+  clear message.
+- **Layout:** `TransformController` (REST) → `TransformService` (type dispatch +
+  the mappings) → `dto/TransformRequest` + `TransformResponse`; `config/WebConfig`
+  sets CORS (allows `iso20022academy.in` + `localhost:5500`). Packaged with a
+  multi-stage `Dockerfile` (Maven build → JRE runtime) and reads `$PORT`.
+- **Endpoints:** `POST /api/transform` — body `{ direction: "AUTO" | "MT_TO_MX" | "MX_TO_MT", source }`;
   `GET /api/health` — the liveness probe used by the status page and UptimeRobot.
 - **Two hard-won fixes worth remembering:** (1) `MT103.parse()` needs a full FIN
   message, so bare `:20:`-style field input is wrapped in a minimal FIN envelope
@@ -471,12 +483,18 @@ and auditable, so no commercial translator is needed.
   `pom.xml` to override Spring Boot's older managed version (else a runtime
   `NoClassDefFoundError`). CreDtTm is truncated to whole seconds.
 
-### How the Playground uses it — the hybrid model
+### How the Playground uses it — the live-only slide-over
 
-The Transform tool keeps its **instant in-browser** transform as the fast,
-always-available layer. On top of that, a **"Run through the live engine"** button
-POSTs to the backend and shows the real Prowide-parsed result, badged as such,
-with a graceful "warming up…" state for Render cold starts. The API base is
+The Playground is one workspace: the catalogue cards (left, `samples.js`) load a
+message into the single **XML viewer** (right, `xml-viewer.js`), and a
+**Transform** button in the top bar sends the current message to the backend.
+The result renders in a **slide-over panel** — live-only, no in-browser
+approximation — with a "waking the engine…" state for Render cold starts and a
+graceful error + Retry so a sleeping server never leaves a dead panel. The panel
+is appended to `<body>` (not the page) so `position: fixed` fills the viewport
+rather than being clipped by the page's animation transform. Transform is enabled
+only for messages whose sample `dest` includes `transformer`; the request helper
+is `MsgTransformer.callEngine(source, direction)` and the API base is
 `TRANSFORM_API` at the top of `assets/js/transformer.js` (point it at
 `http://localhost:8080` for local dev).
 

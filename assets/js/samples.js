@@ -132,8 +132,8 @@ const SampleLibrary = (function () {
                 var ok = isTransformable(code);
                 xf.disabled = !ok;
                 xf.title = ok
-                    ? 'Run this pacs.008 through the live MT ⇄ MX engine'
-                    : 'The live engine currently transforms pacs.008 ⇄ MT103';
+                    ? 'Run this message through the live MT ⇄ MX engine'
+                    : 'This message has no MT equivalent — nothing to transform to';
             }
             markActive(code);
         }).catch(function () { /* a missing sample must not blank the workspace */ });
