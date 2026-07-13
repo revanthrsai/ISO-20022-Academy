@@ -143,3 +143,4 @@ const SampleLibrary = (function () {
 
     return { init: init, open: open };
 })();
+window.SampleLibrary = SampleLibrary;
