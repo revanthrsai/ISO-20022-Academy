@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Status · ISO 20022 Academy</title>
+<meta name="description" content="Live status of the ISO 20022 Academy site and the MT ⇄ MX transform engine.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/images/favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAF9F5; --surface:#FFFFFF; --ink:#1A211C; --muted:#5C685F; --faint:#8A9A93;
+    --border:#E6E2D6; --primary:#0E9F70; --up:#0B8A60; --down:#C13543; --warn:#C98A2B;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,-apple-system,sans-serif;line-height:1.6}
+  .wrap{max-width:680px;margin:0 auto;padding:48px 20px 80px}
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:44px}
+  .brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink)}
+  .brand svg{flex:none}
+  .brand-name{font-weight:700;font-size:16px}
+  .brand-name em{color:var(--primary);font-style:normal}
+  .brand-tag{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);border:1px solid var(--border);border-radius:999px;padding:4px 10px}
+  .banner{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--faint);border-radius:16px;padding:22px 24px;margin-bottom:14px}
+  .banner.ok{border-left-color:var(--up)}
+  .banner.bad{border-left-color:var(--down)}
+  .banner.wait{border-left-color:var(--warn)}
+  .dot{flex:none;width:14px;height:14px;border-radius:50%;background:var(--faint)}
+  .banner.ok .dot{background:var(--up);box-shadow:0 0 0 4px rgba(11,138,96,.15)}
+  .banner.bad .dot{background:var(--down);box-shadow:0 0 0 4px rgba(193,53,67,.15)}
+  .banner.wait .dot{background:var(--warn);animation:pulse 1s ease-in-out infinite alternate}
+  @keyframes pulse{from{opacity:.4}to{opacity:1}}
+  .banner-txt{flex:1}
+  .banner-title{font-size:20px;font-weight:700;letter-spacing:-.01em}
+  .banner-sub{font-size:14px;color:var(--muted)}
+  .rows{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+  .row{display:flex;align-items:center;gap:14px;padding:18px 24px;border-bottom:1px solid var(--border)}
+  .row:last-child{border-bottom:none}
+  .row-name{flex:1}
+  .row-name b{display:block;font-weight:600}
+  .row-name span{font-size:13px;color:var(--muted)}
+  .pill{font-size:12px;font-weight:600;padding:5px 12px;border-radius:999px;white-space:nowrap}
+  .pill.up{color:var(--up);background:rgba(11,138,96,.1)}
+  .pill.down{color:var(--down);background:rgba(193,53,67,.1)}
+  .pill.wait{color:var(--warn);background:rgba(201,138,43,.12)}
+  .ms{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--faint);min-width:64px;text-align:right}
+  .meta{display:flex;align-items:center;justify-content:space-between;margin-top:18px;font-size:13px;color:var(--muted)}
+  .refresh{background:none;border:1px solid var(--border);border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
+  .refresh:hover{border-color:var(--primary);color:var(--primary)}
+  .foot{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--faint)}
+  .foot a{color:var(--primary);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="brand" href="/">
+      <svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#E5F1EA"/><rect x="8" y="8" width="24" height="24" rx="7" fill="#10B981"/><path d="M14 26 L20 15 L26 26" fill="none" stroke="#04130D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="brand-name">ISO&nbsp;20022 <em>Academy</em></span>
+    </a>
+    <span class="brand-tag">System Status</span>
+  </div>
+
+  <div class="banner wait" id="banner">
+    <span class="dot"></span>
+    <div class="banner-txt">
+      <div class="banner-title" id="banner-title">Checking systems…</div>
+      <div class="banner-sub" id="banner-sub">Pinging the services.</div>
+    </div>
+  </div>
+
+  <div class="rows">
+    <div class="row">
+      <div class="row-name"><b>Website</b><span>Lessons, Playground, Glossary (static)</span></div>
+      <span class="pill up">Operational</span>
+    </div>
+    <div class="row">
+      <div class="row-name"><b>Transform Engine</b><span>MT&nbsp;⇄&nbsp;MX API · Java + Prowide</span></div>
+      <span class="ms" id="api-ms"></span>
+      <span class="pill wait" id="api-pill">Checking…</span>
+    </div>
+  </div>
+
+  <div class="meta">
+    <span id="checked">Last checked: —</span>
+    <button class="refresh" onclick="runCheck()">Refresh</button>
+  </div>
+
+  <div class="foot">
+    A live health check of <a href="https://iso20022academy.in">iso20022academy.in</a> and its transform service.
+    Auto-refreshes every 60&nbsp;seconds. &copy; 2026
+  </div>
+</div>
+
+<script>
+  var API = 'https://iso20022academy-transform-api.onrender.com';
+
+  function setApi(state, ms, sub){
+    var pill = document.getElementById('api-pill');
+    var msEl = document.getElementById('api-ms');
+    var banner = document.getElementById('banner');
+    var bt = document.getElementById('banner-title');
+    var bs = document.getElementById('banner-sub');
+    pill.className = 'pill ' + (state === 'up' ? 'up' : state === 'down' ? 'down' : 'wait');
+    pill.textContent = state === 'up' ? 'Operational' : state === 'down' ? 'Unavailable' : 'Checking…';
+    msEl.textContent = (state === 'up' && ms != null) ? ms + ' ms' : '';
+    if (state === 'up'){ banner.className = 'banner ok'; bt.textContent = 'All systems operational'; bs.textContent = 'The website and the transform engine are up.'; }
+    else if (state === 'down'){ banner.className = 'banner bad'; bt.textContent = 'Transform engine unavailable'; bs.textContent = sub || 'The website is up; the engine is not responding.'; }
+    else { banner.className = 'banner wait'; bt.textContent = 'Checking systems…'; bs.textContent = 'Pinging the transform engine.'; }
+  }
+
+  function runCheck(){
+    setApi('wait');
+    var start = (window.performance && performance.now) ? performance.now() : Date.now();
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){ ctrl.abort(); }, 40000);
+    fetch(API + '/api/health', { signal: ctrl.signal, cache: 'no-store' })
+      .then(function(r){
+        clearTimeout(timer);
+        var ms = Math.round(((window.performance && performance.now) ? performance.now() : Date.now()) - start);
+        if (r.ok) { setApi('up', ms); } else { setApi('down', null, 'Returned HTTP ' + r.status + '.'); }
+      })
+      .catch(function(e){
+        clearTimeout(timer);
+        setApi('down', null, e && e.name === 'AbortError' ? 'Timed out — the engine may be waking up. Refresh in a moment.' : 'Could not reach the engine.');
+      })
+      .finally(function(){
+        document.getElementById('checked').textContent = 'Last checked: ' + new Date().toLocaleTimeString();
+      });
+  }
+
+  runCheck();
+  setInterval(runCheck, 60000);
+</script>
+</body>
+</html>
