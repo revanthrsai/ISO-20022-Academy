@@ -15,6 +15,7 @@
 6. [Authoring & Publishing Articles](#6-authoring--publishing-articles) ← day-to-day guide
 7. [Content Roadmap (SME Review)](#7-content-roadmap-sme-review)
 8. [Working Agreements](#8-working-agreements)
+9. [Full-Stack Architecture & Operations](#9-full-stack-architecture--operations)
 
 ---
 
@@ -33,11 +34,15 @@ Every feature answers one of four questions:
 | Can I work with it? | **Playground** | `#/playground` |
 | What does this term mean? | **Glossary** | `#/glossary` |
 
-**Status (2026-07):** all five build phases complete and signed off — Foundation
-(2026-06-28), History (06-28), Library (06-29), Playground (06-30), Glossary
-(07-01) — plus backlog burn-down and the Phase 7 quality pass. The site is live
-on Netlify with Decap CMS at `/admin`; the Library registry is generated from
-content frontmatter on every deploy (see §6).
+**Status (2026-07):** live in production as a **full-stack product**. The static
+academy (History, Library, Playground, Glossary) deploys to **GitHub Pages** from
+`main` via GitHub Actions, with Decap CMS at `/admin` and the Library registry
+generated from content frontmatter on every deploy (§6). Behind it runs a
+separate **Spring Boot + Prowide** service (`/transform-api`, on Render) that
+performs live **MT ⇄ MX** transformation. Also shipped since the original five
+phases: per-lesson SEO pages, a static-JSON message catalogue, per-level quizzes,
+a ⌘K command palette, a live compliance calendar, and a status page. The
+full-stack architecture and operations are documented in **§9**.
 
 **Design principles:** simplicity over feature count · learning before
 implementation · consistency over novelty · typography before decoration ·
@@ -143,7 +148,7 @@ Hash-based routing, with one query-string layer for shareable filter state:
 #/library                       → Library landing (shelves index)
 #/library/<level>               → a shelf overview (100…600)
 #/library/<level>/<topic-slug>  → a single lesson
-#/playground/<tool-slug>        → a tool (xml-viewer|transformer|validator|comparator|samples)
+#/playground/<tool-slug>        → a tool (viewer|transformer|samples)
 #/playground/<tool>?sample=…    → tool deep-linked to a sample message
 #/glossary?category=<cat>       → filtered glossary  (also ?q=<query>)
 #/glossary/<term-slug>          → a single term (scrolls + highlights the card)
@@ -202,33 +207,53 @@ Text that sits ON a --primary/--success/--warning/--danger fill is white.
 
 ## 5. Code Map
 
-Zero-dependency vanilla HTML/CSS/JS. No frameworks, no build step for the site
-itself (the only build-time step is TOC generation).
+Zero-dependency vanilla HTML/CSS/JS for the site. No frameworks, no runtime build
+step; three zero-dependency Node scripts run at deploy time (§6). The one server
+in the stack — the transform backend — is documented in §9.
 
 ```
-index.html                 page shell + script includes
-netlify.toml               deploy config: runs scripts/build-toc.js, redirects
+index.html                 page shell + script includes + footer status pill
+.github/workflows/pages.yml CI: runs the 3 build scripts, then deploys to GitHub Pages
 admin/                     Decap CMS (config.yml + entry page) at /admin
 content/*.md               Library lessons (frontmatter + Markdown + tokens)
+samples/*.json             18 ISO 20022 sample messages, fetched on demand
+status/index.html          standalone live status page at /status/
+
 scripts/build-toc.js       generates assets/js/toc.data.js from content/ frontmatter
+scripts/build-seo.js       generates /library/<id>/ SEO pages + sitemap.xml + robots.txt
+scripts/build-samples.js   generates samples/manifest.json from samples/*.json
+
 assets/css/style.css       ALL styling; :root is the design-token source of truth
-assets/js/app.js           hash routing, page templates, History chapters
+assets/js/app.js           hash routing, page templates, History chapters, chronometer
 assets/js/toc.js           Library shelf definitions + lookup helpers
 assets/js/toc.data.js      GENERATED article registry — never edit by hand
-assets/js/markdown.js      lesson engine: frontmatter, marked.js, {{embed}}/{{check}}/{{flow}}
+assets/js/markdown.js      lesson engine: frontmatter, marked.js, {{embed}}/{{check}}/{{flow}}/{{link}}
 assets/js/flow-diagram.js  beat-4 business-terms flow diagram
-assets/js/data.js          glossary terms (87) + Progress store (localStorage)
-assets/js/ui.js            glossary rendering, detail panel/modal, theme toggle
-assets/js/xml-viewer.js / transformer.js / validator.js / comparator.js / samples.js
-                           the five Playground tools (shared message hand-off)
+assets/js/data.js          glossary terms (87) + message metadata + Progress store
+assets/js/ui.js            glossary rendering, detail panel/modal
+assets/js/xml-viewer.js    Playground: the message reader (View)
+assets/js/transformer.js   Playground: MT ⇄ MX — instant in-browser + live-engine button (§9)
+assets/js/samples.js       Playground: the catalogue of cards, fetches /samples/<code>.json
+assets/js/quiz.data.js / quiz.js       per-level quizzes (31 questions) + CTA
+assets/js/deadlines.data.js / deadlines.js   the live compliance calendar
+assets/js/search.js        ⌘K command palette (indexes lessons, glossary, messages, pages)
+assets/js/signup.js        Formspree email capture (footer)
 assets/js/motion.js        motion design system (reduced-motion gated)
 assets/js/preloader.js     one-time intro animation
+
+transform-api/             the Spring Boot + Prowide backend — see §9
 ```
+
+The Playground is three tools — **View** (reader), **Transform** (MT ⇄ MX), and
+the **Sample Library** catalogue. The old Validate and Compare tools were retired
+in the 2026-07 refactor. Each Playground JS module is an IIFE that assigns a
+`const` and then exposes it on `window` (e.g. `window.SampleLibrary = …`) — that
+exposure line is load-bearing; app.js guards on `if (window.SampleLibrary)`.
 
 **The hybrid content model:** `data.js` powers the *interactive* surfaces
 (Playground, Message Explorer, Glossary); `content/*.md` + the generated TOC
-power *reading*. An article hands off to an interactive surface via
-`{{embed:…}}` tokens.
+power *reading*; `samples/*.json` holds the sample XML, fetched on demand. An
+article hands off to an interactive surface via `{{embed:…}}` tokens.
 
 **Architectural rules:** structural data lives only in `data.js` (`DATA`
 object); UI state/components in `ui.js`; routing/views in `app.js`; never
@@ -246,9 +271,10 @@ the article appears on the right shelf automatically.*
 ```
 write markdown → /admin (Decap CMS) → Drafts → In Review → Ready → Publish
    → commit to content/<num>-<slug>.md on main
-   → Netlify deploy runs node scripts/build-toc.js
-   → regenerates assets/js/toc.data.js from every file's frontmatter
-   → article appears on its shelf. Done.
+   → GitHub Actions (.github/workflows/pages.yml) runs build-toc.js,
+     build-seo.js and build-samples.js, then deploys to GitHub Pages
+   → regenerates the TOC, the /library/<id>/ SEO page, and the sitemap
+   → article appears on its shelf and as its own Google result. Done.
 ```
 
 You never touch `toc.js`/`toc.data.js` — frontmatter decides everything.
@@ -348,7 +374,7 @@ fill the frontmatter form.
 1. `/admin` → Library Articles → **New Library Article**.
 2. Fill the form (shelf, number = next free slot, title, slug, summary, minutes, tags, earned skill) and paste the body.
 3. Save → sits in *Drafts*. Iterate freely; nothing is live.
-4. Drag to *Ready* → **Publish** → Netlify deploys (~1 min) → on the shelf.
+4. Drag to *Ready* → **Publish** → GitHub Actions deploys (~1 min) → on the shelf.
 
 ---
 
@@ -399,3 +425,95 @@ a practitioner's life in 2026." In priority order:*
 - **Every new UI element inherits the established theme tokens** and the §4
   conventions; no jarring modal popups.
 - **A lesson ships only if it passes the §2 acceptance test.**
+
+---
+
+## 9. Full-Stack Architecture & Operations
+
+The academy started as a static site and grew a backend for the one thing that
+genuinely needs a server: parsing real payment messages. The stack is two
+independently deployed halves in one repository.
+
+```
+                            ┌─────────────────────────────────────────────┐
+   Browser  ───────────────▶│  STATIC SITE  ·  GitHub Pages                │
+                            │  iso20022academy.in                          │
+                            │  vanilla HTML/CSS/JS · no framework          │
+                            └───────────────┬─────────────────────────────┘
+                                            │  fetch (CORS)
+                                            ▼
+                            ┌─────────────────────────────────────────────┐
+      "Run the live         │  TRANSFORM API  ·  Render (Docker)           │
+       engine" button ─────▶│  Spring Boot 3 · Java 17 · Prowide Core      │
+                            │  POST /api/transform  (MT103 ⇄ pacs.008)     │
+                            └─────────────────────────────────────────────┘
+                                            ▲
+                     UptimeRobot ───────────┘  pings /api/health every 10 min
+```
+
+### The transform backend (`/transform-api`)
+
+A Spring Boot 3.3 service on Java 17 that converts a legacy SWIFT **MT103** to an
+ISO 20022 **`pacs.008`** and back. The MT parsing is done with **Prowide Core**
+(`pw-swift-core` `SRU2025-10.3.13`, Apache 2.0); the field mapping is hand-coded
+and auditable, so no commercial translator is needed.
+
+- **Layout:** `TransformController` (REST) → `TransformService` (the mapping) →
+  `dto/TransformRequest` + `TransformResponse`; `config/WebConfig` sets CORS
+  (allows `iso20022academy.in` + `localhost:5500`). Packaged with a multi-stage
+  `Dockerfile` (Maven build → JRE runtime) and reads `$PORT`.
+- **Endpoints:** `POST /api/transform` — body `{ direction: "MT_TO_MX" | "MX_TO_MT", source }`;
+  `GET /api/health` — the liveness probe used by the status page and UptimeRobot.
+- **Two hard-won fixes worth remembering:** (1) `MT103.parse()` needs a full FIN
+  message, so bare `:20:`-style field input is wrapped in a minimal FIN envelope
+  before parsing. (2) Prowide 10.3.13 calls `org.apache.commons.lang3.Strings`,
+  added in commons-lang3 **3.18.0** — pinned via `<commons-lang3.version>` in
+  `pom.xml` to override Spring Boot's older managed version (else a runtime
+  `NoClassDefFoundError`). CreDtTm is truncated to whole seconds.
+
+### How the Playground uses it — the hybrid model
+
+The Transform tool keeps its **instant in-browser** transform as the fast,
+always-available layer. On top of that, a **"Run through the live engine"** button
+POSTs to the backend and shows the real Prowide-parsed result, badged as such,
+with a graceful "warming up…" state for Render cold starts. The API base is
+`TRANSFORM_API` at the top of `assets/js/transformer.js` (point it at
+`http://localhost:8080` for local dev).
+
+### Hosting & services
+
+| Concern | Service | Notes |
+|---|---|---|
+| Static site | **GitHub Pages** | serves repo root; custom domain via CNAME; `.nojekyll` |
+| Site deploy | **GitHub Actions** | `.github/workflows/pages.yml` runs the 3 build scripts |
+| Backend | **Render** | Docker, root dir `transform-api`, scales to zero |
+| Keep-warm / uptime | **UptimeRobot** | pings `/api/health` every 10 min |
+| Analytics | **Cloudflare Web Analytics** | cookieless |
+| Email capture | **Formspree** | `signup.js`, no backend |
+| Markdown / fonts | **marked.js** (CDN) · **Google Fonts** | Inter, Plus Jakarta Sans, Newsreader, JetBrains Mono |
+| Domain | **NIXI** (`.in` registry) | `iso20022academy.in` |
+
+### SEO — per-lesson discoverability
+
+`build-seo.js` prerenders a crawlable `/library/<id>/` HTML page for every lesson
+(rendering `{{link}}`/`{{embed}}` tokens, tables, lists, and a Related-lessons
+block) and emits `sitemap.xml` + `robots.txt`. So each lesson surfaces as its own
+Google result — the way a DSA topic does — rather than being trapped behind the
+SPA's hash router. These outputs are generated and git-ignored.
+
+### Monitoring & status
+
+`/status/` is a standalone page (outside the SPA) that hits `/api/health`, shows
+the Website and Transform Engine states with response times, and auto-refreshes
+every 60 s. Every page's footer carries a pulsing **"Page status: Live"** pill
+(inline script in `index.html`) that flips to red / "Page status: Offline" if the
+engine can't be reached.
+
+### Operational gotcha — the mount-sync gremlin
+
+When editing from the Windows workspace, the Linux bash mount mirror occasionally
+shows a **stale or truncated** copy of a just-edited file (failing `node --check`
+on garbage the real file doesn't contain). The **file-tools Read is the source of
+truth** for what actually deploys; don't trust a corrupted bash-side read. This
+once shipped a broken `samples.js` — the real cause turned out to be a dropped
+`window.SampleLibrary = SampleLibrary;` line, not the phantom corruption.

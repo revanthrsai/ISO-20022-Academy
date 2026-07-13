@@ -145,7 +145,7 @@
             <span>&copy; 2026</span>
             <span class="site-footer-dot" aria-hidden="true">&middot;</span>
             <a class="status-pill" href="/status/" id="status-pill" title="Live system status">
-                <span class="status-dot" aria-hidden="true"></span><span class="status-text">All systems operational</span>
+                <span class="status-dot" aria-hidden="true"></span><span class="status-text">Page status: Live</span>
             </a>
         </div>
     </footer>
@@ -166,7 +166,7 @@
             .catch(function () {
                 p.classList.add('is-down');
                 var t = p.querySelector('.status-text');
-                if (t) t.textContent = 'Engine offline';
+                if (t) t.textContent = 'Page status: Offline';
             });
     })();
     </script>
