@@ -1,21 +1,39 @@
-MIT License
+ISO 20022 Academy — Proprietary License
+Copyright (c) 2026 Revanth Sai Rayapati. All rights reserved.
 
-Copyright (c) 2026 Revanth
+This repository and everything in it — including the source code, the written
+lesson and glossary content, the designs, and the documentation (together, the
+"Work") — is the original work of Revanth Sai Rayapati and is protected by
+copyright. It is published publicly so that people can read and learn from it,
+not so that it can be copied.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+PERMITTED
+You may view, read, and reference the Work and its source for personal,
+educational, and non-commercial learning purposes. You may link to the live
+website at https://iso20022academy.in.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+NOT PERMITTED — without the prior written permission of the copyright holder
+  - Copying, cloning, mirroring, forking-to-republish, or otherwise reproducing
+    the Work or the website, in whole or in substantial part.
+  - Using the Work, or any substantial portion of it (code, lesson text, design,
+    or structure), in any other project, product, or website — whether
+    commercial or non-commercial.
+  - Creating derivative works based on the Work.
+  - Removing, obscuring, or altering this notice or any attribution to the
+    author.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+THIRD-PARTY COMPONENTS
+The Work incorporates open-source components that remain under their own
+licenses, including Prowide Core (Apache License 2.0) and marked.js (MIT
+License). Those licenses apply to those components only; this license governs the
+original Work.
+
+NO WARRANTY
+THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR OR
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING
+FROM, OUT OF, OR IN CONNECTION WITH THE WORK OR ITS USE.
+
+For permissions, licensing, or any other inquiry, contact:
+Revanth Sai Rayapati — revanthrsai07@gmail.com

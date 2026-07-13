@@ -188,4 +188,12 @@ Designed, written, and built by **[Revanth Sai Rayapati](https://www.linkedin.co
 
 Standing on the shoulders of the open-source **[Prowide](https://www.prowidesoftware.com/)** libraries, **Spring Boot**, and **marked.js**. All lesson content is original.
 
+---
+
+## 📄 License
+
+© 2026 **Revanth Sai Rayapati**. All rights reserved.
+
+This project is **source-available, not open-source**. You're welcome to read, learn from, and reference it — but copying, cloning, republishing, or reusing the code, lesson content, or design in another project is **not permitted** without written permission. See [`LICENSE`](./LICENSE) for the full terms. Third-party components (Prowide, marked.js) keep their own licenses.
+
 > Money stopped being something you move. It became something you *describe* — and the description has to survive the journey. This is a place to learn that language.
