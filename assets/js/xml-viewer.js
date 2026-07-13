@@ -485,33 +485,20 @@ const XmlViewer = (function () {
         if (!root) return;
         const active = SAMPLES[activeSample];
         root.innerHTML = `
-            <div class="xv-grid">
+            <div class="xv-solo">
                 <div class="xv-pane xv-pane-src">
                     <div class="xv-pane-bar">
                         <span class="xv-dot"></span><span class="xv-dot"></span><span class="xv-dot"></span>
-                        <span class="xv-pane-name">source.xml</span>
-                        <button class="xv-mini" onclick="XmlViewer.clear()" title="Clear">clear</button>
+                        <span class="xv-pane-name">XML message</span>
+                        <div class="xv-tools">
+                            <button class="xv-mini" onclick="XmlViewer.copySource(this)" title="Copy the XML">copy</button>
+                            <button class="xv-mini" onclick="XmlViewer.clear()" title="Clear and paste your own">clear</button>
+                        </div>
                     </div>
                     <textarea id="xv-src" class="xv-src" spellcheck="false"
                         oninput="XmlViewer.onInput()"
                         placeholder="Paste any ISO 20022 XML here…">${esc(active ? active.xml : '')}</textarea>
                     <div class="xv-src-meta">${active ? `<span class="xv-src-sub">${esc(active.sub)}</span>` : '<span class="xv-src-sub">Pasted message</span>'}</div>
-                </div>
-
-                <div class="xv-pane xv-pane-tree">
-                    <div class="xv-pane-bar">
-                        <span class="xv-pane-name">readable tree</span>
-                        <div class="xv-tools">
-                            <button class="xv-mini" onclick="XmlViewer.expandAll(true)">expand all</button>
-                            <button class="xv-mini" onclick="XmlViewer.expandAll(false)">collapse all</button>
-                            <div class="xv-toggle" role="tablist">
-                                <button class="xv-toggle-btn ${!plain ? 'is-on' : ''}" onclick="XmlViewer.setPlain(false)">Tags</button>
-                                <button class="xv-toggle-btn ${plain ? 'is-on' : ''}" onclick="XmlViewer.setPlain(true)">Plain English</button>
-                            </div>
-                            <button class="xv-mini" onclick="XmlViewer.copyDerived(this)" title="Copy the readable output">copy</button>
-                        </div>
-                    </div>
-                    <div class="xv-treewrap" id="xv-treewrap">${renderTree(active ? active.xml : '')}</div>
                 </div>
             </div>
         `;
@@ -584,6 +571,21 @@ const XmlViewer = (function () {
     }
     function copyFallback(text) {
         try { const ta = document.createElement('textarea'); ta.value = text || ''; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); } catch (e) { /* blocked */ }
+    }
+
+    // Copy the current XML message (the single viewer pane).
+    function copySource(btn) {
+        const ta = document.getElementById('xv-src');
+        const text = ta ? ta.value : '';
+        const flash = function () {
+            if (!btn) return;
+            if (!btn.getAttribute('data-lbl')) btn.setAttribute('data-lbl', btn.textContent);
+            btn.textContent = 'copied'; btn.classList.add('is-on');
+            clearTimeout(btn._t); btn._t = setTimeout(function () { btn.textContent = btn.getAttribute('data-lbl') || 'copy'; btn.classList.remove('is-on'); }, 1300);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(flash).catch(function () { copyFallback(text); flash(); });
+        } else { copyFallback(text); flash(); }
     }
 
     // Workspace handoff (Session 4.6) — read/write the current message so the
@@ -734,7 +736,7 @@ const XmlViewer = (function () {
         render();
     }
 
-    return { init, load, onInput, clear, setPlain, toggle, expandAll, copyDerived, getXml, loadXml };
+    return { init, load, onInput, clear, setPlain, toggle, expandAll, copyDerived, copySource, getXml, loadXml };
 })();
 
 window.XmlViewer = XmlViewer;

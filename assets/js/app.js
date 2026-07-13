@@ -136,7 +136,7 @@ const PAGES = {
         <div class="page">
             <p class="pg2-intro">
                 <strong>The Playground.</strong> Pick any message from the <strong>ISO&nbsp;20022 catalogue</strong>
-                to read it as a tree &mdash; then hit <strong>Transform</strong> to run it through the live
+                to read its XML &mdash; then hit <strong>Transform</strong> to run it through the live
                 MT&nbsp;&#8644;&nbsp;MX engine. Or paste your own message into the viewer.
             </p>
 
@@ -165,19 +165,6 @@ const PAGES = {
                     <div class="xv" id="xv-root"></div>
                 </section>
             </div>
-
-            <!-- Transform · live-only, slides in from the right -->
-            <div class="pg2-scrim" id="pg2-scrim" hidden onclick="closeTransform()"></div>
-            <aside class="pg2-drawer" id="pg2-drawer" hidden aria-hidden="true" aria-label="Live transform">
-                <div class="pg2-drawer-bar">
-                    <div class="pg2-drawer-t">
-                        <span class="pg2-drawer-title">Live transform</span>
-                        <span class="pg2-drawer-sub">Java&nbsp;+&nbsp;Prowide engine</span>
-                    </div>
-                    <button class="pg2-drawer-x" onclick="closeTransform()" aria-label="Close">&times;</button>
-                </div>
-                <div class="pg2-drawer-body" id="pg2-drawer-body"></div>
-            </aside>
         </div>
     `,
     glossary: `
@@ -233,17 +220,53 @@ function pgTransformDir() {
     return src.charAt(0) === '<' ? 'MX_TO_MT' : 'MT_TO_MX';
 }
 
+// The slide-over lives on <body>, NOT inside the page — a fixed element trapped
+// under an ancestor with a transform/filter (the page's entrance animation)
+// would size to that ancestor, not the viewport, and get clipped. Built once and
+// reused.
+function ensureTransformDrawer() {
+    let drawer = document.getElementById('pg2-drawer');
+    if (drawer) return drawer;
+
+    const scrim = document.createElement('div');
+    scrim.className = 'pg2-scrim';
+    scrim.id = 'pg2-scrim';
+    scrim.hidden = true;
+    scrim.addEventListener('click', closeTransform);
+
+    drawer = document.createElement('aside');
+    drawer.className = 'pg2-drawer';
+    drawer.id = 'pg2-drawer';
+    drawer.hidden = true;
+    drawer.setAttribute('aria-hidden', 'true');
+    drawer.setAttribute('aria-label', 'Live transform');
+    drawer.innerHTML =
+        '<div class="pg2-drawer-bar">'
+        + '<div class="pg2-drawer-t">'
+        + '<span class="pg2-drawer-title">Live transform</span>'
+        + '<span class="pg2-drawer-sub">Java&nbsp;+&nbsp;Prowide engine</span>'
+        + '</div>'
+        + '<button class="pg2-drawer-x" onclick="closeTransform()" aria-label="Close">&times;</button>'
+        + '</div>'
+        + '<div class="pg2-drawer-body" id="pg2-drawer-body"></div>';
+
+    document.body.appendChild(scrim);
+    document.body.appendChild(drawer);
+    return drawer;
+}
+
 // Open the slide-over and run the viewer's current message through the live
 // engine. Live-only, with a warming state for Render cold starts and a graceful
 // error + Retry (so a sleeping server never leaves a dead panel).
 function openTransform(evt) {
     if (evt) evt.preventDefault();
-    const drawer = document.getElementById('pg2-drawer');
+    const src = (window.XmlViewer ? XmlViewer.getXml() : '').trim();
+    if (!src) return;
+
+    const drawer = ensureTransformDrawer();
     const scrim = document.getElementById('pg2-scrim');
     const body = document.getElementById('pg2-drawer-body');
     if (!drawer || !body) return;
-    const src = (window.XmlViewer ? XmlViewer.getXml() : '').trim();
-    if (!src) return;
 
     scrim.hidden = false;
     drawer.hidden = false;
@@ -402,6 +425,9 @@ function navigate(page, evt) {
     const triggerEl = (evt && evt.target.closest('.nav-item')) || document.querySelector(`.nav-item[data-page="${page}"]`);
 
     if (evt) evt.preventDefault();
+
+    // Never carry the Transform slide-over (and its scroll lock) into another page.
+    if (typeof closeTransform === 'function') closeTransform();
 
     // Leaving any article/chapter reading view for a top-level section.
     window.__currentArticle = null;

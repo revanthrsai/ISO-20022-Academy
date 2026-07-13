@@ -1,11 +1,11 @@
 // =============================================================================
-// PLAYGROUND · ISO 20022 CATALOGUE  (compact collapsible tree)
+// PLAYGROUND · ISO 20022 CATALOGUE  (card catalogue + static JSON)
 // -----------------------------------------------------------------------------
-// The left navigator of the Playground workspace. The catalogue renders as a
-// collapsible tree — business domain → message family → message. Selecting a
-// message fetches its sample on demand from /samples/<code>.json, loads it into
-// the XML viewer on the right, updates the workspace top bar, and toggles the
-// Transform button (only pacs.008 is engine-transformable today).
+// The left navigator of the Playground workspace. The catalogue renders as cards
+// grouped by business domain → message family. Selecting a card fetches its
+// sample on demand from /samples/<code>.json, loads it into the XML viewer on
+// the right, updates the workspace top bar, and toggles the Transform button
+// (only pacs.008 is engine-transformable today).
 //
 // Metadata comes from /samples/manifest.json; the domain grouping is the map
 // below. Self-contained: one global `SampleLibrary` object + injected styles.
@@ -64,15 +64,16 @@ const SampleLibrary = (function () {
         return !!(m && Array.isArray(m.dest) && m.dest.indexOf('transformer') >= 0);
     }
 
-    // ── one message = one leaf button ───────────────────────────────────────
-    function leafHtml(m) {
-        var xf = isTransformable(m.code)
-            ? '<span class="smp-leaf-x" title="Transformable through the live engine">&#9889;</span>' : '';
-        return '<button class="smp-leaf" type="button" data-code="' + esc(m.code) + '"'
-            + ' onclick="SampleLibrary.open(\'' + esc(m.code) + '\')" title="' + esc(m.sub || m.label) + '">'
-            + '<span class="smp-leaf-code">' + esc(m.label || m.code) + '</span>'
-            + '<span class="smp-leaf-name">' + esc(m.sub || '') + '</span>'
-            + xf
+    // ── one message = one card ──────────────────────────────────────────────
+    function cardHtml(m) {
+        var badge = isTransformable(m.code) ? '<span class="smp-card-badge">Transformable &#9889;</span>' : '';
+        return '<button class="smp-card" type="button" data-code="' + esc(m.code) + '"'
+            + ' onclick="SampleLibrary.open(\'' + esc(m.code) + '\')" aria-label="Open ' + esc(m.label) + ' in the viewer">'
+            + '<span class="smp-card-top"><span class="smp-card-code">' + esc(m.label || m.code) + '</span>'
+            + '<span class="smp-card-kind">' + esc(m.kind || '') + '</span></span>'
+            + '<span class="smp-card-sub">' + esc(m.sub || '') + '</span>'
+            + (m.note ? '<span class="smp-card-note">' + esc(m.note) + '</span>' : '')
+            + '<span class="smp-card-foot">' + badge + '<span class="smp-card-go">Open in reader &rarr;</span></span>'
             + '</button>';
     }
 
@@ -85,40 +86,34 @@ const SampleLibrary = (function () {
         manifest.forEach(function (m) { (byFamily[m.family] = byFamily[m.family] || []).push(m); });
         Object.keys(byFamily).forEach(function (f) { byFamily[f].sort(function (a, b) { return a.code.localeCompare(b.code); }); });
 
-        var html = DOMAINS.map(function (d, i) {
+        var html = DOMAINS.map(function (d) {
             var fams = d.families.filter(function (f) { return byFamily[f] && byFamily[f].length; });
             if (!fams.length) return '';
-            var count = fams.reduce(function (n, f) { return n + byFamily[f].length; }, 0);
             var groups = fams.map(function (f) {
-                return '<div class="smp-fam">'
-                    + '<div class="smp-fam-head"><span class="smp-fam-code">' + esc(f) + '</span>'
-                    + '<span class="smp-fam-name">' + esc(FAMILY_NAMES[f] || '') + '</span></div>'
-                    + byFamily[f].map(leafHtml).join('')
+                return '<div class="smp-family">'
+                    + '<div class="smp-family-head"><span class="smp-family-code">' + esc(f) + '</span>'
+                    + '<span class="smp-family-name">' + esc(FAMILY_NAMES[f] || '') + '</span></div>'
+                    + '<div class="smp-grid">' + byFamily[f].map(cardHtml).join('') + '</div>'
                     + '</div>';
             }).join('');
-            return '<details class="smp-dom"' + (i === 0 ? ' open' : '') + '>'
-                + '<summary class="smp-dom-sum"><span class="smp-twist" aria-hidden="true">&#9656;</span>'
-                + '<span class="smp-dom-title">' + esc(d.label) + '</span>'
-                + '<span class="smp-dom-count">' + count + '</span></summary>'
-                + '<div class="smp-dom-body">' + groups + '</div>'
-                + '</details>';
+            return '<section class="smp-domain">'
+                + '<div class="smp-domain-head"><h3 class="smp-domain-title">' + esc(d.label) + '</h3>'
+                + '<span class="smp-domain-sub">' + esc(d.sub) + '</span></div>'
+                + groups
+                + '</section>';
         }).join('');
         root.innerHTML = html || '<div class="smp-loading">No messages found.</div>';
         if (activeCode) markActive(activeCode);
     }
 
-    // Highlight the selected leaf and make sure its domain is expanded.
+    // Highlight the selected card.
     function markActive(code) {
         var root = document.getElementById(mountId);
         if (!root) return;
-        root.querySelectorAll('.smp-leaf.is-active').forEach(function (el) { el.classList.remove('is-active'); });
+        root.querySelectorAll('.smp-card.is-active').forEach(function (el) { el.classList.remove('is-active'); });
         var sel = (window.CSS && CSS.escape) ? CSS.escape(code) : code;
-        var leaf = root.querySelector('.smp-leaf[data-code="' + sel + '"]');
-        if (leaf) {
-            leaf.classList.add('is-active');
-            var det = leaf.closest('.smp-dom');
-            if (det && !det.open) det.open = true;
-        }
+        var card = root.querySelector('.smp-card[data-code="' + sel + '"]');
+        if (card) card.classList.add('is-active');
     }
 
     // ── select a message → drive the viewer + top bar + Transform button ────
@@ -165,27 +160,27 @@ const SampleLibrary = (function () {
         if (document.getElementById('smp-styles')) return;
         var css = ''
             + '.smp-loading{padding:28px 14px;text-align:center;color:var(--text-muted);font-size:var(--fs-small,13px)}'
-            + '.smp-dom{border-bottom:1px solid var(--border)}'
-            + '.smp-dom:last-child{border-bottom:none}'
-            + '.smp-dom-sum{display:flex;align-items:center;gap:9px;padding:12px 12px;cursor:pointer;list-style:none;user-select:none}'
-            + '.smp-dom-sum::-webkit-details-marker{display:none}'
-            + '.smp-dom-sum:hover{background:var(--surface-alt)}'
-            + '.smp-twist{color:var(--text-faint);font-size:10px;transition:transform var(--dur-fast,.15s) var(--ease-out,ease)}'
-            + '.smp-dom[open]>.smp-dom-sum .smp-twist{transform:rotate(90deg)}'
-            + '.smp-dom-title{font-family:var(--font-display,var(--font-sans));font-weight:var(--fw-bold,700);font-size:14px;color:var(--text)}'
-            + '.smp-dom-count{margin-left:auto;font-family:var(--font-mono,monospace);font-size:10.5px;color:var(--text-faint);background:var(--surface-alt);border-radius:var(--radius-pill,999px);padding:1px 8px}'
-            + '.smp-dom-body{padding:2px 8px 10px}'
-            + '.smp-fam{margin:6px 0 10px}'
-            + '.smp-fam-head{display:flex;align-items:baseline;gap:8px;padding:4px 8px 6px}'
-            + '.smp-fam-code{font-family:var(--font-mono,monospace);font-size:12px;font-weight:var(--fw-bold,700);color:var(--primary)}'
-            + '.smp-fam-name{font-size:11px;color:var(--text-faint)}'
-            + '.smp-leaf{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:var(--radius-sm,10px);padding:8px 10px;cursor:pointer;font:inherit;color:var(--text);transition:background var(--dur-fast,.15s) var(--ease-out,ease),border-color var(--dur-fast,.15s) var(--ease-out,ease)}'
-            + '.smp-leaf:hover{background:var(--surface-alt);border-color:var(--border)}'
-            + '.smp-leaf.is-active{background:var(--glass-tint-strong,rgba(16,185,129,.1));border-color:var(--primary)}'
-            + '.smp-leaf-code{flex:none;font-family:var(--font-mono,monospace);font-size:12.5px;font-weight:var(--fw-bold,700);color:var(--text)}'
-            + '.smp-leaf.is-active .smp-leaf-code{color:var(--primary-deep,var(--primary))}'
-            + '.smp-leaf-name{flex:1;min-width:0;font-size:11.5px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
-            + '.smp-leaf-x{flex:none;font-size:12px;color:var(--primary);line-height:1}';
+            + '.smp-domain{padding:16px 14px 6px}'
+            + '.smp-domain + .smp-domain{border-top:1px solid var(--border)}'
+            + '.smp-domain-head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}'
+            + '.smp-domain-title{font-family:var(--font-display,var(--font-sans));font-size:15px;margin:0;font-weight:var(--fw-bold,700);color:var(--text)}'
+            + '.smp-domain-sub{font-family:var(--font-mono,monospace);font-size:10.5px;color:var(--text-faint)}'
+            + '.smp-family{margin-bottom:16px}'
+            + '.smp-family-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}'
+            + '.smp-family-code{font-family:var(--font-mono,monospace);font-size:12.5px;font-weight:var(--fw-bold,700);color:var(--primary)}'
+            + '.smp-family-name{font-size:11px;color:var(--text-muted)}'
+            + '.smp-grid{display:grid;grid-template-columns:1fr;gap:10px}'
+            + '.smp-card{display:flex;flex-direction:column;gap:5px;text-align:left;background:var(--surface,#fff);border:1px solid var(--border);border-radius:var(--radius-md,14px);padding:13px 14px;cursor:pointer;font:inherit;color:var(--text);transition:border-color var(--dur-fast,.15s) var(--ease-out,ease),transform var(--dur-fast,.15s) var(--ease-out,ease),box-shadow var(--dur-fast,.15s) var(--ease-out,ease)}'
+            + '.smp-card:hover{border-color:var(--primary);transform:translateY(-1px);box-shadow:var(--shadow-sm)}'
+            + '.smp-card.is-active{border-color:var(--primary);background:var(--glass-tint-strong,rgba(16,185,129,.08))}'
+            + '.smp-card-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}'
+            + '.smp-card-code{font-family:var(--font-mono,monospace);font-size:15px;font-weight:var(--fw-bold,700);color:var(--text)}'
+            + '.smp-card-kind{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);font-weight:var(--fw-semibold,600)}'
+            + '.smp-card-sub{font-size:13px;font-weight:var(--fw-medium,500);color:var(--text-secondary,var(--text))}'
+            + '.smp-card-note{font-size:12px;color:var(--text-muted);line-height:1.4}'
+            + '.smp-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:3px}'
+            + '.smp-card-badge{font-size:10px;font-weight:var(--fw-semibold,600);color:var(--primary);background:color-mix(in srgb,var(--primary) 12%,transparent);border-radius:var(--radius-pill,999px);padding:2px 8px}'
+            + '.smp-card-go{margin-left:auto;font-size:12.5px;font-weight:var(--fw-semibold,600);color:var(--primary)}';
         var style = document.createElement('style');
         style.id = 'smp-styles';
         style.textContent = css;
