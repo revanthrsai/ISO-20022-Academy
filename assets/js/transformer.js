@@ -667,6 +667,41 @@ const MsgTransformer = (function () {
         });
     }
 
+    // Reusable, UI-agnostic call to the live Spring Boot + Prowide engine. Takes
+    // any source string + an API direction ('MT_TO_MX' | 'MX_TO_MT') and resolves
+    // { ok, result, sourceFormat, targetFormat, message }. Rejects only on a
+    // network failure or timeout (the abort case carries err.timeout = true), so
+    // the caller can tell "engine said no" from "engine unreachable / asleep".
+    // Used by the Playground's slide-over Transform panel.
+    function callEngine(source, apiDir) {
+        const url = TRANSFORM_API.replace(/\/+$/, '') + '/api/transform';
+        const ctrl = new AbortController();
+        const timer = setTimeout(function () { ctrl.abort(); }, 75000);
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source: source, direction: apiDir }),
+            signal: ctrl.signal
+        }).then(function (r) {
+            clearTimeout(timer);
+            return r.json();
+        }).then(function (j) {
+            j = j || {};
+            return {
+                ok: j.ok !== false && !!j.result,
+                result: j.result || '',
+                sourceFormat: j.sourceFormat || '',
+                targetFormat: j.targetFormat || '',
+                message: j.message || ''
+            };
+        }).catch(function (err) {
+            clearTimeout(timer);
+            const e = new Error(err && err.name === 'AbortError' ? 'timeout' : 'network');
+            e.timeout = !!(err && err.name === 'AbortError');
+            throw e;
+        });
+    }
+
     function copyEngine() {
         const pre = document.getElementById('mxt-engine-pre');
         if (!pre) return;
@@ -688,7 +723,7 @@ const MsgTransformer = (function () {
         render();
     }
 
-    return { init, edit, editFromMx, hover, setDir, setPlain, reset, loadModel, getXml, loadXml, runLiveEngine, copyEngine };
+    return { init, edit, editFromMx, hover, setDir, setPlain, reset, loadModel, getXml, loadXml, runLiveEngine, copyEngine, callEngine };
 })();
 
 window.MsgTransformer = MsgTransformer;

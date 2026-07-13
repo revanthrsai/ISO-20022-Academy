@@ -134,57 +134,50 @@ const PAGES = {
     `,
     playground: `
         <div class="page">
-            <div class="pg-layout">
-            <div class="pg-stage">
+            <p class="pg2-intro">
+                <strong>The Playground.</strong> Pick any message from the <strong>ISO&nbsp;20022 catalogue</strong>
+                to read it as a tree &mdash; then hit <strong>Transform</strong> to run it through the live
+                MT&nbsp;&#8644;&nbsp;MX engine. Or paste your own message into the viewer.
+            </p>
 
-            <!-- TOOL · XML Viewer / Reader (Session 4.1) — opened from the Sample Library -->
-            <section class="pg-tool-panel" id="pg-tool-viewer" hidden>
-                <button class="pg-back" onclick="setPlaygroundTool('samples', event)">&larr; Sample Library</button>
-                <p class="pg-tool-intro">
-                    Read the message as a collapsible tree &mdash; or paste your own over it. Flip
-                    <strong>Plain English</strong> to rename every cryptic tag to what it actually means.
-                </p>
-                <div class="pg-flow" role="group" aria-label="Send this message to another tool">
-                    <span class="pg-flow-lbl">Continue with this message</span>
-                    <div class="pg-flow-btns">
-                        <button class="pg-flow-btn" onclick="sendMessageTo('transformer', event)">Transform</button>
+            <div class="pg2">
+                <!-- LEFT · the catalogue as a compact collapsible tree -->
+                <aside class="pg2-nav" aria-label="ISO 20022 catalogue">
+                    <div class="pg2-nav-head">
+                        <span class="pg2-nav-title">ISO&nbsp;20022 Catalogue</span>
+                        <span class="pg2-nav-sub">pick a message</span>
                     </div>
-                </div>
-                <div class="xv" id="xv-root"></div>
-            </section>
+                    <div class="smp" id="smp-root"></div>
+                </aside>
 
-            <!-- TOOL · Message Transformer (Session 4.2) — bidirectional MT103 ⇄ pacs.008 -->
-            <section class="pg-tool-panel" id="pg-tool-transformer" hidden>
-                <button class="pg-back" onclick="setPlaygroundTool('samples', event)">&larr; Sample Library</button>
-                <p class="pg-tool-intro">
-                    The same payment, two languages. Edit <strong>either</strong> side and the other rebuilds
-                    <strong>live</strong> &mdash; the legacy SWIFT <strong>MT103</strong> and the
-                    <strong>ISO&nbsp;20022 pacs.008</strong> stay locked to one shared meaning. Flip the direction to convert
-                    each way, hover a field to see where it lands, and toggle plain English to read the ISO side without the tags.
-                </p>
-                <div class="pg-flow" role="group" aria-label="Send this message to another tool">
-                    <span class="pg-flow-lbl">Continue with this pacs.008</span>
-                    <div class="pg-flow-btns">
-                        <button class="pg-flow-btn" onclick="sendMessageTo('viewer', event)">View</button>
+                <!-- RIGHT · the XML viewer of the selected message -->
+                <section class="pg2-main">
+                    <div class="pg2-bar">
+                        <div class="pg2-msg" id="pg2-msg">
+                            <span class="pg2-msg-code">pacs.008</span>
+                            <span class="pg2-msg-sub">FI-to-FI Customer Credit Transfer</span>
+                        </div>
+                        <button class="pg2-xform" id="pg2-xform" onclick="openTransform(event)" disabled
+                                title="The live engine transforms pacs.008 &#8644; MT103">
+                            <span class="pg2-xform-i" aria-hidden="true">&#9889;</span> Transform
+                        </button>
                     </div>
+                    <div class="xv" id="xv-root"></div>
+                </section>
+            </div>
+
+            <!-- Transform · live-only, slides in from the right -->
+            <div class="pg2-scrim" id="pg2-scrim" hidden onclick="closeTransform()"></div>
+            <aside class="pg2-drawer" id="pg2-drawer" hidden aria-hidden="true" aria-label="Live transform">
+                <div class="pg2-drawer-bar">
+                    <div class="pg2-drawer-t">
+                        <span class="pg2-drawer-title">Live transform</span>
+                        <span class="pg2-drawer-sub">Java&nbsp;+&nbsp;Prowide engine</span>
+                    </div>
+                    <button class="pg2-drawer-x" onclick="closeTransform()" aria-label="Close">&times;</button>
                 </div>
-                <div class="mxt" id="mxt-root"></div>
-            </section>
-
-            <!-- TOOL · Sample Message Library (Session 4.5) — the ISO 20022 catalogue tree, the Playground home -->
-            <section class="pg-tool-panel" id="pg-tool-samples" data-reveal="up">
-                <p class="pg-tool-intro">
-                    The <strong>ISO&nbsp;20022 catalogue</strong>, browsable as a tree &mdash;
-                    <strong>Payments</strong>, <strong>Securities</strong>, <strong>Trade Finance</strong>,
-                    <strong>Cards</strong>, and <strong>Foreign Exchange</strong>. Pick a business domain, pick a
-                    message, and it opens in the reader with <strong>Transform</strong> one click
-                    away &mdash; or paste your own message.
-                </p>
-                <div class="smp" id="smp-root"></div>
-            </section>
-
-            </div><!-- /pg-stage -->
-            </div><!-- /pg-layout -->
+                <div class="pg2-drawer-body" id="pg2-drawer-body"></div>
+            </aside>
         </div>
     `,
     glossary: `
@@ -207,71 +200,135 @@ const PAGES = {
 // Ordered top-level sections, for the prev/next header arrows.
 const NAV_ORDER = ['history', 'library', 'playground', 'glossary'];
 
-// Which Playground tool is showing ('samples' | 'viewer' | 'transformer').
-// 'samples' (the catalogue) is the Playground home; the viewer/reader is opened from it.
-let playgroundTool = 'samples';
+// ── Playground workspace ────────────────────────────────────────────────────
+// One screen, no tool tabs: the catalogue tree (left) loads a message into the
+// XML viewer (right); the Transform button sends the current message through the
+// live engine in a slide-over panel. Live-only — no in-browser approximation.
 
-// Switch between Playground tools without leaving the section. Each tool's
-// panel is a sibling <section>; we just toggle which one is visible and lazily
-// (re)initialise it so its live state is fresh.
-function setPlaygroundTool(tool, evt) {
-    if (evt) evt.preventDefault();
-    playgroundTool = tool;
-    const viewer = document.getElementById('pg-tool-viewer');
-    const transformer = document.getElementById('pg-tool-transformer');
-    const samples = document.getElementById('pg-tool-samples');
-    if (viewer) viewer.hidden = (tool !== 'viewer');
-    if (transformer) transformer.hidden = (tool !== 'transformer');
-    if (samples) samples.hidden = (tool !== 'samples');
-    if (tool === 'viewer' && window.XmlViewer) XmlViewer.init('xv-root');
-    if (tool === 'transformer' && window.MsgTransformer) MsgTransformer.init('mxt-root');
-    if (tool === 'samples' && window.SampleLibrary) SampleLibrary.init('smp-root');
-
-    // Keep the URL on the active tool so a chosen tool is shareable / reload-safe
-    // (docs/HANDBOOK.md (IA) §2). Write-only (replaceState, no reload); routeOnLoad /
-    // hashchange read it back.
-    if (!window.CLEAN_URLS && typeof history !== 'undefined') {
-        const slug = PG_TOOL_TO_SLUG[tool] || tool;
-        const target = '#/playground/' + slug;
-        if (location.hash !== target) history.replaceState(null, '', target);
-    }
+function pgEsc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Route slugs for the five Playground tools (docs/HANDBOOK.md (IA) §3) ⇄ the internal
-// tool keys setPlaygroundTool understands.
-const PG_TOOL_SLUGS = { 'xml-viewer': 'viewer', viewer: 'viewer', transformer: 'transformer', samples: 'samples' };
-const PG_TOOL_TO_SLUG = { viewer: 'xml-viewer', transformer: 'transformer', samples: 'samples' };
+// Mount the workspace: the viewer first (so the tree can load into it), then the
+// catalogue tree (which selects the default message and syncs the top bar).
+function initPlayground() {
+    if (window.XmlViewer) XmlViewer.init('xv-root');
+    if (window.SampleLibrary) SampleLibrary.init('smp-root');
+}
 
-// Open the Playground at a specific tool (from a deep link or a glossary
-// cross-link). Ensures the Playground page is mounted, then switches tools.
-function openPlaygroundTool(slug){
-    const tool = PG_TOOL_SLUGS[slug] || 'samples';
-    if (currentNavPage() !== 'playground' || !document.getElementById('pg-tool-viewer')) {
+// Deep links / glossary cross-links: any /playground/<slug> opens the workspace;
+// 'transformer' additionally pops the live-transform drawer once mounted.
+function openPlaygroundTool(slug) {
+    if (currentNavPage() !== 'playground' || !document.getElementById('xv-root')) {
         navigate('playground');
     }
-    setPlaygroundTool(tool);
+    if (slug === 'transformer') setTimeout(function () { openTransform(); }, 80);
 }
 
-// Carry the current message from the active tool into another, so the five
-// Playground tools behave like one workspace, not five separate pastes
-// (Session 4.6). Read the source tool's current XML first, switch tools (which
-// re-initialises the destination), then load the message into it.
-const PG_GET = {
-    viewer:      () => (window.XmlViewer && XmlViewer.getXml()) || '',
-    transformer: () => (window.MsgTransformer && MsgTransformer.getXml()) || ''
-};
-const PG_LOAD = {
-    viewer:      (xml) => window.XmlViewer && XmlViewer.loadXml(xml),
-    transformer: (xml) => window.MsgTransformer && MsgTransformer.loadXml(xml)
-};
-function sendMessageTo(dest, evt) {
+// Which way to convert: the viewer holds XML (MX) → show its legacy MT; a bare
+// MT field block → show its ISO 20022.
+function pgTransformDir() {
+    const src = (window.XmlViewer ? XmlViewer.getXml() : '').trim();
+    return src.charAt(0) === '<' ? 'MX_TO_MT' : 'MT_TO_MX';
+}
+
+// Open the slide-over and run the viewer's current message through the live
+// engine. Live-only, with a warming state for Render cold starts and a graceful
+// error + Retry (so a sleeping server never leaves a dead panel).
+function openTransform(evt) {
     if (evt) evt.preventDefault();
-    const from = playgroundTool;
-    if (from === dest) return;
-    const xml = (PG_GET[from] ? PG_GET[from]() : '').trim();
-    if (!xml) return;                 // nothing loaded yet — no-op
-    setPlaygroundTool(dest);          // switches + re-inits the destination
-    if (PG_LOAD[dest]) PG_LOAD[dest](xml);
+    const drawer = document.getElementById('pg2-drawer');
+    const scrim = document.getElementById('pg2-scrim');
+    const body = document.getElementById('pg2-drawer-body');
+    if (!drawer || !body) return;
+    const src = (window.XmlViewer ? XmlViewer.getXml() : '').trim();
+    if (!src) return;
+
+    scrim.hidden = false;
+    drawer.hidden = false;
+    drawer.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(function () { drawer.classList.add('is-open'); scrim.classList.add('is-open'); });
+    document.body.classList.add('pg2-locked');
+
+    runTransformInto(body, src, pgTransformDir());
+}
+
+function closeTransform() {
+    const drawer = document.getElementById('pg2-drawer');
+    const scrim = document.getElementById('pg2-scrim');
+    if (!drawer) return;
+    drawer.classList.remove('is-open');
+    if (scrim) scrim.classList.remove('is-open');
+    document.body.classList.remove('pg2-locked');
+    setTimeout(function () {
+        drawer.hidden = true;
+        drawer.setAttribute('aria-hidden', 'true');
+        if (scrim) scrim.hidden = true;
+    }, 280);
+}
+
+function runTransformInto(body, src, dir) {
+    renderTransformLoading(body);
+    if (!window.MsgTransformer || !MsgTransformer.callEngine) {
+        renderTransformError(body, 'The transform engine isn’t available right now.');
+        return;
+    }
+    MsgTransformer.callEngine(src, dir).then(function (r) {
+        if (r && r.ok && r.result) renderTransformResult(body, r);
+        else renderTransformError(body, (r && r.message) || 'The engine returned an error for this message.');
+    }).catch(function (err) {
+        renderTransformError(body, (err && err.timeout)
+            ? 'The engine is waking up and took too long — give it a few seconds and hit Retry.'
+            : 'Couldn’t reach the live engine (it may be asleep). Hit Retry in a moment.');
+    });
+}
+
+function retryTransform() {
+    const body = document.getElementById('pg2-drawer-body');
+    const src = (window.XmlViewer ? XmlViewer.getXml() : '').trim();
+    if (body && src) runTransformInto(body, src, pgTransformDir());
+}
+
+function renderTransformLoading(body) {
+    body.innerHTML =
+        '<div class="pg2-tx pg2-tx-loading">'
+        + '<div class="pg2-tx-spin" aria-hidden="true"></div>'
+        + '<div class="pg2-tx-status"><strong>Waking the engine…</strong><br>'
+        + 'The first run after a quiet spell can take ~30 seconds. After that it’s instant.</div>'
+        + '</div>';
+}
+
+function renderTransformResult(body, r) {
+    const flow = (pgEsc(r.sourceFormat || '') + ' &rarr; ' + pgEsc(r.targetFormat || '')).trim();
+    body.innerHTML =
+        '<div class="pg2-tx pg2-tx-ok">'
+        + '<div class="pg2-tx-head">'
+        + '<span class="pg2-tx-badge is-ok">Live engine &#10003;</span>'
+        + '<span class="pg2-tx-flow">' + flow + '</span>'
+        + '<button class="pg2-tx-copy" onclick="copyTransform(this)">Copy</button></div>'
+        + '<div class="pg2-tx-note">Transformed by the live Java&nbsp;+&nbsp;Prowide server — a real parse, not a browser approximation.</div>'
+        + '<pre class="pg2-tx-out" id="pg2-tx-out">' + pgEsc(r.result) + '</pre>'
+        + '</div>';
+}
+
+function renderTransformError(body, msg) {
+    body.innerHTML =
+        '<div class="pg2-tx pg2-tx-err">'
+        + '<div class="pg2-tx-head">'
+        + '<span class="pg2-tx-badge is-err">Live engine</span>'
+        + '<button class="pg2-tx-retry" onclick="retryTransform()">Retry</button></div>'
+        + '<div class="pg2-tx-status">' + pgEsc(msg) + '</div>'
+        + '</div>';
+}
+
+function copyTransform(btn) {
+    const pre = document.getElementById('pg2-tx-out');
+    if (!pre) return;
+    const txt = pre.textContent || '';
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt);
+    const o = btn.textContent; btn.textContent = 'Copied ✓';
+    setTimeout(function () { btn.textContent = o; }, 1500);
 }
 
 // Which section is currently active (falls back to the first).
@@ -370,8 +427,7 @@ function navigate(page, evt) {
         applyGlossaryHash();
         renderGlossary();
     } else if (page === 'playground') {
-        if (window.SampleLibrary) SampleLibrary.init('smp-root');
-        playgroundTool = 'samples';
+        initPlayground();
     } else if (page === 'library') {
         renderArticleIndex();
     } else if (page === 'history') {

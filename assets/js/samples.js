@@ -1,12 +1,14 @@
 // =============================================================================
-// PLAYGROUND · SAMPLE MESSAGE LIBRARY  (Phase 2 — card catalogue + static JSON)
+// PLAYGROUND · ISO 20022 CATALOGUE  (compact collapsible tree)
 // -----------------------------------------------------------------------------
-// The ISO 20022 catalogue as a grid of cards. Click a message and its sample is
-// fetched on demand from /samples/<code>.json and opened in the Viewer — so the
-// XML lives in static files, not bundled in this script. Metadata comes from
-// /samples/manifest.json; the domain/family grouping is the small map below.
+// The left navigator of the Playground workspace. The catalogue renders as a
+// collapsible tree — business domain → message family → message. Selecting a
+// message fetches its sample on demand from /samples/<code>.json, loads it into
+// the XML viewer on the right, updates the workspace top bar, and toggles the
+// Transform button (only pacs.008 is engine-transformable today).
 //
-// Self-contained: one global `SampleLibrary` object + its own injected styles.
+// Metadata comes from /samples/manifest.json; the domain grouping is the map
+// below. Self-contained: one global `SampleLibrary` object + injected styles.
 // Public API: init(mountId), open(code).
 // =============================================================================
 
@@ -29,8 +31,10 @@ const SampleLibrary = (function () {
     };
 
     let manifest = null;
+    let byCode = {};
     const cache = {};
     let mountId = 'smp-root';
+    let activeCode = null;
 
     function esc(s) {
         return String(s == null ? '' : s)
@@ -41,7 +45,12 @@ const SampleLibrary = (function () {
         if (manifest) return Promise.resolve(manifest);
         return fetch(BASE + 'manifest.json', { cache: 'no-cache' })
             .then(function (r) { return r.json(); })
-            .then(function (j) { manifest = j; return j; });
+            .then(function (j) {
+                manifest = j;
+                byCode = {};
+                (j || []).forEach(function (m) { byCode[m.code] = m; });
+                return j;
+            });
     }
     function loadSample(code) {
         if (cache[code]) return Promise.resolve(cache[code]);
@@ -50,14 +59,20 @@ const SampleLibrary = (function () {
             .then(function (j) { cache[code] = j; return j; });
     }
 
-    function cardHtml(m) {
-        var canTransform = Array.isArray(m.dest) && m.dest.indexOf('transformer') >= 0;
-        var badge = canTransform ? '<span class="smp-card-badge">Transformable</span>' : '';
-        return '<button class="smp-card" onclick="SampleLibrary.open(\'' + esc(m.code) + '\')" aria-label="Open ' + esc(m.label) + ' in the reader">'
-            + '<span class="smp-card-top"><span class="smp-card-code">' + esc(m.label) + '</span><span class="smp-card-kind">' + esc(m.kind || '') + '</span></span>'
-            + '<span class="smp-card-sub">' + esc(m.sub || '') + '</span>'
-            + '<span class="smp-card-note">' + esc(m.note || '') + '</span>'
-            + '<span class="smp-card-foot">' + badge + '<span class="smp-card-go">Open in reader &rarr;</span></span>'
+    function isTransformable(code) {
+        var m = byCode[code];
+        return !!(m && Array.isArray(m.dest) && m.dest.indexOf('transformer') >= 0);
+    }
+
+    // ── one message = one leaf button ───────────────────────────────────────
+    function leafHtml(m) {
+        var xf = isTransformable(m.code)
+            ? '<span class="smp-leaf-x" title="Transformable through the live engine">&#9889;</span>' : '';
+        return '<button class="smp-leaf" type="button" data-code="' + esc(m.code) + '"'
+            + ' onclick="SampleLibrary.open(\'' + esc(m.code) + '\')" title="' + esc(m.sub || m.label) + '">'
+            + '<span class="smp-leaf-code">' + esc(m.label || m.code) + '</span>'
+            + '<span class="smp-leaf-name">' + esc(m.sub || '') + '</span>'
+            + xf
             + '</button>';
     }
 
@@ -70,41 +85,76 @@ const SampleLibrary = (function () {
         manifest.forEach(function (m) { (byFamily[m.family] = byFamily[m.family] || []).push(m); });
         Object.keys(byFamily).forEach(function (f) { byFamily[f].sort(function (a, b) { return a.code.localeCompare(b.code); }); });
 
-        var html = DOMAINS.map(function (d) {
+        var html = DOMAINS.map(function (d, i) {
             var fams = d.families.filter(function (f) { return byFamily[f] && byFamily[f].length; });
             if (!fams.length) return '';
+            var count = fams.reduce(function (n, f) { return n + byFamily[f].length; }, 0);
             var groups = fams.map(function (f) {
-                return '<div class="smp-family">'
-                    + '<div class="smp-family-head"><span class="smp-family-code">' + esc(f) + '</span><span class="smp-family-name">' + esc(FAMILY_NAMES[f] || '') + '</span></div>'
-                    + '<div class="smp-grid">' + byFamily[f].map(cardHtml).join('') + '</div>'
+                return '<div class="smp-fam">'
+                    + '<div class="smp-fam-head"><span class="smp-fam-code">' + esc(f) + '</span>'
+                    + '<span class="smp-fam-name">' + esc(FAMILY_NAMES[f] || '') + '</span></div>'
+                    + byFamily[f].map(leafHtml).join('')
                     + '</div>';
             }).join('');
-            return '<section class="smp-domain">'
-                + '<div class="smp-domain-head"><h3 class="smp-domain-title">' + esc(d.label) + '</h3><span class="smp-domain-sub">' + esc(d.sub) + '</span></div>'
-                + groups
-                + '</section>';
+            return '<details class="smp-dom"' + (i === 0 ? ' open' : '') + '>'
+                + '<summary class="smp-dom-sum"><span class="smp-twist" aria-hidden="true">&#9656;</span>'
+                + '<span class="smp-dom-title">' + esc(d.label) + '</span>'
+                + '<span class="smp-dom-count">' + count + '</span></summary>'
+                + '<div class="smp-dom-body">' + groups + '</div>'
+                + '</details>';
         }).join('');
-        root.innerHTML = html || '<div class="smp-loading">No samples found.</div>';
+        root.innerHTML = html || '<div class="smp-loading">No messages found.</div>';
+        if (activeCode) markActive(activeCode);
     }
 
+    // Highlight the selected leaf and make sure its domain is expanded.
+    function markActive(code) {
+        var root = document.getElementById(mountId);
+        if (!root) return;
+        root.querySelectorAll('.smp-leaf.is-active').forEach(function (el) { el.classList.remove('is-active'); });
+        var sel = (window.CSS && CSS.escape) ? CSS.escape(code) : code;
+        var leaf = root.querySelector('.smp-leaf[data-code="' + sel + '"]');
+        if (leaf) {
+            leaf.classList.add('is-active');
+            var det = leaf.closest('.smp-dom');
+            if (det && !det.open) det.open = true;
+        }
+    }
+
+    // ── select a message → drive the viewer + top bar + Transform button ────
     function open(code) {
-        loadSample(code).then(function (s) {
-            if (typeof window.setPlaygroundTool === 'function') window.setPlaygroundTool('viewer');
-            var ta = document.getElementById('xv-src');
-            if (ta && window.XmlViewer) {
-                ta.value = s.xml;
-                if (typeof XmlViewer.onInput === 'function') XmlViewer.onInput();
-                var meta = document.querySelector('.xv-src-sub');
-                if (meta) meta.textContent = (s.label || code) + ' — ' + (s.sub || '');
+        return loadSample(code).then(function (s) {
+            activeCode = code;
+            if (window.XmlViewer && typeof XmlViewer.loadXml === 'function') XmlViewer.loadXml(s.xml);
+
+            var bar = document.getElementById('pg2-msg');
+            if (bar) {
+                bar.innerHTML = '<span class="pg2-msg-code">' + esc(s.label || code) + '</span>'
+                    + '<span class="pg2-msg-sub">' + esc(s.sub || '') + '</span>';
             }
-        }).catch(function () { /* a missing sample must not blank the reader */ });
+            var xf = document.getElementById('pg2-xform');
+            if (xf) {
+                var ok = isTransformable(code);
+                xf.disabled = !ok;
+                xf.title = ok
+                    ? 'Run this pacs.008 through the live MT ⇄ MX engine'
+                    : 'The live engine currently transforms pacs.008 ⇄ MT103';
+            }
+            markActive(code);
+        }).catch(function () { /* a missing sample must not blank the workspace */ });
     }
 
     function init(id) {
         mountId = id || 'smp-root';
         injectStyles();
         render();
-        loadManifest().then(render).catch(function () {
+        loadManifest().then(function () {
+            render();
+            // Select a sensible default so the viewer, top bar and Transform
+            // button start in sync — prefer the transformable pacs.008.
+            var def = byCode['pacs.008'] ? 'pacs.008' : (manifest[0] && manifest[0].code);
+            if (def) open(def);
+        }).catch(function () {
             var root = document.getElementById(mountId);
             if (root) root.innerHTML = '<div class="smp-loading">Couldn&rsquo;t load the catalogue &mdash; please refresh.</div>';
         });
@@ -114,27 +164,28 @@ const SampleLibrary = (function () {
         if (typeof document === 'undefined' || !document.head) return;
         if (document.getElementById('smp-styles')) return;
         var css = ''
-            + '.smp-loading{padding:48px 16px;text-align:center;color:var(--text-muted);font-size:var(--fs-body,16px)}'
-            + '.smp-domain{margin-bottom:var(--space-2xl,40px)}'
-            + '.smp-domain-head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}'
-            + '.smp-domain-title{font-family:var(--font-display,var(--font-sans));font-size:var(--fs-h3,22px);margin:0}'
-            + '.smp-domain-sub{font-family:var(--font-mono,monospace);font-size:var(--fs-small,13px);color:var(--text-muted)}'
-            + '.smp-family{margin-bottom:var(--space-lg,24px)}'
-            + '.smp-family-head{display:flex;align-items:baseline;gap:9px;margin-bottom:10px}'
-            + '.smp-family-code{font-family:var(--font-mono,monospace);font-size:var(--fs-body,15px);font-weight:var(--fw-bold,700);color:var(--primary)}'
-            + '.smp-family-name{font-size:var(--fs-small,13px);color:var(--text-muted)}'
-            + '.smp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}'
-            + '.smp-card{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--surface,#fff);border:1px solid var(--border);border-radius:var(--radius-md,14px);padding:16px;cursor:pointer;font:inherit;color:var(--text);transition:border-color .15s,transform .15s,box-shadow .15s}'
-            + '.smp-card:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow-sm)}'
-            + '.smp-card-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}'
-            + '.smp-card-code{font-family:var(--font-mono,monospace);font-size:var(--fs-body,16px);font-weight:var(--fw-bold,700);color:var(--text)}'
-            + '.smp-card-kind{font-size:var(--fs-micro,11px);text-transform:uppercase;letter-spacing:.05em;color:var(--primary);font-weight:var(--fw-semibold,600)}'
-            + '.smp-card-sub{font-size:var(--fs-small,13.5px);font-weight:var(--fw-medium,500);color:var(--text-secondary,var(--text))}'
-            + '.smp-card-note{font-size:var(--fs-small,13px);color:var(--text-muted);line-height:var(--lh-snug,1.35)}'
-            + '.smp-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}'
-            + '.smp-card-badge{font-size:var(--fs-micro,10.5px);font-weight:var(--fw-semibold,600);color:var(--primary);background:color-mix(in srgb,var(--primary) 12%,transparent);border-radius:var(--radius-pill,999px);padding:2px 8px}'
-            + '.smp-card-go{margin-left:auto;font-size:var(--fs-small,13px);font-weight:var(--fw-semibold,600);color:var(--primary)}'
-            + '@media (max-width:520px){.smp-grid{grid-template-columns:1fr}}';
+            + '.smp-loading{padding:28px 14px;text-align:center;color:var(--text-muted);font-size:var(--fs-small,13px)}'
+            + '.smp-dom{border-bottom:1px solid var(--border)}'
+            + '.smp-dom:last-child{border-bottom:none}'
+            + '.smp-dom-sum{display:flex;align-items:center;gap:9px;padding:12px 12px;cursor:pointer;list-style:none;user-select:none}'
+            + '.smp-dom-sum::-webkit-details-marker{display:none}'
+            + '.smp-dom-sum:hover{background:var(--surface-alt)}'
+            + '.smp-twist{color:var(--text-faint);font-size:10px;transition:transform var(--dur-fast,.15s) var(--ease-out,ease)}'
+            + '.smp-dom[open]>.smp-dom-sum .smp-twist{transform:rotate(90deg)}'
+            + '.smp-dom-title{font-family:var(--font-display,var(--font-sans));font-weight:var(--fw-bold,700);font-size:14px;color:var(--text)}'
+            + '.smp-dom-count{margin-left:auto;font-family:var(--font-mono,monospace);font-size:10.5px;color:var(--text-faint);background:var(--surface-alt);border-radius:var(--radius-pill,999px);padding:1px 8px}'
+            + '.smp-dom-body{padding:2px 8px 10px}'
+            + '.smp-fam{margin:6px 0 10px}'
+            + '.smp-fam-head{display:flex;align-items:baseline;gap:8px;padding:4px 8px 6px}'
+            + '.smp-fam-code{font-family:var(--font-mono,monospace);font-size:12px;font-weight:var(--fw-bold,700);color:var(--primary)}'
+            + '.smp-fam-name{font-size:11px;color:var(--text-faint)}'
+            + '.smp-leaf{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:var(--radius-sm,10px);padding:8px 10px;cursor:pointer;font:inherit;color:var(--text);transition:background var(--dur-fast,.15s) var(--ease-out,ease),border-color var(--dur-fast,.15s) var(--ease-out,ease)}'
+            + '.smp-leaf:hover{background:var(--surface-alt);border-color:var(--border)}'
+            + '.smp-leaf.is-active{background:var(--glass-tint-strong,rgba(16,185,129,.1));border-color:var(--primary)}'
+            + '.smp-leaf-code{flex:none;font-family:var(--font-mono,monospace);font-size:12.5px;font-weight:var(--fw-bold,700);color:var(--text)}'
+            + '.smp-leaf.is-active .smp-leaf-code{color:var(--primary-deep,var(--primary))}'
+            + '.smp-leaf-name{flex:1;min-width:0;font-size:11.5px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+            + '.smp-leaf-x{flex:none;font-size:12px;color:var(--primary);line-height:1}';
         var style = document.createElement('style');
         style.id = 'smp-styles';
         style.textContent = css;
