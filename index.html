@@ -143,8 +143,33 @@
             <span>An interactive academy for how money moves</span>
             <span class="site-footer-dot" aria-hidden="true">&middot;</span>
             <span>&copy; 2026</span>
+            <span class="site-footer-dot" aria-hidden="true">&middot;</span>
+            <a class="status-pill" href="/status/" id="status-pill" title="Live system status">
+                <span class="status-dot" aria-hidden="true"></span><span class="status-text">All systems operational</span>
+            </a>
         </div>
     </footer>
+    <style>
+        .status-pill{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:inherit;transition:color .15s}
+        .status-pill:hover{color:var(--primary)}
+        .status-dot{width:8px;height:8px;border-radius:50%;background:var(--success,#0B8A60);box-shadow:0 0 0 0 rgba(11,138,96,.55);animation:statusPulse 1.8s ease-out infinite}
+        .status-pill.is-down .status-dot{background:var(--danger,#C13543);animation:none}
+        @keyframes statusPulse{0%{box-shadow:0 0 0 0 rgba(11,138,96,.55)}70%{box-shadow:0 0 0 7px rgba(11,138,96,0)}100%{box-shadow:0 0 0 0 rgba(11,138,96,0)}}
+        @media (prefers-reduced-motion:reduce){.status-dot{animation:none}}
+    </style>
+    <script>
+    (function(){
+        var p = document.getElementById('status-pill');
+        if (!p) return;
+        fetch('https://iso20022academy-transform-api.onrender.com/api/health', { cache: 'no-store' })
+            .then(function (r) { if (!r.ok) throw 0; })
+            .catch(function () {
+                p.classList.add('is-down');
+                var t = p.querySelector('.status-text');
+                if (t) t.textContent = 'Engine offline';
+            });
+    })();
+    </script>
 
     <!-- Markdown article engine: marked.js (CDN) renders /content/*.md -->
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
