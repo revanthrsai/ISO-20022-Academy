@@ -2,56 +2,51 @@
 title: "The camt Family: How Banks Tell You What Happened"
 level: 300
 category: Message Deep Dives
-summary: "The money moved. But how do you actually find out? The camt family is the reporting side of payments: the statements, the notifications, and the balances that let everyone reconcile what happened."
+summary: "The money moved. But how do you actually find out? The camt family is the reporting side of payments: the statements, notifications, and balances that let everyone reconcile what happened."
 minutes: 8
-updated: 2026-06-29
+updated: 2026-07-13
 tags: [camt, reporting, camt.053, camt.054, camt.052, reconciliation, cash-management]
-related: [303-camt-family, 302-pacs-family, 305-message-lifecycle, 103-payment-lifecycle, 311-camt-053-reconciliation]
-earnedSkill: "Explain what the camt family is for, tell a statement (camt.053) from an intraday report (camt.052) from a single-payment notification (camt.054), and say where reporting sits in the life of a payment."
+related: [302-pacs-family, 305-message-lifecycle, 103-payment-lifecycle, 311-camt-053-reconciliation]
+earnedSkill: "Explain what the camt family is for, tell a statement (camt.053) from an intraday report (camt.052) from a single-payment notification (camt.054), and place reporting in the life of a payment."
 num: 303
 status: published
 ---
 
-> **Nobody knows yet.** Sweety's ₹33,000 has landed. Her bank applied the funds, the payment settled, everyone's happy. But Sweety doesn't work at the bank. She's at her desk in Bangalore, and as far as she can tell, *nothing has happened* until her bank tells her something did. And her accountant needs more: not just "money arrived," but *which* invoice it paid, on *what* date, leaving *what* balance. Who sends that, and what does it look like?
+> **Nobody knows yet.** Sweety's ₹33,000 has landed. Her bank applied the funds, it settled, everyone's happy. But Sweety doesn't work at the bank. She's at her desk in Bangalore, and as far as she can tell, *nothing has happened*. And her accountant needs more than "money arrived" — *which* invoice it paid, on *what* date, leaving *what* balance.
 
-That's the **camt family**, short for **Cash Management**. If pain is you instructing your bank and pacs is banks moving the money, camt is everyone being *told what happened* afterwards. It is the reporting layer of the payment world: statements, notifications, and balances.
+You've moved the money (pain, then pacs). This family is about everyone finding out it moved. And the shape of it falls out of Sweety's problem.
 
-One line to keep: **pain and pacs make money move; camt tells you that it did.** No money settles inside a camt message. It is information about money that already moved.
+## Who tells Sweety, and does money move in it?
 
-## The purpose: closing the loop
+{{think}}
+The payment settled inside the banks. Sweety, outside them, knows nothing until she's told. Her ERP needs to match the credit to Invoice 0042, on the right date, and confirm the new balance — automatically, at scale.
 
-A payment isn't finished when the funds settle. It's finished when both sides can *see* it settled and tie it back to what they were owed, the step Level 100 called **reconciliation**. The camt family is what makes reconciliation possible at scale: instead of a human logging into a portal, a bank sends a structured report that a company's accounting system can read and match automatically.
+So who sends that, what kind of thing is it, and does any money move inside it?
+{{reveal}}
+Her bank sends *structured reports* her accounting system can read and match without a human — the **camt family** (Cash Management): statements, notifications, balances. And no, no money moves inside a camt message. It's *information about money that already moved.*
 
-It replaces a tangle of older formats: the legacy SWIFT **MT940** statement, **MT942** interim report, **MT900/910** debit and credit advices, plus a hundred proprietary bank file formats. The camt family gives every bank one shared shape for "here is what happened on your account."
+The one line: **pain and pacs make money move; camt tells you that it did.**
+{{/think}}
 
-## Who's in the family
+## Closing the loop
 
-Three messages do almost all the everyday work, and they differ mainly in *scope* and *timing*:
+A payment isn't finished when the funds settle — it's finished when both sides can *see* it settled and tie it back to what they were owed. That's the **reconciliation** step from Level 100, and camt is what makes it work at scale: not a human logging into a portal, but a structured report a company's accounting system reads and matches automatically. It replaces a tangle of legacy formats — MT940 statement, MT942 interim report, MT900/910 advices, plus a hundred proprietary files — with one shared shape for "here's what happened on your account."
 
-- **camt.053, Bank-to-Customer Statement.** The end-of-day statement. Every booked entry on the account for the period, plus opening and closing balances. The workhorse of reconciliation, and the replacement for MT940.
-- **camt.052, Bank-to-Customer Account Report.** The *intraday* report: the same idea, but provisional and mid-day: "here's where you stand right now," before the day is closed. Replaces MT942.
-- **camt.054, Bank-to-Customer Debit/Credit Notification.** A single-event nudge: "one specific entry just hit your account." This is the message that tells Sweety's accounting system *the moment* her ₹33,000 arrived, rather than waiting for the nightly statement. Replaces MT900/910.
+## Who's in the family, and how they differ
 
-Two more you'll meet later: **camt.060** asks the bank to *send* a report (a request, not a report itself), and **camt.056**, the payment cancellation request, belongs to the exceptions world you'll study in Level 400.
+{{think}}
+Three messages do almost all the everyday work, and they differ mainly by *scope* and *timing*. Match each description to a job: "one specific entry, the moment it lands," "the whole account so far today, provisional," "the whole account at day's close, authoritative."
+{{reveal}}
+- **one entry, now** → **camt.054**, Bank-to-Customer Debit/Credit Notification — the single-event nudge that tells Sweety's system the moment her ₹33,000 arrived. (Replaces MT900/910.)
+- **the whole account so far today** → **camt.052**, Bank-to-Customer Account Report — the intraday, provisional "here's where you stand right now." (Replaces MT942.)
+- **the whole account at close** → **camt.053**, Bank-to-Customer Statement — the authoritative end-of-day record, the workhorse of reconciliation. (Replaces MT940.)
+{{/think}}
 
-Tell the first three apart by scope: **camt.054 is one entry now, camt.052 is the whole account so far today, camt.053 is the whole account at day's close.**
+Two more you'll meet later: **camt.060** *asks* the bank to send a report (a request, not a report), and **camt.056**, the cancellation request, belongs to the Level 400 exceptions world.
 
-{{embed:explorer:CAMT.054|Open camt.054, the credit notification, in the Explorer}}
+## Where reporting sits
 
-## The lifecycle: where reporting sits
-
-camt messages don't start a payment; they trail it. Following Sweety's ₹33,000:
-
-1. **The pacs.008 settles** at Sweety's bank and the funds are applied to her account.
-2. **Her bank fires a camt.054** credit notification almost immediately, a single-event "this just arrived" that her accounting system can match to Invoice 0042 without waiting.
-3. **Through the day, a camt.052** intraday report shows the provisional running position if her treasury team asks for it.
-4. **At end of day, a camt.053** statement closes the books, every entry with opening and closing balances, the authoritative record her accountant reconciles against.
-
-The same references thread through all of it. The `EndToEndId` Bob set back in the pain.001, `BOB-INV0042`, rides the pacs.008 into Sweety's bank and surfaces again here, inside the camt entry, which is exactly how her system knows this credit pays *that* invoice.
-
-## A sample camt.054
-
-A credit notification, trimmed to the essentials. Notice it reports an entry rather than moving one:
+camt messages don't start a payment; they trail it. Following Sweety's ₹33,000: the **pacs.008 settles** and the funds hit her account; her bank fires a **camt.054** almost immediately so her ERP can match Invoice 0042 without waiting; through the day a **camt.052** shows the provisional running position if treasury asks; at close a **camt.053** statement closes the books with opening and closing balances. The same references thread through all of it — the `EndToEndId` Bob set in the pain.001 rides into Sweety's bank and surfaces again *inside the camt entry*, which is exactly how her system knows this credit pays *that* invoice.
 
 ```xml
 <BkToCstmrDbtCdtNtfctn>
@@ -77,11 +72,43 @@ A credit notification, trimmed to the essentials. Notice it reports an entry rat
 </BkToCstmrDbtCdtNtfctn>
 ```
 
-Read it as a sentence: a **credit** (`CdtDbtInd = CRDT`) of **33,000 INR** was **booked** (`Sts = BOOK`) on Sweety's account on 29 June, sent by **Bob**, for **Invoice 0042**. That single `EndToEndId` is the thread back to the instruction Bob typed in his kitchen, and the reason reconciliation works at all.
+Read it as a sentence: a **credit** (`CdtDbtInd = CRDT`) of **33,000 INR** was **booked** (`Sts = BOOK`) on Sweety's account on 29 June, from **Bob**, for **Invoice 0042**. That single `EndToEndId` is the thread back to the instruction Bob typed in his kitchen — and the reason reconciliation works at all.
 
-## So, what can you now do?
+{{embed:explorer:CAMT.054|Open camt.054, the credit notification, in the Explorer}}
 
-You can explain what the camt family is for (reporting, not moving), tell camt.053 (end-of-day statement) from camt.052 (intraday report) from camt.054 (single-entry notification), say which legacy MT messages each one replaced, and place reporting at its proper spot in the life of a payment: the step that finally closes the loop.
+{{aside:model|The mental model}}
+**pain and pacs make money move; camt tells you it did.** No money settles inside a camt message — it's information *about* money that already moved. Tell the three apart by scope: camt.054 = one entry now, camt.052 = the whole account so far today, camt.053 = the whole account at day's close.
+{{/aside}}
+
+{{aside:chair|From the engineer's chair}}
+The `EndToEndId` that started life in Bob's pain.001 surfaces again inside the camt entry (`NtryDtls/TxDtls/Refs`) — that reappearance is what lets an ERP tie an incoming credit to a specific open invoice. Structurally the camt family replaces MT940 (→ camt.053), MT942 (→ camt.052), and MT900/910 (→ camt.054), but with references in named homes instead of a cramped free-text field.
+{{/aside}}
+
+{{aside:breaks|Where it breaks}}
+- **Expecting money to move in a camt.** It never does — it reports movement that already happened.
+- **Confusing the scope.** Acting on a provisional camt.052 as if it were the authoritative camt.053, or waiting for the nightly camt.053 when a real-time camt.054 already told you.
+- **A missing `EndToEndId` in the entry.** Without the thread, the ERP can't auto-match the credit to its invoice, and the entry drops into a manual queue.
+{{/aside}}
+
+{{aside:map|The map}}
+Reporting closes the loop the earlier families opened:
+
+- What actually moved the money → {{link:article:302-pacs-family|the pacs family}}.
+- The statement up close → {{link:article:311-camt-053-reconciliation|camt.053, line by line}}.
+- The field that makes matching automatic → {{link:article:601-remittance-information|remittance information}}.
+{{/aside}}
+
+{{aside:ref|Reference card}}
+- **camt = Cash Management** — reporting, not moving. No settlement inside.
+- **camt.054** = one-entry notification (MT900/910). **camt.052** = intraday report (MT942). **camt.053** = end-of-day statement (MT940).
+- **camt.060** requests a report; **camt.056** (cancellation) is a Level 400 exception.
+- **Purpose:** make reconciliation automatic at scale.
+- **The thread:** `EndToEndId` from the pain.001 surfaces in the camt entry to tie a credit to its invoice.
+{{/aside}}
+
+## So what can you do now?
+
+You can explain what the camt family is for (reporting, not moving), tell camt.053 (end-of-day statement) from camt.052 (intraday) from camt.054 (single-entry notification), say which legacy MT messages each replaced, and place reporting at its proper spot in the life of a payment — the step that finally closes the loop.
 
 {{check:What is the camt family for?|Cash management — statements, intraday reports, notifications, and cancellation requests|Initiating customer payments|Settling between central banks}}
 

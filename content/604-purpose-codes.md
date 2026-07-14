@@ -1,58 +1,81 @@
 ---
 title: "Purpose Codes: Telling the System Why"
 level: 600
+category: Field Guides
 num: 604
-summary: "SALA means salary. DIVD means dividend. Four letters that decide how a payment is processed, taxed, screened, and reported, and one of the easiest fields to get quietly wrong."
+summary: "SALA means salary. DIVD means dividend. Four letters that decide how a payment is processed, taxed, screened, and reported — and one of the easiest fields to get quietly wrong."
 minutes: 6
-updated: 2026-07-03
+updated: 2026-07-13
 tags: [purpose codes, purp, ctgypurp, external code sets, compliance]
-related: [302-pain-001, 301-pacs-008, 502-payroll]
+related: [302-pain-001, 502-payroll, 408-reason-codes]
 earnedSkill: "Tell Purp from CtgyPurp, know where purpose codes come from and who sets them, and explain why some corridors reject a payment that arrives without one."
 status: published
 ---
 
-> **The problem first.** Two payments leave the same company account on the same afternoon, for the same amount, to two people with the same surname. One is an employee's salary. The other settles an invoice from a family-run supplier. The receiving bank must treat them differently: one may enjoy payroll handling and privacy conventions, the other feeds into trade statistics, and in several countries the tax treatment of each is different. Nothing in the amount, the names, or the accounts reveals which is which. Where does a payment say *why* it exists?
+> **The problem first.** Two payments leave the same company account on the same afternoon, for the same amount, to two people with the same surname. One is an employee's salary. The other settles an invoice from a family-run supplier. The receiving bank must treat them differently — one may get payroll handling and privacy conventions, the other feeds trade statistics, and in several countries the tax treatment differs. Nothing in the amount, the names, or the accounts reveals which is which.
 
-In a small field with a short answer. ISO 20022 gives every payment a dedicated place to declare its reason: the **purpose code**. Where remittance information tells the *receiver's accounting system* which invoice the money pays, the purpose code tells the *machinery in between* what kind of event this payment is.
+Where does a payment say *why* it exists? Work out what's missing and you've found the field.
 
-## Purp: the payment's declared reason
+## What's the one thing that distinguishes them?
 
-The element is **`Purp`**, carried in the transaction block of the pain.001 and travelling untouched into the pacs.008, exactly like the customer's `EndToEndId`. Inside it, `Cd` holds a four-letter code drawn from a published list: the **external purpose code list** that ISO 20022 maintains outside the message schemas, so codes can be added without changing the messages themselves. A few you will meet constantly:
+{{think}}
+The two payments are identical on every field you'd normally look at: amount, date, account, even the surname. Yet they must be processed, taxed, and reported differently.
 
-- **`SALA`**: salary payment.
-- **`SUPP`**: supplier payment.
-- **`DIVD`**: dividend.
-- **`TAXS`**: tax payment.
-- **`PENS`**: pension.
-- **`INTC`**: an intra-company transfer between related entities.
+What does the message need to carry to tell them apart — and who is in a position to set it?
+{{reveal}}
+A dedicated field declaring the payment's *reason*: the **purpose code**, `Purp`. Inside it, a four-letter code from a published list — `SALA` (salary), `SUPP` (supplier), `DIVD` (dividend), `TAXS` (tax), `PENS` (pension), `INTC` (intra-company). It's set by whoever *initiates* the payment (only the payer knows why they're paying), and carried untouched through the chain, exactly like the customer's `EndToEndId`.
 
-The code is set by whoever initiates the payment, and the agents in the chain carry it without altering it. It is the customer speaking, in a vocabulary every machine on the route understands.
+Where remittance information tells the *receiver's ERP* which invoice the money pays, the purpose code tells the *machinery in between* what kind of event this is.
+{{/think}}
 
-## CtgyPurp: the same question at a different altitude
+The code comes from the **external purpose code list** ISO 20022 maintains *outside* the message schemas, so new codes can be added without changing the messages. It's the customer speaking, in a vocabulary every machine on the route understands.
 
-Nearby lives a sibling that trips almost everyone: **`CtgyPurp`**, the Category Purpose. The difference is altitude, and who is listening.
+## Purp's confusing sibling
 
-- **`Purp`** is *fine-grained* and aimed at the far end: the beneficiary's bank, the regulator, the statistics office. "This specific payment is a dividend."
-- **`CtgyPurp`** is *coarse-grained* and aimed at the banks in the middle: it can trigger special **processing**. A category of `SALA` can route a whole batch into payroll handling; a treasury category can claim priority settlement.
+{{think}}
+Right next to `Purp` lives `CtgyPurp` (Category Purpose), and swapping them is one of the commonest field mistakes. Here's the clue: `Purp` is *fine-grained* and aimed at the far end — the beneficiary's bank, the regulator, the statistics office ("this specific payment is a dividend").
 
-A payroll run shows both at work: the file carries a salary category so banks process the batch as payroll, and each transaction carries `SALA` so the far end knows what each credit is.
+So what would a *coarse-grained* code, aimed at the banks in the **middle**, be for?
+{{reveal}}
+Triggering **processing**. `CtgyPurp` is a high-level category the intermediary banks read to decide *how to handle* a payment: a `SALA` category can route a whole batch into payroll handling; a treasury category can claim priority settlement.
+
+So: `Purp` = *what this payment is* (read at the far end); `CtgyPurp` = *how to handle it* (read in the middle). A payroll run uses both — a salary category so banks process the batch as payroll, and `SALA` on each transaction so the far end knows what each credit is.
+{{/think}}
 
 {{flow:Who reads which code|Corporate ERP ~ sets Purp and CtgyPurp in the pain.001|-> pain.001|Banks in the chain ~ read CtgyPurp for processing decisions|-> pacs.008|Beneficiary bank ~ applies local rules to Purp|-> reporting|Regulator and statistics ~ consume Purp downstream}}
 
-## Where purpose codes stop being optional
+In much of the world `Purp` is good practice; in a growing set of corridors it is *law*. Several jurisdictions — across the Middle East, South Asia, and East Asia — require an approved purpose code on incoming or outgoing cross-border payments and will **reject or hold** one that arrives without it (the lists are sometimes national, published by the central bank, not the ISO external list). There, the purpose code isn't metadata — it's a condition of the money arriving at all. Even where it's voluntary, a correctly coded payment sails past filters that would otherwise stop it for a human question, because the question — *what is this payment for?* — was answered before anyone had to ask.
 
-In much of the world, `Purp` is good practice. In a growing set of corridors it is law. Several jurisdictions, particularly across the Middle East, South Asia, and East Asia, require an approved purpose code on incoming or outgoing cross-border payments and will **reject or hold** a payment arriving without one. The lists are sometimes national rather than the ISO external list, published by the central bank. For anyone operating those corridors, the purpose code is not metadata: it is a condition of the money arriving at all.
+{{aside:model|The mental model}}
+**The purpose code answers "why?" before it's asked.** `Purp` = fine-grained, read at the far end (beneficiary bank, regulator, statistics). `CtgyPurp` = coarse category, read by the banks in the middle to trigger *processing*. Set by the initiator, carried untouched, drawn from an external code list.
+{{/aside}}
 
-Even where it's voluntary, the incentive is straight-through processing. A correctly coded payment sails past filters that would otherwise stop it for a human question, because the question ("what is this payment for?") was answered before anyone had to ask it.
+{{aside:chair|From the engineer's chair}}
+Both codes come from external code sets (evolve without a schema change), so validate against the current list, not a hard-coded enum — and in mandatory corridors, against the *national* list. Keep `Purp` and `CtgyPurp` in their own lanes: put a fine-grained code in the category field and intermediary banks make processing decisions on data meant for the far end, while the far end loses the detail entirely.
+{{/aside}}
 
-## What breaks
+{{aside:breaks|Where it breaks}}
+- **No code in a mandatory corridor.** Complete, funded, correct — and it still bounces or queues, because the one four-letter answer a regulator demands is missing.
+- **The default nobody chose.** An ERP template ships with a placeholder and nobody changes it — a year of supplier, tax, and salary payments all claim to be the same thing. Statistics polluted, audits uncomfortable.
+- **`Purp` treated as free text.** An invented code that isn't on the list: schema-valid where the code set isn't checked, meaningless or rejected everywhere else.
+- **`Purp` and `CtgyPurp` swapped.** Middle banks act on far-end information, and the far end loses the detail.
+{{/aside}}
 
-- **No code in a mandatory corridor.** The payment is complete, funded, and correct, and it still bounces or sits in a queue, because the one four-letter answer a regulator demands is missing.
-- **The default nobody chose.** An ERP template ships with a placeholder code and nobody changes it, so a year of mixed supplier, tax, and salary payments all claim to be the same thing. Statistics are polluted; audits get uncomfortable.
-- **Purp treated as free text.** A creative implementer invents a code that isn't on the list. Schema-valid in structures that don't validate the code set, meaningless or rejected everywhere else.
-- **Purp and CtgyPurp swapped.** The fine-grained code lands in the category field, so intermediary banks make processing decisions on information meant for the far end, and the far end loses the detail entirely.
+{{aside:map|The map}}
+The field that says why — and the end of the Library:
 
-The phrase to keep: **the purpose code answers the question before it's asked.** Every payment eventually has to explain itself; the coded ones explain themselves at machine speed.
+- Where the customer sets it → {{link:article:302-pain-001|pain.001, field by field}}.
+- `CtgyPurp` doing real work → {{link:article:502-payroll|the payroll batch}}.
+- The same external-code machinery, pointed at failure → {{link:article:408-reason-codes|reason codes}}.
+{{/aside}}
+
+{{aside:ref|Reference card}}
+- **`Purp`** = the payment's declared reason (SALA, SUPP, DIVD, TAXS, PENS, INTC…). Fine-grained, far end.
+- **`CtgyPurp`** = a coarse category the middle banks read to trigger *processing* (e.g. payroll handling, priority).
+- **Set by the initiator**, carried untouched, from the **external purpose code list** (outside the schema).
+- **Mandatory in some corridors** — a payment without one can be rejected or held.
+- **Don't swap them:** what-it-is (far end) vs how-to-handle-it (middle).
+{{/aside}}
 
 {{embed:article:302-pain-001|Where the customer sets it: pain.001 field by field}}
 {{embed:article:502-payroll|CtgyPurp doing real work: the payroll batch}}

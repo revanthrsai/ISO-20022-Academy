@@ -5,37 +5,33 @@ category: Exceptions
 num: 409
 summary: "The investigation you just learned is being rebuilt. Two new messages — camt.110 and camt.111 — replace a drawer full of narrow camt types and the free-text MT199 that quietly did the real work. Here's the new model, and the 2026/2027 dates that make it not optional."
 minutes: 7
-updated: 2026-07-06
+updated: 2026-07-13
 tags: [investigations, camt.110, camt.111, case management, exceptions, R-transactions, mt199]
 related: [405-investigations, 309-the-four-identifiers, 208-the-end-of-mt, 407-the-r-transactions-map]
-earnedSkill: "Explain why ISO 20022 is rebuilding exceptions-and-investigations, name the two new messages (camt.110 investigation request, camt.111 investigation response), describe how one generic typed request/response replaces the camt.026/027/028/029 set and the free-text MT199/299, place the November 2026 and November 2027 milestones, and say what Swift Case Management adds on top of the messages."
+earnedSkill: "Explain why ISO 20022 is rebuilding investigations, name the two new messages (camt.110, camt.111), describe how one generic typed request/response replaces the camt.026/027/028/029 set and the free-text MT199, place the November 2026 and 2027 milestones, and say what Swift Case Management adds."
 status: published
 ---
 
-> **The problem first.** You just learned the classic investigation: a camt.027 to claim non-receipt, a camt.026 for unable-to-apply, a camt.028 to add detail, a camt.029 to close. Tidy on paper. But walk onto a real payments-operations floor and you'll find something else doing most of the work: a free-format **MT199**, a human typing *"where is our payment ref BOB-INV0042, sent 1 July, please advise"* into a text box, and another human reading it at the far end. Structured messages existed; the industry still reached for the text box. Why — and what is finally replacing it?
+> **The problem first.** You just learned the classic investigation: a camt.027 to claim non-receipt, a camt.026 for unable-to-apply, a camt.028 to add detail, a camt.029 to close. Tidy on paper. But walk onto a real payments-operations floor and you'll find something else doing most of the work: a free-format **MT199**, a human typing *"where is our payment ref BOB-INV0042, sent 1 July, please advise"* into a text box.
 
-The classic model you met in the last chapter is not wrong. It is being **superseded**. This chapter is the forward half of the same story: the investigation layer of ISO 20022 is being rebuilt around two messages and a piece of shared infrastructure, on a clock with real deadlines. If the last chapter taught you how investigations work *today*, this one teaches you how they work *next* — and "next" is already in flight.
+Structured messages existed. The industry still reached for the text box. That fact is the whole chapter — and if you can work out *why*, you've already worked out what's replacing it.
 
-## Why the old model strained
+## Why did people abandon the structured messages?
 
-The legacy exceptions-and-investigations set had two problems that pushed people back to free text.
+{{think}}
+The classic model gives you tidy, structured camt messages for investigations. Yet real ops floors ran on a free-text MT199 that no machine can read. Two things about the old design pushed people to the text box. What were they — and what single redesign fixes both?
+{{reveal}}
+Two problems:
 
-First, it was **fragmented**. There wasn't one "ask a question" message; there was a drawer full of narrow ones — camt.026, camt.027, camt.028, camt.029, and a long tail beyond them — each for a specific situation. To use them well you had to know in advance exactly which kind of problem you had and pick the matching message. When the situation didn't fit a slot, people gave up and opened an MT199.
+1. **Fragmentation.** There was no one "ask a question" message — there was a *drawer* of narrow ones (camt.026, .027, .028, .029, and a long tail). To use them you had to know in advance exactly which kind of problem you had and pick the matching message. When the situation didn't fit a slot, people gave up and typed.
+2. **The real workhorse was unstructured.** The free-text MT199 (and cousins) can't be read by a machine — so investigations stayed manual, slow, unsearchable, and invisible to tracking.
 
-Second, the real workhorse — that **free-text MT199** (and its cousins MT299, MT195/295, MT196/296) — was **unstructured by design**. A machine can't read "please advise where this is." So investigations stayed manual: slow, unsearchable, impossible to automate, and invisible to any tracking system. The one place payments still ran on prose.
+The fix is one move ISO 20022 makes everywhere: collapse the drawer into **one generic request and one generic response**, and push the specificity out of the *message type* into a **structured reason code inside**. That's **camt.110** (Investigation Request) and **camt.111** (Investigation Response).
+{{/think}}
 
-## The new idea: two messages, a type code, and a case
+## The new idea: two messages, a type code, a case
 
-The redesign collapses the drawer into **one generic request and one generic response**, and moves the specificity out of the *message type* and into a **structured field inside it**:
-
-- **camt.110 — Investigation Request.** One message to open or push any investigation. What *kind* of investigation it is (claim non-receipt, unable to apply, request for more information, and so on) is carried as a coded reason inside the message, not as a different message name.
-- **camt.111 — Investigation Response.** One message to answer: status, findings, resolution.
-
-That single change is the whole point. Instead of *"which of a dozen messages do I need?"* the question becomes *"camt.110, with which reason code?"* — the same move ISO 20022 makes everywhere: keep the envelope stable, put the meaning in structured, machine-readable fields. A camt.110 asking *"where is this?"* and a camt.110 asking *"I can't apply this, help"* are the same message with different codes, and a machine can route, search, and age both without a human reading a sentence.
-
-> ISO has registered a broader investigations set as this area evolves; the two messages that carry the actual request-and-answer conversation through Swift's Case Management are **camt.110** and **camt.111**. Note also that **cancellations** are a separate track: a recall still travels as **camt.056** answered by **camt.029** (see the recall and camt.056 chapters). Investigations and cancellations are being modernised in parallel, not merged.
-
-## What it maps to from the last chapter
+Instead of *"which of a dozen messages do I need?"* the question becomes *"camt.110, with which reason code?"* A camt.110 asking *"where is this?"* and a camt.110 asking *"I can't apply this, help"* are the **same message** with different codes — so a machine can route, search, and age both without a human reading a sentence. Keep the envelope stable; put the meaning in structured fields.
 
 | Classic model | New model |
 |---|---|
@@ -45,33 +41,59 @@ That single change is the whole point. Instead of *"which of a dozen messages do
 | camt.029 Resolution (for investigations) | camt.111 Investigation Response |
 | Free-text MT199 / MT299 | camt.110 / camt.111 (structured) |
 
-The `UETR` still does what it did in the last chapter: it is the thread that pins every message in a case to one payment. That doesn't change. What changes is that the conversation around it is now structured end to end, so *"where is my payment?"* is a query a system can answer, not an email a person has to write.
+The `UETR` still does exactly what it did — the thread pinning every message in a case to one payment. What changes is that the conversation around it is now structured end to end, so *"where is my payment?"* becomes a query a system can answer, not an email a person writes.
 
-## What Case Management adds on top
+> **Keep two tracks apart:** **cancellations** are separate. A recall still travels as **camt.056** answered by **camt.029** (the recall and camt.056 chapters). Investigations (*find out what happened*) and cancellations (*ask for money back*) are being modernised in parallel, not merged.
 
-The messages are only half of it. Swift wraps camt.110/111 in a service called **Case Management** (its orchestration engine is sometimes called Case Orchestrator): a shared place where a case is opened, routed to the right party in the chain, tracked, and aged — with APIs and a GUI so both large automated banks and smaller manual ones can take part. The message is the *what*; Case Management is the *where the case lives*. This is why the industry talks about "case management 2.0" rather than just "new camt messages."
+## What Case Management adds
+
+The messages are only half of it. Swift wraps camt.110/111 in a service called **Case Management**: a shared place where a case is opened, routed to the right party on the payment's UETR, tracked, and aged — with APIs and a GUI so both large automated banks and smaller manual ones can take part. The message is the *what*; Case Management is *where the case lives*. That's why the industry says "case management 2.0," not just "new camt messages."
 
 {{flow:One case, structured end to end|Beneficiary bank ~ opens the case|-> camt.110|Case Management ~ routes it down the chain on the payment's UETR|-> investigate|Correspondent ~ finds the stuck payment, answers|-> camt.111|Resolution ~ status and outcome, case closed and searchable}}
 
-## The dates that make it not optional
+## Predict the migration shape
 
-This is a migration with a schedule, and it is the part an interviewer or an auditor will ask about:
+{{think}}
+This is a migration with a schedule. You already know the MT-to-MX pattern from the end-of-MT chapter. Predict the shape here — and, more usefully, where the operational surprises will cluster.
+{{reveal}}
+Same coexistence pattern, exactly:
 
-- **November 2024** — camt.110/111 available on an **opt-in** basis. Early adopters start.
-- **November 2026** — it becomes **mandatory to be able to receive** a camt.110 investigation request through Case Management. To cushion the long tail, the request can arrive **with an embedded MT199**, and **in-flow translation** lets institutions not yet on Case Management still process the investigation through their legacy FIN channel. Nobody is cut off overnight.
-- **November 2027** — in-flow translation **ends**. The whole community sends and receives investigations in **ISO 20022 only** (camt.110/111) through Case Management, and the legacy exceptions-and-investigations formats — the free-text MT199/299, MT195/295, MT196/296, MT198/298, MT995/996 — are **retired** for this purpose.
+- **Nov 2024** — camt.110/111 available **opt-in**. Early adopters start.
+- **Nov 2026** — **mandatory to be able to receive** a camt.110 through Case Management. To cushion the long tail, the request can arrive **with an embedded MT199**, and **in-flow translation** lets institutions not yet on Case Management still process it through legacy FIN. Nobody's cut off overnight.
+- **Nov 2027** — in-flow translation **ends**. Investigations are **ISO-only** (camt.110/111) through Case Management, and the legacy set (MT199/299, 195/295, 196/296, 198/298, 995/996) is **retired** for this purpose.
 
-Notice the shape: it is the exact same coexistence pattern as the MT-to-MX migration you read about. A three-year runway, an embedded-legacy bridge in the middle, and a hard cutover at the end. "The investigation is modernised" will be only half-true for the whole window in between — which is precisely where the operational surprises will live.
+A three-year runway, an embedded-legacy bridge in the middle, a hard cutover at the end. And the surprises: "the investigation is modernised" is only half-true through the whole in-between window — which is precisely where the incidents will live, just as they did in the MT-to-MX coexistence.
+{{/think}}
 
-## What breaks (and what to keep straight)
+{{aside:model|The mental model}}
+**Keep the envelope stable, put the meaning in a structured field.** One `camt.110` request + one `camt.111` response, with a *reason code* replacing a drawer of narrow message types and the unreadable free-text MT199. The `UETR` still pins the case; now the whole conversation is machine-readable.
+{{/aside}}
 
-- **Treating camt.110 as "just the new camt.027."** It isn't a one-to-one rename. It's a *generic* request whose meaning lives in a reason code. Map by intent, not by old message name.
-- **Assuming the messages are enough.** Sending a camt.110 without being reachable through Case Management is like posting a letter to a house with no letterbox. The 2026 obligation is specifically about being able to **receive** through the service.
-- **Confusing investigations with cancellations.** A recall is still camt.056 → camt.029. camt.110/111 are for *finding out what happened*, not for *asking for money back*. Different track, different messages.
+{{aside:chair|From the engineer's chair}}
+Map by *intent*, not old message name — `camt.110` is a generic request whose meaning is its reason code, not a rename of `camt.027`. And the messages aren't enough on their own: the 2026 obligation is specifically to be *reachable* through Case Management (a letterbox, not just a letter). Keep the recall track separate — that's still `camt.056` → `camt.029`, not camt.110/111.
+{{/aside}}
 
-## So, what can you now do?
+{{aside:breaks|Where it breaks}}
+- **Treating camt.110 as "the new camt.027."** It's a *generic* request; map by the reason code, not one-to-one from old names.
+- **Assuming the messages are enough.** Sending a camt.110 without being reachable through Case Management is posting a letter to a house with no letterbox.
+- **Confusing investigations with cancellations.** camt.110/111 *find out what happened*; a recall (camt.056 → camt.029) *asks for money back*. Different track.
+{{/aside}}
 
-You can explain why the industry is rebuilding exceptions-and-investigations (a fragmented message set plus a free-text MT199 that machines couldn't read); name the two new messages (**camt.110** investigation request, **camt.111** investigation response) and the reason-code idea that lets one message do many jobs; map the classic camt.026/027/028/029 conversation onto the new pair; say what Swift Case Management adds on top of the raw messages; and place the **November 2026** (mandatory receive, with embedded MT199 and in-flow translation) and **November 2027** (ISO-only, legacy retired) milestones on the same coexistence pattern as the MT-to-MX migration.
+{{aside:map|The map}}
+The forward half of the investigations story:
+
+- The classic model this replaces → {{link:article:405-investigations|investigations}}.
+- The same coexistence pattern, one migration earlier → {{link:article:208-the-end-of-mt|the end of MT}}.
+- The thread that still pins every case → {{link:article:309-the-four-identifiers|the four identifiers}}.
+{{/aside}}
+
+{{aside:ref|Reference card}}
+- **camt.110** = generic Investigation Request; **camt.111** = generic Investigation Response.
+- **The move:** one message + a structured reason code replaces the fragmented camt.026/027/028/029 and free-text MT199.
+- **Case Management** is where the case lives — opened, routed on `UETR`, tracked, aged.
+- **Dates:** Nov 2024 opt-in → Nov 2026 mandatory-to-receive (embedded MT199 + in-flow translation bridge) → Nov 2027 ISO-only, legacy retired.
+- **Cancellations stay separate:** recall is still `camt.056` → `camt.029`.
+{{/aside}}
 
 {{embed:article:405-investigations|The classic model this replaces: Investigations}}
 {{embed:article:208-the-end-of-mt|The same coexistence pattern, one migration earlier: the end of MT}}
