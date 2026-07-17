@@ -231,7 +231,9 @@ samples/*.json             18 ISO 20022 sample messages, fetched on demand
 status/index.html          standalone live status page at /status/
 
 scripts/build-toc.js       generates assets/js/toc.data.js from content/ frontmatter
-scripts/build-seo.js       generates /library/<id>/ SEO pages + sitemap.xml + robots.txt
+scripts/build-seo.js       generates SEO pages (lessons /library/<id>/, dictionary
+                           messages/elements/codes /dictionary/…, glossary /glossary/…)
+                           + sitemap.xml + robots.txt. Reads the browser data files via a vm shim.
 scripts/build-samples.js   generates samples/manifest.json from samples/*.json
 
 assets/css/style.css       ALL styling; :root is the design-token source of truth

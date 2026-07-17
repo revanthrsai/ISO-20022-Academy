@@ -1175,7 +1175,7 @@ window.addEventListener('hashchange', function(){
     if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
     const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);
     if (mdc) { dictCodeSet(mdc[1]); return; }
-    const mde = h.match(/^#\/dictionary\/([a-z0-9.]+)\/([A-Za-z0-9]+)$/);
+    const mde = h.match(/^#\/dictionary\/([a-z0-9._]+)\/([A-Za-z0-9]+)$/);
     if (mde) { dictElement(mde[1] === '_' ? '' : mde[1], mde[2]); return; }
     const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
     if (mdm) { dictMessage(mdm[1]); return; }
@@ -1201,7 +1201,7 @@ function routeOnLoad(){
     if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
     const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);
     if (mdc) { dictCodeSet(mdc[1]); return; }
-    const mde = h.match(/^#\/dictionary\/([a-z0-9.]+)\/([A-Za-z0-9]+)$/);
+    const mde = h.match(/^#\/dictionary\/([a-z0-9._]+)\/([A-Za-z0-9]+)$/);
     if (mde) { dictElement(mde[1] === '_' ? '' : mde[1], mde[2]); return; }
     const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
     if (mdm) { dictMessage(mdm[1]); return; }

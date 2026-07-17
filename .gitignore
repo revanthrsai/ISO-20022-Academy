@@ -9,8 +9,10 @@ docs/ENGINE-SPEC.md
 /assets/cheatsheets
 
 # Build artifacts — regenerated on every deploy by scripts/build-seo.js.
-# Source of truth is /content; never edit these by hand.
+# Source of truth is /content and the data files; never edit these by hand.
 /library/
+/dictionary/
+/glossary/
 /sitemap.xml
 /robots.txt
 
