@@ -181,11 +181,14 @@ const PAGES = {
             <div class="filter-bar" id="glossary-filter" data-reveal="up"></div>
             <div class="glossary-grid" id="glossary-grid"></div>
         </div>
+    `,
+    dictionary: `
+        <div class="page"><div id="dict-root"></div></div>
     `
 };
 
 // Ordered top-level sections, for the prev/next header arrows.
-const NAV_ORDER = ['history', 'library', 'playground', 'glossary'];
+const NAV_ORDER = ['history', 'library', 'playground', 'glossary', 'dictionary'];
 
 // ── Playground workspace ────────────────────────────────────────────────────
 // One screen, no tool tabs: the catalogue tree (left) loads a message into the
@@ -211,6 +214,34 @@ function openPlaygroundTool(slug) {
         navigate('playground');
     }
     if (slug === 'transformer') setTimeout(function () { openTransform(); }, 80);
+}
+
+// ── Dictionary (the reference tab) ──────────────────────────────────────────
+// Three deep-linkable views rendered into #dict-root by the AcademyDictionary
+// module: landing, one message (interactive anatomy), one element.
+function ensureDict() {
+    if (currentNavPage() !== 'dictionary' || !document.getElementById('dict-root')) navigate('dictionary');
+}
+function dictHash(target) {
+    if (!window.CLEAN_URLS && typeof history !== 'undefined' && location.hash !== target) history.replaceState(null, '', target);
+}
+function dictHome(evt) {
+    if (evt) evt.preventDefault();
+    ensureDict();
+    if (window.AcademyDictionary) AcademyDictionary.showLanding();
+    dictHash('#/dictionary');
+}
+function dictMessage(code) {
+    ensureDict();
+    if (window.AcademyDictionary) AcademyDictionary.showMessage(code);
+    dictHash('#/dictionary/' + code);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+}
+function dictElement(code, name) {
+    ensureDict();
+    if (window.AcademyDictionary) AcademyDictionary.showElement(code, name);
+    dictHash('#/dictionary/' + (code || '_') + '/' + name);
+    window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
 // Which way to convert: the viewer holds XML (MX) → show its legacy MT; a bare
@@ -463,6 +494,8 @@ function navigate(page, evt) {
         renderGlossary();
     } else if (page === 'playground') {
         initPlayground();
+    } else if (page === 'dictionary') {
+        if (window.AcademyDictionary) AcademyDictionary.init('dict-root');
     } else if (page === 'library') {
         renderArticleIndex();
     } else if (page === 'history') {
@@ -1111,6 +1144,11 @@ window.addEventListener('hashchange', function(){
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
     if (/^#\/playground(\?|$)/.test(h)) { if (currentNavPage() !== 'playground') navigate('playground'); return; }
+    const mde = h.match(/^#\/dictionary\/([a-z0-9.]+)\/([A-Za-z0-9]+)$/);
+    if (mde) { dictElement(mde[1] === '_' ? '' : mde[1], mde[2]); return; }
+    const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
+    if (mdm) { dictMessage(mdm[1]); return; }
+    if (/^#\/dictionary(\/|$)/.test(h)) { if (currentNavPage() !== 'dictionary') navigate('dictionary'); return; }
     const ml = h.match(/^#\/library\/([a-z0-9-]+)$/);
     if (ml && typeof getArticle === 'function' && getArticle(ml[1])) { openArticle(ml[1]); return; }
     if (/^#\/library(\/|\?|$)/.test(h)) { if (currentNavPage() !== 'library') navigate('library'); return; }
@@ -1127,6 +1165,11 @@ function routeOnLoad(){
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
     if (/^#\/playground(\?|$)/.test(h)) { navigate('playground'); return; }
+    const mde = h.match(/^#\/dictionary\/([a-z0-9.]+)\/([A-Za-z0-9]+)$/);
+    if (mde) { dictElement(mde[1] === '_' ? '' : mde[1], mde[2]); return; }
+    const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
+    if (mdm) { dictMessage(mdm[1]); return; }
+    if (/^#\/dictionary(\/|$)/.test(h)) { navigate('dictionary'); return; }
     const ml = h.match(/^#\/library\/([a-z0-9-]+)$/);
     if (ml && typeof getArticle === 'function' && getArticle(ml[1])) { openArticle(ml[1]); return; }
     if (/^#\/library(\/|\?|$)/.test(h)) { navigate('library'); return; }

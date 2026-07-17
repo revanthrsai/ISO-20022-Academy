@@ -136,23 +136,34 @@ this table immediately; no persistent personalities or storyline.
 
 ## 3. Information Architecture & Routes
 
-Exactly **four** top-level sections, in question order — the global header never
-grows past four items: `History · Library · Playground · Glossary`. The home
-route `#/` redirects to `#/history`.
+**Five** top-level sections, in learning-then-reference order:
+`History · Library · Playground · Glossary · Dictionary`. (This was four through
+2026-07; the **Dictionary** reference tab was added as the fifth — the earlier
+"never past four" rule is retired.) The home route `#/` redirects to `#/history`.
 
 Hash-based routing, with one query-string layer for shareable filter state:
 
 ```
-#/                              → redirect to #/history
-#/history/<chapter-slug>        → a single History chapter
-#/library                       → Library landing (shelves index)
-#/library/<level>               → a shelf overview (100…600)
-#/library/<level>/<topic-slug>  → a single lesson
-#/playground/<tool-slug>        → a tool (viewer|transformer|samples)
-#/playground/<tool>?sample=…    → tool deep-linked to a sample message
-#/glossary?category=<cat>       → filtered glossary  (also ?q=<query>)
-#/glossary/<term-slug>          → a single term (scrolls + highlights the card)
+#/                                 → redirect to #/history
+#/history/<chapter-slug>           → a single History chapter
+#/library                          → Library landing (shelves index)
+#/library/<level>                  → a shelf overview (100…600)
+#/library/<level>/<topic-slug>     → a single lesson
+#/playground/<tool-slug>           → a tool (viewer|transformer|samples)
+#/playground/<tool>?sample=…       → tool deep-linked to a sample message
+#/glossary?category=<cat>          → filtered glossary  (also ?q=<query>)
+#/glossary/<term-slug>             → a single term (scrolls + highlights the card)
+#/dictionary                       → the Dictionary landing (families → messages)
+#/dictionary/<message>             → one message + its interactive anatomy
+#/dictionary/<message>/<Element>   → one element's entry (deep-linkable, SEO)
 ```
+
+The **Dictionary** is a data-driven reference (`assets/js/dictionary.data.js`
++ `dictionary.js`): family → message → element, where each message page renders
+the real sample XML as an interactive anatomy (every element links to its entry)
+and each element page carries definition, cardinality, valid codes, an example,
+and every message it appears in. Meaning is keyed by XML localName; structure is
+derived live from `/samples`, so it stays accurate.
 
 **Slug rules:** lowercase, hyphenated, derived from the human title. Levels are
 bare numbers.

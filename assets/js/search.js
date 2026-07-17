@@ -58,8 +58,23 @@ const Search = (function () {
                 });
             });
         }
+        // Dictionary (messages + elements) — the reference tab
+        if (typeof DICTIONARY !== 'undefined') {
+            Object.keys(DICTIONARY.MESSAGES || {}).forEach(code => {
+                const m = DICTIONARY.MESSAGES[code];
+                items.push({ type: 'Dictionary', label: code, sub: m.name || '',
+                    kw: (code + ' ' + (m.name || '') + ' ' + (m.mt || '')).toLowerCase(), badge: 'msg',
+                    run: () => { if (typeof dictMessage === 'function') dictMessage(code); } });
+            });
+            Object.keys(DICTIONARY.ELEMENTS || {}).forEach(name => {
+                const e = DICTIONARY.ELEMENTS[name];
+                items.push({ type: 'Dictionary', label: name, sub: (e.def || '').split('. ')[0],
+                    kw: name.toLowerCase(), badge: 'field',
+                    run: () => { if (typeof dictElement === 'function') dictElement('', name); } });
+            });
+        }
         // Pages
-        [['History', 'history'], ['Library', 'library'], ['Playground', 'playground'], ['Glossary', 'glossary']].forEach(([label, page]) => {
+        [['History', 'history'], ['Library', 'library'], ['Playground', 'playground'], ['Glossary', 'glossary'], ['Dictionary', 'dictionary']].forEach(([label, page]) => {
             items.push({ type: 'Page', label, sub: 'Go to the ' + label + ' section', kw: page, badge: '↵',
                 run: () => { if (typeof navigate === 'function') navigate(page); } });
         });
