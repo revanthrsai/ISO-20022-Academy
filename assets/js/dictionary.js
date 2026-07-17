@@ -15,6 +15,7 @@
 
 const AcademyDictionary = (function () {
     const D = (typeof DICTIONARY !== 'undefined') ? DICTIONARY : { FAMILIES: [], MESSAGES: {}, ELEMENTS: {}, SAMPLE_FOR: {} };
+    const C = (typeof CODESETS !== 'undefined') ? CODESETS : { SETS: [] };
     let mountId = 'dict-root';
     const xmlCache = {};        // code → parsed sample xml string
     let appearsIn = null;       // localName → [codes] (built lazily from samples)
@@ -71,7 +72,21 @@ const AcademyDictionary = (function () {
             + '<input type="text" class="dict-search" id="dict-search" placeholder="Search elements and messages — try ChrgBr, UETR, pacs.008…" oninput="AcademyDictionary.filter(this.value)" autocomplete="off">'
             + '<div class="dict-results" id="dict-results" hidden></div>'
             + '</div>'
-            + '<div class="dict-families">' + cards + '</div>';
+            + codeSetsSectionHtml()
+            + '<div class="dict-families"><div class="dict-sec-label">Messages</div>' + cards + '</div>';
+    }
+
+    function codeSetsSectionHtml() {
+        if (!C.SETS.length) return '';
+        const cards = C.SETS.map(function (s) {
+            return '<button class="dict-cset" onclick="dictCodeSet(\'' + esc(s.id) + '\')">'
+                + '<span class="dict-cset-name">' + esc(s.name) + '</span>'
+                + '<span class="dict-cset-count">' + s.codes.length + '</span>'
+                + '<span class="dict-cset-blurb">' + esc(s.blurb) + '</span>'
+                + '</button>';
+        }).join('');
+        return '<div class="dict-csets"><div class="dict-sec-label">Code sets</div>'
+            + '<div class="dict-cset-grid">' + cards + '</div></div>';
     }
 
     // Client-side search across elements + messages.
@@ -94,11 +109,29 @@ const AcademyDictionary = (function () {
                 hits.push({ t: 'el', name: name, label: name, sub: (e.def || '').split('.')[0] });
             }
         });
+        C.SETS.forEach(function (s) {
+            if (s.name.toLowerCase().indexOf(q) >= 0) hits.push({ t: 'cset', id: s.id, label: s.name, sub: s.blurb });
+            s.codes.forEach(function (c) {
+                if (c.code.toLowerCase().indexOf(q) >= 0 || (c.name && c.name.toLowerCase().indexOf(q) >= 0)) {
+                    hits.push({ t: 'code', id: s.id, code: c.code, label: c.code, sub: c.name + ' · ' + s.name });
+                }
+            });
+        });
         hits.sort(function (a, b) { return a.label.length - b.label.length; });
         box.innerHTML = hits.slice(0, 40).map(function (h) {
             if (h.t === 'msg') {
                 return '<button class="dict-hit" onclick="dictMessage(\'' + esc(h.code) + '\')">'
                     + '<span class="dict-hit-kind">message</span><span class="dict-hit-code">' + esc(h.label) + '</span>'
+                    + '<span class="dict-hit-sub">' + esc(h.sub) + '</span></button>';
+            }
+            if (h.t === 'cset') {
+                return '<button class="dict-hit" onclick="dictCodeSet(\'' + esc(h.id) + '\')">'
+                    + '<span class="dict-hit-kind">code set</span><span class="dict-hit-code">' + esc(h.label) + '</span>'
+                    + '<span class="dict-hit-sub">' + esc(h.sub) + '</span></button>';
+            }
+            if (h.t === 'code') {
+                return '<button class="dict-hit" onclick="dictCodeSet(\'' + esc(h.id) + '\',\'' + esc(h.code) + '\')">'
+                    + '<span class="dict-hit-kind">code</span><span class="dict-hit-code">' + esc(h.label) + '</span>'
                     + '<span class="dict-hit-sub">' + esc(h.sub) + '</span></button>';
             }
             return '<button class="dict-hit" onclick="dictElement(\'\',\'' + esc(h.name) + '\')">'
@@ -244,6 +277,54 @@ const AcademyDictionary = (function () {
         });
     }
 
+    // ── CODE SETS ───────────────────────────────────────────────────────────
+    function showCodeSets() {
+        const el = root();
+        if (!el) return;
+        const cards = C.SETS.map(function (s) {
+            return '<button class="dict-cset" onclick="dictCodeSet(\'' + esc(s.id) + '\')">'
+                + '<span class="dict-cset-name">' + esc(s.name) + '</span>'
+                + '<span class="dict-cset-count">' + s.codes.length + '</span>'
+                + '<span class="dict-cset-blurb">' + esc(s.blurb) + '</span></button>';
+        }).join('');
+        el.innerHTML = '<button class="dict-back" onclick="dictHome()">&larr; The Dictionary</button>'
+            + '<div class="dict-el-hero"><h2 class="dict-el-name">Code sets</h2>'
+            + '<p class="dict-el-def">The external code lists a payments engineer looks up constantly — reason, purpose, status, settlement, and the small closed lists.</p></div>'
+            + '<div class="dict-cset-grid">' + cards + '</div>';
+    }
+
+    function showCodeSet(id, q) {
+        const el = root();
+        if (!el) return;
+        const s = C.SETS.filter(function (x) { return x.id === id; })[0];
+        if (!s) { showCodeSets(); return; }
+        const rows = s.codes.map(function (c) {
+            return '<tr class="dict-crow" data-kw="' + esc((c.code + ' ' + c.name + ' ' + c.desc).toLowerCase()) + '">'
+                + '<td class="dict-ccode">' + esc(c.code) + '</td>'
+                + '<td class="dict-cname">' + esc(c.name) + '</td>'
+                + '<td class="dict-cdesc">' + esc(c.desc) + '</td></tr>';
+        }).join('');
+        const note = s.note ? '<p class="dict-cset-note">' + esc(s.note) + '</p>' : '';
+        el.innerHTML = '<button class="dict-back" onclick="dictCodes()">&larr; Code sets</button>'
+            + '<div class="dict-msg-hero"><div class="dict-msg-hero-top"><span class="dict-msg-hero-code">' + esc(s.name) + '</span>'
+            + '<span class="dict-msg-hero-ver">' + s.codes.length + ' codes</span></div>'
+            + '<p class="dict-msg-hero-purpose">' + esc(s.blurb) + '</p>'
+            + '<div class="dict-msg-meta"><span class="dict-meta"><b>Carried in</b> ' + esc(s.field) + '</span></div>' + note + '</div>'
+            + '<input type="text" class="dict-search" id="dict-cfilter" placeholder="Filter these codes…" oninput="AcademyDictionary.filterCodes(this.value)" autocomplete="off">'
+            + '<div class="dict-ctable-wrap"><table class="dict-ctable"><thead><tr><th>Code</th><th>Name</th><th>Meaning</th></tr></thead>'
+            + '<tbody id="dict-ctbody">' + rows + '</tbody></table></div>';
+        if (q) { const f = document.getElementById('dict-cfilter'); if (f) { f.value = q; filterCodes(q); } }
+    }
+
+    function filterCodes(q) {
+        q = (q || '').trim().toLowerCase();
+        const rows = document.querySelectorAll('#dict-ctbody .dict-crow');
+        for (let i = 0; i < rows.length; i++) {
+            const kw = rows[i].getAttribute('data-kw') || '';
+            rows[i].style.display = (!q || kw.indexOf(q) >= 0) ? '' : 'none';
+        }
+    }
+
     // ── styles ──────────────────────────────────────────────────────────────
     function injectStyles() {
         if (typeof document === 'undefined' || !document.head || document.getElementById('dict-styles')) return;
@@ -314,7 +395,27 @@ const AcademyDictionary = (function () {
             + '.dict-appears-list{display:flex;flex-wrap:wrap;gap:8px}'
             + '.dict-chip{font-family:var(--font-mono,monospace);font-size:12.5px;font-weight:700;color:var(--primary-deep,var(--primary));background:var(--surface-alt);border:1px solid var(--border);border-radius:999px;padding:5px 13px;cursor:pointer}'
             + '.dict-chip:hover{border-color:var(--primary)}'
-            + '.dict-loading{padding:20px;text-align:center;color:var(--text-muted);font-size:13px}';
+            + '.dict-loading{padding:20px;text-align:center;color:var(--text-muted);font-size:13px}'
+            + '.dict-sec-label{font-family:var(--font-mono,monospace);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);margin:0 0 12px}'
+            + '.dict-csets{margin:0 0 30px}'
+            + '.dict-cset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}'
+            + '.dict-cset{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:2px 8px;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md,14px);padding:13px 15px;cursor:pointer;font:inherit;color:var(--text);transition:border-color .15s,transform .15s}'
+            + '.dict-cset:hover{border-color:var(--primary);transform:translateY(-2px)}'
+            + '.dict-cset-name{font-family:var(--font-display,var(--font-sans));font-weight:700;font-size:14.5px;color:var(--text)}'
+            + '.dict-cset-count{font-family:var(--font-mono,monospace);font-size:10.5px;color:var(--text-faint);background:var(--surface-alt);border-radius:999px;padding:1px 8px;align-self:start}'
+            + '.dict-cset-blurb{grid-column:1 / -1;font-size:12px;color:var(--text-muted);line-height:1.45}'
+            + '.dict-cset-note{margin:12px 0 0;font-size:12.5px;color:var(--text-faint);font-style:italic}'
+            + '.dict-ctable-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md,14px);overflow:hidden;margin-top:14px}'
+            + '.dict-ctable{width:100%;border-collapse:collapse;font-size:13.5px}'
+            + '.dict-ctable thead th{text-align:left;font-family:var(--font-mono,monospace);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);padding:11px 16px;background:var(--bg-deep,var(--surface-alt));border-bottom:1px solid var(--border)}'
+            + '.dict-crow{border-bottom:1px solid var(--border)}'
+            + '.dict-crow:last-child{border-bottom:none}'
+            + '.dict-crow:hover{background:var(--surface-alt)}'
+            + '.dict-crow td{padding:11px 16px;vertical-align:top}'
+            + '.dict-ccode{font-family:var(--font-mono,monospace);font-weight:700;color:var(--primary-deep,var(--primary));white-space:nowrap}'
+            + '.dict-cname{font-family:var(--font-mono,monospace);font-size:12.5px;color:var(--text);white-space:nowrap}'
+            + '.dict-cdesc{color:var(--text-muted);line-height:1.5}'
+            + '@media (max-width:640px){.dict-cname{display:none}.dict-ctable thead th:nth-child(2){display:none}}';
         const s = document.createElement('style');
         s.id = 'dict-styles';
         s.textContent = css;
@@ -327,6 +428,6 @@ const AcademyDictionary = (function () {
         showLanding();
     }
 
-    return { init: init, showLanding: showLanding, showMessage: showMessage, showElement: showElement, filter: filter };
+    return { init: init, showLanding: showLanding, showMessage: showMessage, showElement: showElement, filter: filter, showCodeSets: showCodeSets, showCodeSet: showCodeSet, filterCodes: filterCodes };
 })();
 window.AcademyDictionary = AcademyDictionary;

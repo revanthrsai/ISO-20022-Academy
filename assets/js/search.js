@@ -73,6 +73,19 @@ const Search = (function () {
                     run: () => { if (typeof dictElement === 'function') dictElement('', name); } });
             });
         }
+        // Code sets (reason/purpose/status codes…) — the reference lookups
+        if (typeof CODESETS !== 'undefined') {
+            (CODESETS.SETS || []).forEach(s => {
+                items.push({ type: 'Dictionary', label: s.name, sub: s.blurb,
+                    kw: (s.id + ' ' + s.name).toLowerCase(), badge: 'codes',
+                    run: () => { if (typeof dictCodeSet === 'function') dictCodeSet(s.id); } });
+                (s.codes || []).forEach(c => {
+                    items.push({ type: 'Dictionary', label: c.code, sub: c.name + ' · ' + s.name,
+                        kw: (c.code + ' ' + c.name).toLowerCase(), badge: 'code',
+                        run: () => { if (typeof dictCodeSet === 'function') dictCodeSet(s.id, c.code); } });
+                });
+            });
+        }
         // Pages
         [['History', 'history'], ['Library', 'library'], ['Playground', 'playground'], ['Glossary', 'glossary'], ['Dictionary', 'dictionary']].forEach(([label, page]) => {
             items.push({ type: 'Page', label, sub: 'Go to the ' + label + ' section', kw: page, badge: '↵',

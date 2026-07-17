@@ -243,6 +243,19 @@ function dictElement(code, name) {
     dictHash('#/dictionary/' + (code || '_') + '/' + name);
     window.scrollTo({ top: 0, behavior: 'auto' });
 }
+function dictCodes(evt) {
+    if (evt) evt.preventDefault();
+    ensureDict();
+    if (window.AcademyDictionary) AcademyDictionary.showCodeSets();
+    dictHash('#/dictionary/codes');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+}
+function dictCodeSet(id, q) {
+    ensureDict();
+    if (window.AcademyDictionary) AcademyDictionary.showCodeSet(id, q);
+    dictHash('#/dictionary/codes/' + id);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+}
 
 // Which way to convert: the viewer holds XML (MX) → show its legacy MT; a bare
 // MT field block → show its ISO 20022.
@@ -1144,6 +1157,9 @@ window.addEventListener('hashchange', function(){
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
     if (/^#\/playground(\?|$)/.test(h)) { if (currentNavPage() !== 'playground') navigate('playground'); return; }
+    if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
+    const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);
+    if (mdc) { dictCodeSet(mdc[1]); return; }
     const mde = h.match(/^#\/dictionary\/([a-z0-9.]+)\/([A-Za-z0-9]+)$/);
     if (mde) { dictElement(mde[1] === '_' ? '' : mde[1], mde[2]); return; }
     const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
@@ -1165,6 +1181,9 @@ function routeOnLoad(){
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
     if (/^#\/playground(\?|$)/.test(h)) { navigate('playground'); return; }
+    if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
+    const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);
+    if (mdc) { dictCodeSet(mdc[1]); return; }
     const mde = h.match(/^#\/dictionary\/([a-z0-9.]+)\/([A-Za-z0-9]+)$/);
     if (mde) { dictElement(mde[1] === '_' ? '' : mde[1], mde[2]); return; }
     const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
