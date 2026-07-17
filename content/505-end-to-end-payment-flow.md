@@ -99,6 +99,7 @@ The capstone points back at everything:
 - **The thread:** `EndToEndId` (customer) + `UETR` (tracking) — what makes it *one* payment.
 {{/aside}}
 
+{{embed:page:journey|Watch this whole payment come to life — the animated Life of a Payment}}
 {{embed:playground|Take the whole chain into the Playground}}
 
 ## So what can you do now?

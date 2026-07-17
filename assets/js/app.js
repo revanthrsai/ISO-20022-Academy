@@ -184,6 +184,9 @@ const PAGES = {
     `,
     dictionary: `
         <div class="page"><div id="dict-root"></div></div>
+    `,
+    journey: `
+        <div class="page"><div id="journey-root"></div></div>
     `
 };
 
@@ -481,6 +484,8 @@ function navigate(page, evt) {
 
     // Never carry the Transform slide-over (and its scroll lock) into another page.
     if (typeof closeTransform === 'function') closeTransform();
+    // Detach the Life-of-a-Payment scroll driver when leaving it.
+    if (window.PaymentJourney) PaymentJourney.teardown();
 
     // Leaving any article/chapter reading view for a top-level section.
     window.__currentArticle = null;
@@ -509,6 +514,8 @@ function navigate(page, evt) {
         initPlayground();
     } else if (page === 'dictionary') {
         if (window.AcademyDictionary) AcademyDictionary.init('dict-root');
+    } else if (page === 'journey') {
+        if (window.PaymentJourney) PaymentJourney.init('journey-root');
     } else if (page === 'library') {
         renderArticleIndex();
     } else if (page === 'history') {
@@ -1165,6 +1172,7 @@ window.addEventListener('hashchange', function(){
     const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
     if (mdm) { dictMessage(mdm[1]); return; }
     if (/^#\/dictionary(\/|$)/.test(h)) { if (currentNavPage() !== 'dictionary') navigate('dictionary'); return; }
+    if (/^#\/journey$/.test(h)) { navigate('journey'); return; }
     const ml = h.match(/^#\/library\/([a-z0-9-]+)$/);
     if (ml && typeof getArticle === 'function' && getArticle(ml[1])) { openArticle(ml[1]); return; }
     if (/^#\/library(\/|\?|$)/.test(h)) { if (currentNavPage() !== 'library') navigate('library'); return; }
@@ -1189,6 +1197,7 @@ function routeOnLoad(){
     const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
     if (mdm) { dictMessage(mdm[1]); return; }
     if (/^#\/dictionary(\/|$)/.test(h)) { navigate('dictionary'); return; }
+    if (/^#\/journey$/.test(h)) { navigate('journey'); return; }
     const ml = h.match(/^#\/library\/([a-z0-9-]+)$/);
     if (ml && typeof getArticle === 'function' && getArticle(ml[1])) { openArticle(ml[1]); return; }
     if (/^#\/library(\/|\?|$)/.test(h)) { navigate('library'); return; }
