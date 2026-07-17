@@ -328,9 +328,10 @@ const Articles = (function () {
                 <div class="eyebrow" data-reveal="fade">The Library</div>
                 <h2 class="section-title" data-reveal="up">Read your way up.</h2>
                 <p class="section-description" data-reveal="up">
-                    Long-form articles that build a deep, structured understanding of payments and ISO&nbsp;20022 —
-                    from the fundamentals of how money moves, through the message families and the exceptions that
-                    break them, all the way to full end-to-end case studies.
+                    New here? <a class="learn-cine-link" href="#/journey" onclick="navigate('journey', event)">&#9654;&nbsp;Watch <strong>The Life of a Payment</strong></a> &mdash; one payment, Dubai to Bangalore, in a single cinematic scroll.
+                </p>
+                <p class="section-description" data-reveal="up">
+                    Then know them in detail by going through each level below.
                 </p>
             </div>
             ${progressNote()}

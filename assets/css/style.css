@@ -3382,6 +3382,13 @@ body.kinetic-ready .hero-stage .hero-cta { animation-delay: 0.98s; }
 
 /* ---- 15a. The Library index ------------------------------------------- */
 .learn-head { max-width: 760px; margin-bottom: 8px; }
+.learn-cine-link {
+    color: var(--primary-deep, var(--primary)); font-weight: 600; text-decoration: none;
+    border-bottom: 1.5px solid var(--primary); padding-bottom: 1px;
+    transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.learn-cine-link strong { font-weight: 700; }
+.learn-cine-link:hover { color: var(--primary); background: var(--glass-tint, rgba(16,185,129,.08)); }
 .learn-level { margin-top: clamp(36px, 5vw, 64px); }
 .learn-level-head {
     display: flex;
