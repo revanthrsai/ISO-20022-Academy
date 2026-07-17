@@ -259,6 +259,13 @@ function dictCodeSet(id, q) {
     dictHash('#/dictionary/codes/' + id);
     window.scrollTo({ top: 0, behavior: 'auto' });
 }
+function dictChanges(evt) {
+    if (evt) evt.preventDefault();
+    ensureDict();
+    if (window.AcademyDictionary) AcademyDictionary.showChanges();
+    dictHash('#/dictionary/changes');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+}
 
 // Which way to convert: the viewer holds XML (MX) → show its legacy MT; a bare
 // MT field block → show its ISO 20022.
@@ -1164,6 +1171,7 @@ window.addEventListener('hashchange', function(){
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
     if (/^#\/playground(\?|$)/.test(h)) { if (currentNavPage() !== 'playground') navigate('playground'); return; }
+    if (/^#\/dictionary\/changes$/.test(h)) { dictChanges(); return; }
     if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
     const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);
     if (mdc) { dictCodeSet(mdc[1]); return; }
@@ -1189,6 +1197,7 @@ function routeOnLoad(){
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
     if (/^#\/playground(\?|$)/.test(h)) { navigate('playground'); return; }
+    if (/^#\/dictionary\/changes$/.test(h)) { dictChanges(); return; }
     if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
     const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);
     if (mdc) { dictCodeSet(mdc[1]); return; }

@@ -73,6 +73,9 @@ const Search = (function () {
                     run: () => { if (typeof dictElement === 'function') dictElement('', name); } });
             });
         }
+        // What's changing (migration hub)
+        items.push({ type: 'Dictionary', label: "What's changing", sub: 'Migration deadlines, MT↔MX map, versions', kw: 'changing migration deadline mt mx version cbpr coexistence', badge: '↵',
+            run: () => { if (typeof dictChanges === 'function') dictChanges(); } });
         // Code sets (reason/purpose/status codes…) — the reference lookups
         if (typeof CODESETS !== 'undefined') {
             (CODESETS.SETS || []).forEach(s => {

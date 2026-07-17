@@ -16,6 +16,7 @@
 const AcademyDictionary = (function () {
     const D = (typeof DICTIONARY !== 'undefined') ? DICTIONARY : { FAMILIES: [], MESSAGES: {}, ELEMENTS: {}, SAMPLE_FOR: {} };
     const C = (typeof CODESETS !== 'undefined') ? CODESETS : { SETS: [] };
+    const CH = (typeof CHANGES !== 'undefined') ? CHANGES : { MILESTONES: [], MAP: [], VERSION_FACTS: [] };
     let mountId = 'dict-root';
     const xmlCache = {};        // code → parsed sample xml string
     let appearsIn = null;       // localName → [codes] (built lazily from samples)
@@ -72,8 +73,79 @@ const AcademyDictionary = (function () {
             + '<input type="text" class="dict-search" id="dict-search" placeholder="Search elements and messages — try ChrgBr, UETR, pacs.008…" oninput="AcademyDictionary.filter(this.value)" autocomplete="off">'
             + '<div class="dict-results" id="dict-results" hidden></div>'
             + '</div>'
+            + changesCardHtml()
             + codeSetsSectionHtml()
             + '<div class="dict-families"><div class="dict-sec-label">Messages</div>' + cards + '</div>';
+    }
+
+    // ── WHAT'S CHANGING ─────────────────────────────────────────────────────
+    function nextMilestone() {
+        const today = new Date();
+        const upcoming = CH.MILESTONES.filter(function (m) { return new Date(m.date) >= today; });
+        return upcoming.length ? upcoming[0] : null;
+    }
+    function daysUntil(dateStr) {
+        const ms = new Date(dateStr) - new Date();
+        return Math.max(0, Math.ceil(ms / 86400000));
+    }
+    function changesCardHtml() {
+        if (!CH.MILESTONES.length) return '';
+        const nx = nextMilestone();
+        const badge = nx
+            ? '<span class="dict-chg-count">' + daysUntil(nx.date) + ' days</span> to <b>' + esc(nx.title) + '</b> · ' + esc(nx.when)
+            : 'The standard keeps moving — versions advance every year.';
+        return '<button class="dict-chg-card" onclick="dictChanges()">'
+            + '<div class="dict-chg-top"><span class="dict-chg-eyebrow">What’s changing</span>'
+            + '<span class="dict-chg-go">Open &rarr;</span></div>'
+            + '<div class="dict-chg-line">' + badge + '</div>'
+            + '<div class="dict-chg-sub">Migration deadlines · MT&nbsp;&#8644;&nbsp;MX map · versions</div>'
+            + '</button>';
+    }
+
+    function showChanges() {
+        const el = root();
+        if (!el) return;
+        const today = new Date();
+        const nx = nextMilestone();
+
+        const timeline = CH.MILESTONES.map(function (m) {
+            const done = new Date(m.date) < today;
+            const isNext = nx && m === nx;
+            const st = done ? 'done' : (isNext ? 'next' : 'upcoming');
+            const label = done ? 'Done' : (isNext ? 'Next' : 'Upcoming');
+            const link = m.link ? '<a class="dict-chg-link" href="#/library/' + esc(m.link) + '" onclick="openArticle(\'' + esc(m.link) + '\'); return false;">Read the lesson &rarr;</a>' : '';
+            return '<div class="dict-tl-row is-' + st + '">'
+                + '<div class="dict-tl-dot"></div>'
+                + '<div class="dict-tl-body"><div class="dict-tl-head"><span class="dict-tl-when">' + esc(m.when) + '</span>'
+                + '<span class="dict-tl-badge is-' + st + '">' + label + '</span></div>'
+                + '<div class="dict-tl-title">' + esc(m.title) + '</div>'
+                + '<p class="dict-tl-text">' + esc(m.body) + '</p>' + link + '</div></div>';
+        }).join('');
+
+        const rows = CH.MAP.map(function (r) {
+            const eng = r.engine
+                ? '<button class="dict-mx-try" onclick="event.stopPropagation(); navigate(\'playground\')" title="Try the live transform">live</button>'
+                : '';
+            return '<tr class="dict-crow">'
+                + '<td class="dict-ccode">' + esc(r.mt) + '</td>'
+                + '<td class="dict-mx-arrow">&rarr;</td>'
+                + '<td class="dict-ccode">' + esc(r.mx) + ' ' + eng + '</td>'
+                + '<td class="dict-cdesc">' + esc(r.what) + '</td></tr>';
+        }).join('');
+
+        const facts = CH.VERSION_FACTS.map(function (f) { return '<li>' + f + '</li>'; }).join('');
+
+        el.innerHTML = '<button class="dict-back" onclick="dictHome()">&larr; The Dictionary</button>'
+            + '<div class="dict-el-hero"><h2 class="dict-el-name">What’s changing</h2>'
+            + '<p class="dict-el-def">ISO 20022 doesn’t stand still. Here are the migration milestones, the MT&nbsp;&#8644;&nbsp;MX map, and how versions move — the page to check on every release.</p>'
+            + (nx ? '<div class="dict-chg-hero-count"><span class="dict-chg-count-big">' + daysUntil(nx.date) + '</span> days to <b>' + esc(nx.title) + '</b> &middot; ' + esc(nx.when) + '</div>' : '')
+            + '</div>'
+            + '<div class="dict-card-h" style="margin-top:8px">Migration timeline</div>'
+            + '<div class="dict-timeline">' + timeline + '</div>'
+            + '<div class="dict-card-h" style="margin-top:26px">MT &#8644; MX map</div>'
+            + '<div class="dict-ctable-wrap"><table class="dict-ctable"><thead><tr><th>Legacy MT</th><th></th><th>ISO 20022</th><th>What it is</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+            + '<div class="dict-card-h" style="margin-top:26px">On versions</div>'
+            + '<div class="dict-card"><ul class="dict-facts">' + facts + '</ul></div>';
     }
 
     function codeSetsSectionHtml() {
@@ -415,7 +487,40 @@ const AcademyDictionary = (function () {
             + '.dict-ccode{font-family:var(--font-mono,monospace);font-weight:700;color:var(--primary-deep,var(--primary));white-space:nowrap}'
             + '.dict-cname{font-family:var(--font-mono,monospace);font-size:12.5px;color:var(--text);white-space:nowrap}'
             + '.dict-cdesc{color:var(--text-muted);line-height:1.5}'
-            + '@media (max-width:640px){.dict-cname{display:none}.dict-ctable thead th:nth-child(2){display:none}}';
+            + '@media (max-width:640px){.dict-cname{display:none}.dict-ctable thead th:nth-child(2){display:none}}'
+            // What's changing
+            + '.dict-chg-card{display:block;width:100%;text-align:left;margin:0 0 26px;padding:16px 18px;background:linear-gradient(180deg,var(--glass-tint,rgba(16,185,129,.06)),var(--surface));border:1px solid var(--primary);border-radius:var(--radius-md,14px);cursor:pointer;font:inherit;color:var(--text);transition:transform .15s,box-shadow .15s}'
+            + '.dict-chg-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm)}'
+            + '.dict-chg-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}'
+            + '.dict-chg-eyebrow{font-family:var(--font-mono,monospace);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--primary-deep,var(--primary));font-weight:700}'
+            + '.dict-chg-go{font-size:12.5px;font-weight:700;color:var(--primary-deep,var(--primary))}'
+            + '.dict-chg-line{font-size:15px;color:var(--text)}'
+            + '.dict-chg-count{font-family:var(--font-mono,monospace);font-weight:700;color:var(--primary-deep,var(--primary));background:var(--surface);border:1px solid var(--primary);border-radius:999px;padding:1px 9px}'
+            + '.dict-chg-sub{margin-top:5px;font-size:12px;color:var(--text-muted)}'
+            + '.dict-chg-hero-count{margin-top:14px;font-size:15px;color:var(--text-muted)}'
+            + '.dict-chg-count-big{font-family:var(--font-mono,monospace);font-weight:700;font-size:26px;color:var(--primary-deep,var(--primary));margin-right:4px}'
+            + '.dict-timeline{position:relative;padding-left:6px}'
+            + '.dict-tl-row{position:relative;display:grid;grid-template-columns:22px 1fr;gap:10px;padding-bottom:22px}'
+            + '.dict-tl-row:not(:last-child)::before{content:"";position:absolute;left:5px;top:16px;bottom:0;width:2px;background:var(--border)}'
+            + '.dict-tl-dot{width:12px;height:12px;border-radius:50%;margin-top:4px;background:var(--surface);border:2px solid var(--border-hi)}'
+            + '.dict-tl-row.is-done .dict-tl-dot{background:var(--primary);border-color:var(--primary)}'
+            + '.dict-tl-row.is-next .dict-tl-dot{background:var(--surface);border-color:var(--primary);box-shadow:0 0 0 4px var(--glass-tint-strong,rgba(16,185,129,.14))}'
+            + '.dict-tl-head{display:flex;align-items:center;gap:9px;margin-bottom:3px}'
+            + '.dict-tl-when{font-family:var(--font-mono,monospace);font-size:12px;font-weight:700;color:var(--text)}'
+            + '.dict-tl-badge{font-family:var(--font-mono,monospace);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;border-radius:999px;padding:2px 8px}'
+            + '.dict-tl-badge.is-done{color:var(--primary-deep,var(--primary));background:var(--glass-tint,rgba(16,185,129,.08))}'
+            + '.dict-tl-badge.is-next{color:#fff;background:var(--primary)}'
+            + '.dict-tl-badge.is-upcoming{color:var(--text-faint);background:var(--surface-alt)}'
+            + '.dict-tl-title{font-weight:600;font-size:15px;color:var(--text);margin-bottom:4px}'
+            + '.dict-tl-text{margin:0 0 6px;font-size:13.5px;line-height:1.6;color:var(--text-muted);max-width:64ch}'
+            + '.dict-chg-link{font-size:12.5px;font-weight:600;color:var(--primary-deep,var(--primary));text-decoration:none}'
+            + '.dict-chg-link:hover{text-decoration:underline}'
+            + '.dict-mx-arrow{color:var(--text-faint);text-align:center;width:24px}'
+            + '.dict-mx-try{font-family:var(--font-mono,monospace);font-size:9.5px;font-weight:700;text-transform:uppercase;color:#fff;background:var(--primary);border:none;border-radius:999px;padding:1px 7px;margin-left:6px;cursor:pointer;vertical-align:middle}'
+            + '.dict-facts{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:9px}'
+            + '.dict-facts li{font-size:13.5px;line-height:1.6;color:var(--text-muted)}'
+            + '.dict-facts code{font-family:var(--font-mono,monospace);color:var(--primary-deep,var(--primary))}'
+            + '.dict-facts b{color:var(--text)}';
         const s = document.createElement('style');
         s.id = 'dict-styles';
         s.textContent = css;
@@ -428,6 +533,6 @@ const AcademyDictionary = (function () {
         showLanding();
     }
 
-    return { init: init, showLanding: showLanding, showMessage: showMessage, showElement: showElement, filter: filter, showCodeSets: showCodeSets, showCodeSet: showCodeSet, filterCodes: filterCodes };
+    return { init: init, showLanding: showLanding, showMessage: showMessage, showElement: showElement, filter: filter, showCodeSets: showCodeSets, showCodeSet: showCodeSet, filterCodes: filterCodes, showChanges: showChanges };
 })();
 window.AcademyDictionary = AcademyDictionary;
