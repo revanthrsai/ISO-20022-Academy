@@ -215,8 +215,12 @@ const Workshop = (function () {
             const ar = a.getBoundingClientRect(), br = b.getBoundingClientRect();
             const x1 = ar.right - wr.left, y1 = ar.top + ar.height / 2 - wr.top;
             const x2 = br.left - wr.left, y2 = br.top + br.height / 2 - wr.top;
-            out += `<path class="wsm-link" d="${path(x1, y1, x2, y2)}"
-                     data-s="${l.s}" data-t="${l.t}"><title>Click to remove</title></path>`;
+            const d = path(x1, y1, x2, y2);
+            // A 2px stroke is almost impossible to click. Lay an invisible fat
+            // stroke underneath purely as a hit target.
+            out += `<path class="wsm-hit" d="${d}" data-s="${l.s}" data-t="${l.t}">`
+                 + `<title>Click to remove this link</title></path>`
+                 + `<path class="wsm-link" d="${d}" data-s="${l.s}" data-t="${l.t}"></path>`;
         });
 
         if (dragging) {
@@ -259,10 +263,33 @@ const Workshop = (function () {
 
         // --- tap to connect ---
         wrap.addEventListener('click', function (e) {
+            // --- undo, in three places, because one is never enough ---
+            const clearS = e.target.closest('[data-clear-src]');
+            if (clearS) {
+                const id = clearS.getAttribute('data-clear-src');
+                links = links.filter(l => l.s !== id);
+                armed = null; renderLinks(); syncMapUi();
+                return;
+            }
+            const clearT = e.target.closest('[data-clear-tgt]');
+            if (clearT) {
+                const id = clearT.getAttribute('data-clear-tgt');
+                links = links.filter(l => l.t !== id);
+                armed = null; renderLinks(); syncMapUi();
+                return;
+            }
+            const cut = e.target.closest('.wsm-hit, .wsm-link');
+            if (cut) { removeLink(cut.getAttribute('data-s'), cut.getAttribute('data-t')); return; }
+
             const src = e.target.closest('[data-src]');
             const tgt = e.target.closest('[data-tgt]');
-            const cut = e.target.closest('.wsm-link');
-            if (cut) { removeLink(cut.getAttribute('data-s'), cut.getAttribute('data-t')); return; }
+            // Clicking a target that already holds a link clears it — the most
+            // obvious "undo" gesture, and the one people try first.
+            if (tgt && !armed && links.some(l => l.t === tgt.getAttribute('data-tgt'))) {
+                links = links.filter(l => l.t !== tgt.getAttribute('data-tgt'));
+                renderLinks(); syncMapUi();
+                return;
+            }
             if (src) {
                 const id = src.getAttribute('data-src');
                 armed = (armed === id) ? null : id;
@@ -271,6 +298,16 @@ const Workshop = (function () {
             }
             if (tgt && armed) { addLink(armed, tgt.getAttribute('data-tgt')); return; }
             armed = null; renderLinks(); syncMapUi();
+        });
+
+        // Escape disarms; keyboard users get the same connect gesture via Enter.
+        wrap.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { armed = null; renderLinks(); syncMapUi(); return; }
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const row = e.target.closest('[data-src],[data-tgt]');
+            if (!row) return;
+            e.preventDefault();
+            row.click();
         });
 
         // --- drag to connect ---
@@ -300,26 +337,32 @@ const Workshop = (function () {
         window.addEventListener('resize', renderLinks);
     }
 
+    // Rows are divs, not buttons, so each can hold its own nested "clear" button
+    // — nesting a <button> inside a <button> is invalid and browsers drop it.
     function mapRowsHtml(def) {
         const src = def.source.fields.map(f => `
-            <button class="wsm-row wsm-src" data-src="${f.id}" type="button">
+            <div class="wsm-row wsm-src" data-src="${f.id}" role="button" tabindex="0">
                 <span class="wsm-tag">${esc(f.tag)}</span>
                 <span class="wsm-body">
                     <span class="wsm-name">${esc(f.name)}</span>
                     <span class="wsm-val">${esc(f.value)}</span>
                 </span>
                 <span class="wsm-count" hidden></span>
+                <button class="wsm-clear" type="button" data-clear-src="${f.id}"
+                        title="Remove this field's links" aria-label="Remove links">&times;</button>
                 <span class="wsm-port wsm-port-r" aria-hidden="true"></span>
-            </button>`).join('');
+            </div>`).join('');
 
         const tgt = def.target.fields.map(f => `
-            <button class="wsm-row wsm-tgt${f.id === 'none' ? ' is-none' : ''}" data-tgt="${f.id}" type="button">
+            <div class="wsm-row wsm-tgt${f.id === 'none' ? ' is-none' : ''}" data-tgt="${f.id}" role="button" tabindex="0">
                 <span class="wsm-port wsm-port-l" aria-hidden="true"></span>
                 <span class="wsm-body">
                     <span class="wsm-path">${esc(f.path)}</span>
                     <span class="wsm-note">${esc(f.note)}</span>
                 </span>
-            </button>`).join('');
+                <button class="wsm-clear" type="button" data-clear-tgt="${f.id}"
+                        title="Remove this link" aria-label="Remove link">&times;</button>
+            </div>`).join('');
 
         return `
         <div class="wsm-wrap" id="wsm-wrap">
@@ -1125,67 +1168,92 @@ const Workshop = (function () {
         .ws-ide-map .wsm-scroll { flex: 1; }
         .ws-ide-map .ws-out { flex: 0 0 auto; max-height: 46%; }
 
-        /* ---- Mapping board ---- */
+        /* ---- Mapping board ----
+           The board does NOT scroll. Rows flex to share whatever height the pane
+           has, so every field is on screen at once and a drag never has to chase
+           a moving target. Below 1040px it stacks and scrolling returns. */
         .ws-ide-map .ws-pane-work { min-width: 0; }
-        .wsm-scroll { padding: 18px; }
+        .wsm-scroll { padding: 16px; overflow: hidden; flex: 1; min-height: 0; }
         .wsm-wrap {
-            position: relative;
-            display: grid; grid-template-columns: 1fr 1fr; gap: 100px;
-            align-items: start;
+            position: relative; height: 100%;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 96px;
         }
         .wsm-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-        .wsm-link {
-            fill: none; stroke: var(--primary); stroke-width: 2;
+        .wsm-link { fill: none; stroke: var(--primary); stroke-width: 2.5; pointer-events: none; }
+        .wsm-hit {
+            fill: none; stroke: transparent; stroke-width: 16;
             pointer-events: stroke; cursor: pointer;
         }
-        .wsm-link:hover { stroke: var(--danger, #C13543); stroke-width: 3; }
-        .wsm-link.is-live { stroke-dasharray: 5 4; opacity: 0.75; pointer-events: none; }
+        .wsm-hit:hover + .wsm-link { stroke: var(--danger, #C13543); stroke-width: 3.5; }
+        .wsm-link.is-live { stroke-dasharray: 5 4; opacity: 0.8; }
 
-        .wsm-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        .wsm-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; height: 100%; }
         .wsm-col-head {
-            font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.07em;
+            flex: 0 0 auto;
+            font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.07em;
             text-transform: uppercase; color: var(--text-faint); margin-bottom: 2px;
         }
         .wsm-row {
-            position: relative; display: flex; align-items: center; gap: 10px;
+            position: relative; display: flex; align-items: center; gap: 9px;
+            flex: 1 1 0; min-height: 34px;
             width: 100%; text-align: left; cursor: pointer;
-            padding: 9px 12px; border-radius: var(--radius-sm);
+            padding: 6px 11px; border-radius: var(--radius-sm);
             background: var(--surface-alt); border: 1px solid var(--border);
             transition: border-color var(--dur-fast) var(--ease-out),
                         background var(--dur-fast) var(--ease-out);
         }
         .wsm-row:hover { border-color: var(--border-hi); }
+        .wsm-row:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .wsm-row.is-linked { border-color: var(--primary); background: var(--glass-tint, rgba(16,185,129,0.06)); }
         .wsm-row.is-armed { border-color: var(--primary); box-shadow: 0 0 0 3px var(--glass-tint, rgba(16,185,129,0.18)); }
         .wsm-tgt.is-open:not(.is-linked) { border-style: dashed; border-color: var(--primary); }
         .wsm-tgt.is-none { background: transparent; border-style: dashed; }
 
         .wsm-tag {
-            flex-shrink: 0; font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;
-            color: var(--primary); min-width: 46px;
+            flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+            color: var(--primary); min-width: 44px;
         }
-        .wsm-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        .wsm-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
-        .wsm-val {
-            font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint);
+        .wsm-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+        .wsm-name {
+            font-size: 12px; font-weight: 600; color: var(--text);
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
-        .wsm-path { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
-        .wsm-note { font-size: 10.5px; color: var(--text-faint); }
+        .wsm-val {
+            font-family: var(--font-mono); font-size: 10px; color: var(--text-faint);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .wsm-path {
+            font-family: var(--font-mono); font-size: 11.5px; color: var(--text);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .wsm-note {
+            font-size: 10px; color: var(--text-faint);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
         .wsm-count {
-            margin-left: auto; flex-shrink: 0;
-            font-family: var(--font-mono); font-size: 9.5px; padding: 1px 6px;
+            flex-shrink: 0; font-family: var(--font-mono); font-size: 9.5px; padding: 1px 6px;
             border-radius: var(--radius-pill); background: var(--primary); color: #fff;
         }
+
+        /* Per-row undo. Only shown once a row actually holds a link. */
+        .wsm-clear {
+            flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+            border: 1px solid var(--border); background: var(--surface);
+            color: var(--text-muted); font-size: 13px; line-height: 1; cursor: pointer;
+            padding: 0; display: none;
+        }
+        .wsm-row.is-linked .wsm-clear { display: block; }
+        .wsm-clear:hover { border-color: var(--danger, #C13543); color: var(--danger, #C13543); }
+
         .wsm-port {
             position: absolute; top: 50%; width: 9px; height: 9px; border-radius: 50%;
             background: var(--surface); border: 2px solid var(--border-hi);
             transform: translateY(-50%);
         }
         .wsm-port-r { right: -5px; }
-        .wsm-port-l { left: -5px; position: absolute; }
+        .wsm-port-l { left: -5px; }
         .wsm-row.is-linked .wsm-port, .wsm-row.is-armed .wsm-port { border-color: var(--primary); background: var(--primary); }
-        .wsm-tgt { padding-left: 16px; }
+        .wsm-tgt { padding-left: 15px; }
 
         /* Below ~1040px the side-by-side stops being usable: the editor gets too
            narrow for XML lines. Drop to a single column with natural page scroll
@@ -1195,7 +1263,9 @@ const Workshop = (function () {
             .ws-ide-body { grid-template-columns: 1fr; }
             .ws-pane-brief .ws-pane-scroll { max-height: 340px; }
             .ws-pane-work { min-height: 620px; }
-            .wsm-wrap { gap: 46px; }
+            .wsm-wrap { gap: 46px; height: auto; }
+            .wsm-scroll { overflow: auto; }
+            .wsm-row { flex: 0 0 auto; min-height: 42px; }
         }
         @media (max-width: 720px) {
             .ws-grid { grid-template-columns: 1fr; }
@@ -1204,9 +1274,10 @@ const Workshop = (function () {
             .ws-src { font-size: 11.5px; }
             .ws-out-tabs { flex-wrap: wrap; }
             .ws-out-actions { margin-left: 0; width: 100%; }
-            .wsm-wrap { grid-template-columns: 1fr; gap: 18px; }
+            .wsm-wrap { grid-template-columns: 1fr; gap: 18px; height: auto; }
             .wsm-svg { display: none; }   /* stacked: curves would cross the rows */
-            .wsm-scroll { padding: 12px; }
+            .wsm-scroll { padding: 12px; overflow: auto; }
+            .wsm-row { flex: 0 0 auto; }
             .ws-run-btn { flex: 1; }
         }
         `;
