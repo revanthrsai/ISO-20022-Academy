@@ -118,11 +118,11 @@ const WORKSHOPS = (function () {
             n: '03',
             title: 'The Money Comes Back',
             kicker: 'Exception flow',
-            blurb: 'The beneficiary account is closed. Choose the right R-transaction, the right reason code, and the right direction — then defend the choice.',
-            minutes: 25,
+            blurb: 'The money arrived and the account was closed. Work out which R-transaction this is, which message carries it, which reason code it quotes, and what Bob actually gets back.',
+            minutes: 20,
             difficulty: 'Advanced',
-            skills: ['Return vs. recall vs. reject', 'Reason codes', 'camt.056'],
-            ready: false
+            skills: ['Return vs. reject vs. recall', 'pacs.004', 'Reason codes', 'Return charges'],
+            ready: true
         }
     ];
 
@@ -370,6 +370,146 @@ const WORKSHOPS = (function () {
                 { id: '208-the-end-of-mt', why: 'Why MT is being retired, and what replaces it' },
                 { id: '603-structured-addresses', why: 'The same fight over free text, one field further on' },
                 { id: '601-remittance-information', why: 'What :70: becomes when it grows up' }
+            ]
+        },
+
+        // ---------------------------------------------------------------------
+        // WORKSHOP 3 · THE MONEY COMES BACK
+        // A triage exercise. Every step is a decision a real operator makes under
+        // time pressure, and each wrong option is wrong for a reason worth
+        // hearing. The steps are sequential because that is how the decision
+        // actually works: get the first one wrong and everything after it is
+        // wrong too, no matter how confidently you answer.
+        // ---------------------------------------------------------------------
+        'r-transaction': {
+            kind: 'decide',
+            title: 'The Money Comes Back',
+            kicker: 'Exception flow',
+
+            brief:
+                "The pacs.008 settled cleanly at 09:41. Emirates NBD is out USD 400.00, HDFC has it, " +
+                "and everybody's day was going fine.\n\n" +
+                "At 11:15 HDFC's booking engine tries to credit Sweety's account and finds it closed — " +
+                "she moved banks three weeks ago and nobody told Bob. The money is sitting in a " +
+                "suspense account in Mumbai and somebody has to decide what happens to it.",
+
+            given: [
+                'The payment settled — HDFC genuinely holds the funds',
+                'Original UETR eb6305c9-1f7c-4a9b-9b1e-2c2f4e7a91d4',
+                'EndToEndId BOB-INV0042, ChrgBr was SHAR',
+                'Nobody has asked for the money back — HDFC simply cannot deliver it'
+            ],
+
+            task:
+                'Five decisions, in order. Each one follows from the last, so get the first right ' +
+                'before you worry about the rest.',
+
+            steps: [
+                {
+                    id: 'kind',
+                    q: 'What has happened here, in ISO 20022 terms?',
+                    type: 'pick',
+                    options: [
+                        { id: 'reject',   label: 'A Reject',   sub: 'the message was refused before it settled' },
+                        { id: 'return',   label: 'A Return',   sub: 'settled funds are being sent back' },
+                        { id: 'recall',   label: 'A Recall',   sub: 'the sender is asking for the money back' },
+                        { id: 'reversal', label: 'A Reversal', sub: 'an erroneous instruction is being undone' }
+                    ],
+                    answer: 'return',
+                    wrong: {
+                        reject: 'A Reject happens *before* settlement — the receiving bank or CSM refuses the message and no money ever moves. Here the payment settled at 09:41 and HDFC is holding real funds. You cannot reject money you have already been paid.',
+                        recall: 'A Recall is initiated by the *sender*, asking for the money back — wrong payee, duplicate, fraud. Nobody at Emirates NBD has asked for anything. HDFC is the one who cannot deliver, so HDFC initiates.',
+                        reversal: 'A Reversal undoes an instruction the originator should never have sent. The instruction here was perfectly valid — Bob genuinely meant to pay Sweety. What failed was delivery at the far end.'
+                    },
+                    why: 'The payment settled and cannot be delivered, so the receiving bank sends it back on its own initiative. That is a Return — and the trigger being *delivery failure* rather than *sender regret* is what separates it from a Recall.'
+                },
+                {
+                    id: 'msg',
+                    q: 'Which message carries it?',
+                    type: 'pick',
+                    options: [
+                        { id: 'pacs002', label: 'pacs.002', sub: 'FIToFIPaymentStatusReport' },
+                        { id: 'pacs004', label: 'pacs.004', sub: 'PaymentReturn' },
+                        { id: 'camt056', label: 'camt.056', sub: 'FIToFIPaymentCancellationRequest' },
+                        { id: 'pacs007', label: 'pacs.007', sub: 'FIToFIPaymentReversal' }
+                    ],
+                    answer: 'pacs004',
+                    wrong: {
+                        pacs002: 'A pacs.002 reports status — ACCP, ACSP, RJCT. It moves information, never money. A returned payment has to actually move USD 400.00 back across the border, and a status report cannot do that.',
+                        camt056: 'camt.056 is how you *ask* for a cancellation — it is the Recall message. HDFC is not asking anyone for permission; it already knows it cannot deliver and is sending the funds back.',
+                        pacs007: 'pacs.007 is a Reversal, used to undo an instruction that was wrong at source — most often on the direct debit side. This instruction was correct; only the destination account failed.'
+                    },
+                    why: 'pacs.004 PaymentReturn is the only message in the family that both moves funds and says why. It carries <RtrdIntrBkSttlmAmt> — the amount going back — alongside the reason.'
+                },
+                {
+                    id: 'code',
+                    q: 'Which reason code does the return quote?',
+                    type: 'code',
+                    set: 'reason',
+                    answer: 'AC04',
+                    shortlist: ['AC01', 'AC04', 'AC06', 'BE04', 'MS03', 'AM04'],
+                    wrong: {
+                        AC01: 'AC01 IncorrectAccountNumber means the number is malformed or does not exist. Sweety’s account number was perfectly valid — it simply is not open any more. The distinction matters, because AC01 suggests Bob mistyped something and AC04 tells him the truth.',
+                        AC06: 'AC06 BlockedAccount means the account exists and is frozen — a sanction, a court order, a fraud hold. A closed account is not blocked, it is gone. Sending AC06 would imply something legally serious that is not happening.',
+                        BE04: 'BE04 MissingCreditorAddress is about incomplete party data. The address was never the problem here.',
+                        MS03: 'MS03 NotSpecified is the code you use when you cannot say why — often for privacy. Using it when you know exactly why guarantees the sending bank has to open an investigation to learn what you already knew.',
+                        AM04: 'AM04 InsufficientFunds is about the *debtor* not having the money. The money arrived fine; it is the destination that failed.'
+                    },
+                    why: 'AC04 ClosedAccountNumber says precisely what went wrong, which lets Emirates NBD tell Bob something useful — "her account is closed, get new details" — instead of "it bounced".'
+                },
+                {
+                    id: 'dir',
+                    q: 'Where does the pacs.004 go?',
+                    type: 'pick',
+                    options: [
+                        { id: 'back',   label: 'HDFC → Emirates NBD', sub: 'back along the chain it came down' },
+                        { id: 'fwd',    label: 'Emirates NBD → HDFC', sub: 'the same direction as the original' },
+                        { id: 'direct', label: 'HDFC → Bob',          sub: 'straight to the payer' },
+                        { id: 'cust',   label: 'HDFC → Sweety',       sub: 'to the intended beneficiary' }
+                    ],
+                    answer: 'back',
+                    wrong: {
+                        fwd: 'That is the direction the original travelled. A return retraces the chain — the bank holding the money sends it to the bank that sent it.',
+                        direct: 'HDFC has no relationship with Bob and no way to credit him. Banks settle with the banks they hold accounts with; the money has to walk back the way it came.',
+                        cust: 'Sweety is precisely who cannot be credited — that is the whole problem.'
+                    },
+                    why: 'Returns retrace the settlement chain in reverse, hop by hop. Each leg unwinds the leg that created it, which is what keeps every nostro/vostro pair reconciling.'
+                },
+                {
+                    id: 'amount',
+                    q: 'Bob asks whether he gets his USD 400.00 back. What do you tell him?',
+                    type: 'pick',
+                    options: [
+                        { id: 'full',    label: 'Yes — the full 400.00',      sub: 'a return always restores the original amount' },
+                        { id: 'net',     label: 'Probably not the full 400',  sub: 'return charges can be deducted along the way' },
+                        { id: 'nothing', label: 'Nothing — the funds are stuck', sub: 'the money stays in suspense' },
+                        { id: 'plus',    label: 'The full 400 plus compensation', sub: 'the receiving bank owes interest' }
+                    ],
+                    answer: 'net',
+                    wrong: {
+                        full: 'Tempting, and often wrong. The returned amount travels in <RtrdIntrBkSttlmAmt>, which is a separate element from the original <IntrBkSttlmAmt> precisely because the two can differ. Banks in the chain may deduct their return charges, declared in <ChrgsInf>.',
+                        nothing: 'The funds are not stuck — that is exactly what the return exists to prevent. Money sitting in suspense is a problem for HDFC too, not a resting state.',
+                        plus: 'Compensation and interest claims are a separate process with their own rules and thresholds. A plain return does not carry them.'
+                    },
+                    why: 'The returned amount is its own element — <RtrdIntrBkSttlmAmt> — with <ChrgsInf> alongside it to declare what was taken. If returns always restored the original amount exactly, ISO would not have needed a second element to hold the figure.'
+                }
+            ],
+
+            debrief:
+                "Five decisions, and the first one determined all four that followed. Get \"is this a " +
+                "reject or a return\" wrong and you spend the afternoon building a message that " +
+                "cannot move money.\n\n" +
+                "The distinction is always the same question: had it settled, and who is unhappy? " +
+                "Not settled yet — reject. Settled but undeliverable — return. Settled and the " +
+                "sender wants it back — recall. Settled and the instruction itself was wrong — reversal.\n\n" +
+                "And the reason code is not paperwork. AC04 instead of MS03 is the difference between " +
+                "Bob learning \"her account is closed, ask her for new details\" today, and an " +
+                "investigation that takes two weeks to reach the same sentence.",
+
+            next: [
+                { id: '402-return', why: 'The return, in full' },
+                { id: '407-the-r-transactions-map', why: 'All four R-transactions on one map' },
+                { id: '408-reason-codes', why: 'Why the code you pick decides what the customer is told' }
             ]
         }
     };

@@ -48,6 +48,14 @@ const Workshop = (function () {
 
     function root() { return document.getElementById(mountId); }
 
+    // Guarded: not every environment implements scrollIntoView, and a missing
+    // scroll should never take the workshop down with it.
+    function nudgeInto(el) {
+        if (el && typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
     // Paragraph-split plain text that uses \n\n as a break.
     function paras(text, cls) {
         return String(text || '').split(/\n\n+/)
@@ -92,8 +100,9 @@ const Workshop = (function () {
             <p class="ws-hero-sub">
                 Every lesson in the Library explains something. Here you get a situation instead:
                 a broken message, a migration with a deadline, a payment that has to come back.
-                You work it, and you get checked &mdash; by the same engine that runs the
-                Playground validator. No multiple choice, no marking your own homework.
+                You work it and you get checked &mdash; and when you get it wrong, you're told
+                why that answer was tempting, not just that it was wrong. Nothing here marks
+                its own homework.
             </p>
         </header>
         <div class="ws-grid">${WORKSHOPS.LIST.map(cardHtml).join('')}</div>
@@ -382,6 +391,191 @@ const Workshop = (function () {
         </div>`;
     }
 
+    // =========================================================================
+    // DECISION WORKSHOPS (kind: 'decide')
+    // -------------------------------------------------------------------------
+    // A triage flow. Steps reveal one at a time because that is how the decision
+    // really works — the first call determines every call after it. A wrong
+    // answer is never just "wrong": each one carries the reason it is tempting
+    // and the reason it fails, which is where the teaching actually happens.
+    //
+    // Reason-code steps pull their options from CODESETS, so the workshop and
+    // the Dictionary can never drift apart.
+    // =========================================================================
+    let stepAt = 0;      // index of the step currently being answered
+    let stepTries = {};  // stepId -> how many wrong answers so far
+
+    function codeOptions(step) {
+        const set = (window.CODESETS && CODESETS.SETS || []).find(s => s.id === step.set);
+        if (!set) return [];
+        const short = step.shortlist || [];
+        return set.codes
+            .filter(c => !short.length || short.indexOf(c.code) !== -1)
+            .map(c => ({ id: c.code, label: c.code, sub: c.name + ' — ' + c.desc }));
+    }
+
+    function stepOptions(step) {
+        return step.type === 'code' ? codeOptions(step) : (step.options || []);
+    }
+
+    function stepCardHtml(def, step, i) {
+        const done = i < stepAt;
+        const active = i === stepAt;
+        if (i > stepAt) return '';   // not revealed yet
+
+        if (done) {
+            const opt = stepOptions(step).find(o => o.id === step.answer);
+            return `
+            <div class="wsd-step is-done">
+                <div class="wsd-step-head">
+                    <span class="wsd-step-n is-ok">&#10003;</span>
+                    <span class="wsd-step-q">${esc(step.q)}</span>
+                    <span class="wsd-step-ans">${esc(opt ? opt.label : step.answer)}</span>
+                </div>
+                <p class="wsd-why">${esc(step.why)}</p>
+            </div>`;
+        }
+
+        const opts = stepOptions(step).map(o => `
+            <button class="wsd-opt${step.type === 'code' ? ' wsd-opt-code' : ''}" type="button"
+                    onclick="Workshop.answer('${esc(o.id)}')">
+                <span class="wsd-opt-label">${esc(o.label)}</span>
+                <span class="wsd-opt-sub">${esc(o.sub || '')}</span>
+            </button>`).join('');
+
+        return `
+        <div class="wsd-step is-active">
+            <div class="wsd-step-head">
+                <span class="wsd-step-n">${i + 1}</span>
+                <span class="wsd-step-q">${esc(step.q)}</span>
+            </div>
+            ${step.type === 'code'
+                ? '<p class="wsd-hintline">These are reason codes from the real ISO 20022 set — the same ones in the Dictionary.</p>' : ''}
+            <div class="wsd-opts">${opts}</div>
+            <div class="wsd-feedback" id="wsd-feedback"></div>
+        </div>`;
+    }
+
+    function renderDecide(def) {
+        const el = root();
+        const body = def.steps.map((s, i) => stepCardHtml(def, s, i)).join('');
+        const finished = stepAt >= def.steps.length;
+
+        el.querySelector('#wsd-flow').innerHTML = body + (finished ? decidePassHtml(def) : '');
+        const chip = document.getElementById('ws-progress');
+        if (chip) {
+            chip.textContent = finished
+                ? 'all five decisions made'
+                : `decision ${stepAt + 1} of ${def.steps.length}`;
+        }
+        const flow = el.querySelector('#wsd-flow');
+        if (flow) {
+            const active = flow.querySelector('.wsd-step.is-active, .ws-v-pass');
+            if (active && stepAt > 0) nudgeInto(active);
+        }
+    }
+
+    // Answer the current step.
+    function answer(choice) {
+        const def = WORKSHOPS.DEFS[current];
+        if (!def || def.kind !== 'decide') return;
+        const step = def.steps[stepAt];
+        if (!step) return;
+
+        if (choice === step.answer) {
+            stepAt++;
+            if (stepAt >= def.steps.length) solved = true;
+            renderDecide(def);
+            return;
+        }
+
+        stepTries[step.id] = (stepTries[step.id] || 0) + 1;
+        attempts++;
+        const why = (step.wrong || {})[choice];
+        const fb = document.getElementById('wsd-feedback');
+        if (fb) {
+            fb.innerHTML = `
+            <div class="wsd-wrong">
+                <span class="wsd-wrong-tag">not this one</span>
+                <p>${esc(why || 'That is not it. Read what each option actually claims.')}</p>
+            </div>`;
+            nudgeInto(fb);
+        }
+    }
+
+    function decidePassHtml(def) {
+        const wrongTotal = Object.values(stepTries).reduce((a, b) => a + b, 0);
+        const sub = wrongTotal === 0
+            ? 'Five for five, first time. That is the real thing.'
+            : `You took ${wrongTotal} wrong turn${wrongTotal === 1 ? '' : 's'} on the way — which is where the learning was.`;
+        const next = (def.next || []).map(x => `
+            <li><a href="#/library/${x.id}" onclick="openArticle('${x.id}'); return false;">
+                ${esc(lessonTitle(x.id))}</a> <span>${esc(x.why)}</span></li>`).join('');
+
+        return `
+        <div class="ws-v ws-v-pass wsd-done">
+            <div class="ws-v-head">
+                <span class="ws-v-badge">&#10003;</span>
+                <div>
+                    <div class="ws-v-title">The money is on its way back.</div>
+                    <div class="ws-v-sub">${esc(sub)}</div>
+                </div>
+            </div>
+            <div class="ws-debrief">
+                <div class="ws-debrief-label">What you just worked out</div>
+                ${paras(def.debrief, 'ws-debrief-p')}
+                ${next ? `<div class="ws-debrief-label">Read next</div><ul class="ws-next">${next}</ul>` : ''}
+                <div class="ws-again">
+                    <button class="ws-mini" onclick="Workshop.reset()">Run it again</button>
+                    <button class="ws-mini" onclick="workshopHome(event)">Back to all workshops</button>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function openDecide(def) {
+        const el = root();
+        el.innerHTML = `
+        <div class="ws-ide ws-ide-decide">
+            <header class="ws-ide-top">
+                <button class="ws-back" onclick="workshopHome(event)">&larr; All workshops</button>
+                <div class="ws-ide-id">
+                    <span class="ws-ide-kicker">${esc(def.kicker)}</span>
+                    <h2 class="ws-ide-title">${esc(def.title)}</h2>
+                </div>
+                <span class="ws-ide-progress" id="ws-progress">decision 1 of ${def.steps.length}</span>
+            </header>
+
+            <div class="ws-ide-body">
+                <section class="ws-pane ws-pane-brief">
+                    <div class="ws-pane-bar"><span class="ws-pane-name">Brief</span></div>
+                    <div class="ws-pane-scroll">
+                        <div class="ws-brief-label">The situation</div>
+                        ${paras(def.brief, 'ws-brief-p')}
+                        <div class="ws-given-label">What you know</div>
+                        <ul class="ws-given-list">
+                            ${def.given.map(g => `<li>${esc(g)}</li>`).join('')}
+                        </ul>
+                        <div class="ws-task">
+                            <div class="ws-task-label">Your job</div>
+                            <p>${esc(def.task)}</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="ws-pane ws-pane-work">
+                    <div class="ws-pane-bar">
+                        <span class="ws-pane-name">triage</span>
+                        <button class="ws-mini" onclick="Workshop.reset()">start over</button>
+                    </div>
+                    <div class="ws-pane-scroll" id="wsd-flow"></div>
+                </section>
+            </div>
+        </div>`;
+
+        renderDecide(def);
+    }
+
     // -------------------------------------------------------------------------
     // WORKSHOP VIEW
     // -------------------------------------------------------------------------
@@ -399,8 +593,11 @@ const Workshop = (function () {
         links = [];
         armed = null;
         dragging = null;
+        stepAt = 0;
+        stepTries = {};
 
         if (def.kind === 'map') { openMap(def); return; }
+        if (def.kind === 'decide') { openDecide(def); return; }
 
         // Three-pane workspace: brief on the left, editor top-right, results
         // bottom-right. The brief stays visible while you work — a workshop where
@@ -681,6 +878,7 @@ const Workshop = (function () {
 
     function check() {
         const def = WORKSHOPS.DEFS[current];
+        if (def && def.kind === 'decide') return;   // each step checks itself
         if (def && def.kind === 'map') { checkMap(); return; }
         const ta = document.getElementById('ws-src');
         const out = document.getElementById('ws-out-result');
@@ -818,7 +1016,7 @@ const Workshop = (function () {
     function hint() {
         const def = WORKSHOPS.DEFS[current];
         const wrap = document.getElementById('ws-out-hints');
-        if (!def || !wrap) return;
+        if (!def || def.kind === 'decide' || !wrap) return;
         pane('hints');
 
         // Map workshops hint by source field; debug workshops hint by defect.
@@ -1259,6 +1457,64 @@ const Workshop = (function () {
         .wsm-row.is-linked .wsm-port, .wsm-row.is-armed .wsm-port { border-color: var(--primary); background: var(--primary); }
         .wsm-tgt { padding-left: 15px; }
 
+        /* ---- Decision flow ---- */
+        .wsd-step {
+            padding: 16px 18px; border-radius: var(--radius-md);
+            border: 1px solid var(--border); background: var(--surface);
+            margin-bottom: 12px;
+        }
+        .wsd-step.is-done { background: var(--surface-alt); border-color: var(--border); }
+        .wsd-step.is-active { border-color: var(--primary); }
+        .wsd-step-head { display: flex; align-items: center; gap: 11px; }
+        .wsd-step-n {
+            flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--glass-tint, rgba(16,185,129,0.12)); color: var(--primary);
+            font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+        }
+        .wsd-step-n.is-ok { background: var(--success, #4ad6a0); color: #fff; }
+        .wsd-step-q {
+            font-family: var(--font-display); font-weight: 700; font-size: 14.5px;
+            color: var(--text); line-height: 1.4;
+        }
+        .wsd-step-ans {
+            margin-left: auto; flex-shrink: 0;
+            font-family: var(--font-mono); font-size: 11px; color: var(--primary);
+            padding: 3px 10px; border-radius: var(--radius-pill);
+            background: var(--glass-tint, rgba(16,185,129,0.1));
+        }
+        .wsd-why {
+            margin: 10px 0 0 35px; font-size: 13px; line-height: 1.7; color: var(--text-muted);
+        }
+        .wsd-hintline {
+            margin: 10px 0 0 35px; font-size: 11.5px; color: var(--text-faint);
+        }
+
+        .wsd-opts { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 0 35px; }
+        .wsd-opt {
+            display: flex; flex-direction: column; gap: 2px; text-align: left;
+            padding: 11px 14px; border-radius: var(--radius-sm); cursor: pointer;
+            background: var(--surface-alt); border: 1px solid var(--border);
+            transition: border-color var(--dur-fast) var(--ease-out),
+                        transform var(--dur-fast) var(--ease-out);
+        }
+        .wsd-opt:hover { border-color: var(--primary); transform: translateX(2px); }
+        .wsd-opt-label { font-family: var(--font-display); font-weight: 700; font-size: 13.5px; color: var(--text); }
+        .wsd-opt-code .wsd-opt-label { font-family: var(--font-mono); color: var(--primary); }
+        .wsd-opt-sub { font-size: 12px; line-height: 1.55; color: var(--text-muted); }
+
+        .wsd-feedback:not(:empty) { margin: 12px 0 0 35px; }
+        .wsd-wrong {
+            padding: 12px 14px; border-radius: var(--radius-sm);
+            background: rgba(241,112,122,0.07); border: 1px solid var(--danger, #f1707a);
+        }
+        .wsd-wrong-tag {
+            font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.07em;
+            text-transform: uppercase; color: var(--danger, #C13543); font-weight: 700;
+        }
+        .wsd-wrong p { margin: 6px 0 0; font-size: 13px; line-height: 1.7; color: var(--text); }
+        .wsd-done { margin-top: 6px; }
+
         /* Below ~1040px the side-by-side stops being usable: the editor gets too
            narrow for XML lines. Drop to a single column with natural page scroll
            rather than trying to squeeze three panes into a phone. */
@@ -1282,6 +1538,7 @@ const Workshop = (function () {
             .wsm-svg { display: none; }   /* stacked: curves would cross the rows */
             .wsm-scroll { padding: 12px; overflow: auto; }
             .wsm-row { flex: 0 0 auto; }
+            .wsd-opts, .wsd-why, .wsd-hintline, .wsd-feedback:not(:empty) { margin-left: 0; }
             .ws-run-btn { flex: 1; }
         }
         `;
@@ -1299,7 +1556,7 @@ const Workshop = (function () {
     // Styles are needed the moment any view renders.
     injectStyles();
 
-    return { init, showLanding, open, check, hint, reset, pane, hideOut };
+    return { init, showLanding, open, check, hint, reset, pane, hideOut, answer };
 })();
 
 window.Workshop = Workshop;
