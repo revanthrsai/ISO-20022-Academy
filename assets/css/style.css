@@ -4514,6 +4514,7 @@ body.pg2-locked { overflow: hidden; }
 @media (max-width: 820px) {
     .pg2 { grid-template-columns: 1fr; }
     .pg2-nav { position: static; max-height: 360px; }
+}
 
 /* ===========================================================================
    28. FOUR-TAB IA (1.6)
