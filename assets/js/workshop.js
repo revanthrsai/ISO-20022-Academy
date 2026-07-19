@@ -470,37 +470,34 @@ const Workshop = (function () {
                 </section>
 
                 <section class="ws-pane ws-pane-work">
+                    <!-- Actions live on the board's own bar, so the output panel
+                         can stay out of the way until there is something to say. -->
                     <div class="ws-pane-bar">
                         <span class="ws-pane-name">field map</span>
-                        <button class="ws-mini" onclick="Workshop.reset()">clear all</button>
+                        <div class="ws-bar-actions">
+                            <button class="ws-mini" onclick="Workshop.reset()">clear all</button>
+                            <button class="ws-hint-btn" id="ws-hint-btn" onclick="Workshop.hint()">
+                                Hint <span class="ws-hint-left" id="ws-hint-left">${def.hints.length}</span>
+                            </button>
+                            <button class="ws-run-btn" onclick="Workshop.check()">Run the mapping</button>
+                        </div>
                     </div>
                     <div class="ws-pane-scroll wsm-scroll">
                         ${mapRowsHtml(def)}
                     </div>
 
-                    <div class="ws-out">
+                    <!-- Revealed by Run or Hint; the board owns the height until then. -->
+                    <div class="ws-out" id="ws-out" hidden>
                         <div class="ws-out-tabs" role="tablist">
                             <button class="ws-tab is-on" id="ws-tab-result" role="tab"
                                     onclick="Workshop.pane('result')">Result</button>
                             <button class="ws-tab" id="ws-tab-hints" role="tab"
                                     onclick="Workshop.pane('hints')">Hints<span class="ws-tab-n" id="ws-hint-n" hidden>0</span></button>
-                            <div class="ws-out-actions">
-                                <button class="ws-hint-btn" id="ws-hint-btn" onclick="Workshop.hint()">
-                                    Hint <span class="ws-hint-left" id="ws-hint-left">${def.hints.length}</span>
-                                </button>
-                                <button class="ws-run-btn" onclick="Workshop.check()">Run the mapping</button>
-                            </div>
+                            <button class="ws-out-x" type="button" aria-label="Hide this panel"
+                                    onclick="Workshop.hideOut()">&times;</button>
                         </div>
-                        <div class="ws-out-body" id="ws-out-result">
-                            <div class="ws-idle">
-                                Drag from a field on the left to the element it becomes on the right &mdash;
-                                or tap one side then the other. Click a line to remove it.
-                                When the board looks right, run it.
-                            </div>
-                        </div>
-                        <div class="ws-out-body" id="ws-out-hints" hidden>
-                            <div class="ws-idle">No hints yet. ${def.hints.length} available if you get stuck.</div>
-                        </div>
+                        <div class="ws-out-body" id="ws-out-result"></div>
+                        <div class="ws-out-body" id="ws-out-hints" hidden></div>
                     </div>
                 </section>
             </div>
@@ -609,8 +606,20 @@ const Workshop = (function () {
         });
     }
 
+    // On mapping workshops the output panel is absent until Run or Hint produces
+    // something. Board first; verdict only when there is a verdict.
+    function showOut() {
+        const o = document.getElementById('ws-out');
+        if (o && o.hidden) { o.hidden = false; renderLinks(); }
+    }
+    function hideOut() {
+        const o = document.getElementById('ws-out');
+        if (o) { o.hidden = true; renderLinks(); }
+    }
+
     // Switch the bottom pane between the run result and the hint log.
     function pane(which) {
+        showOut();
         const isHints = which === 'hints';
         const r = document.getElementById('ws-out-result');
         const h = document.getElementById('ws-out-hints');
@@ -1100,6 +1109,22 @@ const Workshop = (function () {
         .ws-next span { color: var(--text-faint); }
         .ws-again { display: flex; gap: 10px; flex-wrap: wrap; }
 
+        /* Output panel is revealed on demand in mapping workshops. .ws-out sets
+           display:flex, which outranks the browser's [hidden] rule — so say it
+           again at higher specificity, or a "hidden" panel still takes up space. */
+        .ws-out[hidden] { display: none; }
+        .ws-bar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+        .ws-bar-actions .ws-mini { margin-left: 0; }
+        .ws-out-x {
+            margin-left: auto; width: 26px; height: 26px; border-radius: 50%;
+            border: 1px solid var(--border); background: transparent;
+            color: var(--text-muted); font-size: 16px; line-height: 1; cursor: pointer;
+        }
+        .ws-out-x:hover { border-color: var(--danger, #C13543); color: var(--danger, #C13543); }
+        /* Given room to breathe, the board should use it. */
+        .ws-ide-map .wsm-scroll { flex: 1; }
+        .ws-ide-map .ws-out { flex: 0 0 auto; max-height: 46%; }
+
         /* ---- Mapping board ---- */
         .ws-ide-map .ws-pane-work { min-width: 0; }
         .wsm-scroll { padding: 18px; }
@@ -1199,7 +1224,7 @@ const Workshop = (function () {
     // Styles are needed the moment any view renders.
     injectStyles();
 
-    return { init, showLanding, open, check, hint, reset, pane };
+    return { init, showLanding, open, check, hint, reset, pane, hideOut };
 })();
 
 window.Workshop = Workshop;
