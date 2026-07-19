@@ -35,7 +35,8 @@ const Workshop = (function () {
 
     let mountId = 'ws-root';
     let current = null;      // active workshop id
-    let hintsUsed = 0;       // escalating hints, per attempt
+    let hintsUsed = 0;       // how many distinct hints have been spent
+    let hinted = [];         // defect ids already hinted — a hint is never repeated
     let attempts = 0;
     let solved = false;
 
@@ -152,6 +153,188 @@ const Workshop = (function () {
         return out;
     }
 
+    // =========================================================================
+    // MAPPING WORKSHOPS (kind: 'map')
+    // -------------------------------------------------------------------------
+    // Two columns of fields and a set of links drawn between them. Connecting is
+    // supported two ways on purpose: drag from one side to the other, or tap a
+    // source then tap a target. The tap path is not a fallback afterthought —
+    // it is the only thing that works on a touch screen, and it is also what
+    // keyboard users get via focus + Enter.
+    // =========================================================================
+    let links = [];      // [{ s: sourceId, t: targetId }]
+    let armed = null;    // sourceId currently waiting for a target (tap mode)
+    let dragging = null; // { s, x, y } while a drag is in flight
+
+    function linkKey(s, t) { return s + '>' + t; }
+    function hasLink(s, t) { return links.some(l => l.s === s && l.t === t); }
+
+    function addLink(s, t) {
+        if (!s || !t) return;
+        // A target holds one value, so a second link into it replaces the first.
+        links = links.filter(l => l.t !== t);
+        if (!hasLink(s, t)) links.push({ s: s, t: t });
+        armed = null;
+        renderLinks();
+        syncMapUi();
+    }
+    function removeLink(s, t) {
+        links = links.filter(l => !(l.s === s && l.t === t));
+        renderLinks();
+        syncMapUi();
+    }
+
+    function mapEls() {
+        return {
+            wrap: document.getElementById('wsm-wrap'),
+            svg: document.getElementById('wsm-svg')
+        };
+    }
+
+    // Draw one bezier per link, plus the in-flight drag line. Recomputed from
+    // live geometry so it survives resize, reflow and font loading.
+    function renderLinks() {
+        const { wrap, svg } = mapEls();
+        if (!wrap || !svg) return;
+
+        const wr = wrap.getBoundingClientRect();
+        svg.setAttribute('viewBox', `0 0 ${wr.width} ${wr.height}`);
+        svg.setAttribute('width', wr.width);
+        svg.setAttribute('height', wr.height);
+
+        const path = (x1, y1, x2, y2) => {
+            const dx = Math.max(40, Math.abs(x2 - x1) * 0.45);
+            return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+        };
+
+        let out = '';
+        links.forEach(l => {
+            const a = document.querySelector(`[data-src="${l.s}"]`);
+            const b = document.querySelector(`[data-tgt="${l.t}"]`);
+            if (!a || !b) return;
+            const ar = a.getBoundingClientRect(), br = b.getBoundingClientRect();
+            const x1 = ar.right - wr.left, y1 = ar.top + ar.height / 2 - wr.top;
+            const x2 = br.left - wr.left, y2 = br.top + br.height / 2 - wr.top;
+            out += `<path class="wsm-link" d="${path(x1, y1, x2, y2)}"
+                     data-s="${l.s}" data-t="${l.t}"><title>Click to remove</title></path>`;
+        });
+
+        if (dragging) {
+            const a = document.querySelector(`[data-src="${dragging.s}"]`);
+            if (a) {
+                const ar = a.getBoundingClientRect();
+                const x1 = ar.right - wr.left, y1 = ar.top + ar.height / 2 - wr.top;
+                out += `<path class="wsm-link is-live" d="${path(x1, y1, dragging.x - wr.left, dragging.y - wr.top)}"/>`;
+            }
+        }
+        svg.innerHTML = out;
+    }
+
+    // Reflect link state onto the rows: connected, armed, and the link count.
+    function syncMapUi() {
+        const def = WORKSHOPS.DEFS[current];
+        document.querySelectorAll('[data-src]').forEach(el => {
+            const id = el.getAttribute('data-src');
+            const n = links.filter(l => l.s === id).length;
+            el.classList.toggle('is-linked', n > 0);
+            el.classList.toggle('is-armed', armed === id);
+            const c = el.querySelector('.wsm-count');
+            if (c) { c.textContent = n > 1 ? String(n) : ''; c.hidden = n < 2; }
+        });
+        document.querySelectorAll('[data-tgt]').forEach(el => {
+            const id = el.getAttribute('data-tgt');
+            el.classList.toggle('is-linked', links.some(l => l.t === id));
+            el.classList.toggle('is-open', armed !== null);
+        });
+        const chip = document.getElementById('ws-progress');
+        if (chip && def) {
+            const need = Object.values(def.answer).reduce((a, b) => a + b.length, 0);
+            chip.textContent = `${links.length} of ${need} links drawn`;
+        }
+    }
+
+    function bindMap() {
+        const { wrap } = mapEls();
+        if (!wrap) return;
+
+        // --- tap to connect ---
+        wrap.addEventListener('click', function (e) {
+            const src = e.target.closest('[data-src]');
+            const tgt = e.target.closest('[data-tgt]');
+            const cut = e.target.closest('.wsm-link');
+            if (cut) { removeLink(cut.getAttribute('data-s'), cut.getAttribute('data-t')); return; }
+            if (src) {
+                const id = src.getAttribute('data-src');
+                armed = (armed === id) ? null : id;
+                renderLinks(); syncMapUi();
+                return;
+            }
+            if (tgt && armed) { addLink(armed, tgt.getAttribute('data-tgt')); return; }
+            armed = null; renderLinks(); syncMapUi();
+        });
+
+        // --- drag to connect ---
+        wrap.addEventListener('mousedown', function (e) {
+            const src = e.target.closest('[data-src]');
+            if (!src) return;
+            dragging = { s: src.getAttribute('data-src'), x: e.clientX, y: e.clientY };
+            e.preventDefault();
+        });
+        document.addEventListener('mousemove', function (e) {
+            if (!dragging) return;
+            dragging.x = e.clientX; dragging.y = e.clientY;
+            renderLinks();
+        });
+        document.addEventListener('mouseup', function (e) {
+            if (!dragging) return;
+            const over = document.elementFromPoint(e.clientX, e.clientY);
+            const tgt = over && over.closest && over.closest('[data-tgt]');
+            const s = dragging.s;
+            dragging = null;
+            // A drag that lands on a target links; one that goes nowhere leaves
+            // the source armed, so the click handler can finish the job.
+            if (tgt) addLink(s, tgt.getAttribute('data-tgt'));
+            else { renderLinks(); syncMapUi(); }
+        });
+
+        window.addEventListener('resize', renderLinks);
+    }
+
+    function mapRowsHtml(def) {
+        const src = def.source.fields.map(f => `
+            <button class="wsm-row wsm-src" data-src="${f.id}" type="button">
+                <span class="wsm-tag">${esc(f.tag)}</span>
+                <span class="wsm-body">
+                    <span class="wsm-name">${esc(f.name)}</span>
+                    <span class="wsm-val">${esc(f.value)}</span>
+                </span>
+                <span class="wsm-count" hidden></span>
+                <span class="wsm-port wsm-port-r" aria-hidden="true"></span>
+            </button>`).join('');
+
+        const tgt = def.target.fields.map(f => `
+            <button class="wsm-row wsm-tgt${f.id === 'none' ? ' is-none' : ''}" data-tgt="${f.id}" type="button">
+                <span class="wsm-port wsm-port-l" aria-hidden="true"></span>
+                <span class="wsm-body">
+                    <span class="wsm-path">${esc(f.path)}</span>
+                    <span class="wsm-note">${esc(f.note)}</span>
+                </span>
+            </button>`).join('');
+
+        return `
+        <div class="wsm-wrap" id="wsm-wrap">
+            <svg class="wsm-svg" id="wsm-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+            <div class="wsm-col">
+                <div class="wsm-col-head">${esc(def.source.label)}</div>
+                ${src}
+            </div>
+            <div class="wsm-col">
+                <div class="wsm-col-head">${esc(def.target.label)}</div>
+                ${tgt}
+            </div>
+        </div>`;
+    }
+
     // -------------------------------------------------------------------------
     // WORKSHOP VIEW
     // -------------------------------------------------------------------------
@@ -163,8 +346,14 @@ const Workshop = (function () {
 
         current = id;
         hintsUsed = 0;
+        hinted = [];
         attempts = 0;
         solved = false;
+        links = [];
+        armed = null;
+        dragging = null;
+
+        if (def.kind === 'map') { openMap(def); return; }
 
         // Three-pane workspace: brief on the left, editor top-right, results
         // bottom-right. The brief stays visible while you work — a workshop where
@@ -217,7 +406,9 @@ const Workshop = (function () {
                             <button class="ws-tab" id="ws-tab-hints" role="tab"
                                     onclick="Workshop.pane('hints')">Hints<span class="ws-tab-n" id="ws-hint-n" hidden>0</span></button>
                             <div class="ws-out-actions">
-                                <button class="ws-hint-btn" onclick="Workshop.hint()">Hint</button>
+                                <button class="ws-hint-btn" id="ws-hint-btn" onclick="Workshop.hint()">
+                                    Hint <span class="ws-hint-left" id="ws-hint-left">${def.defectCount}</span>
+                                </button>
                                 <button class="ws-run-btn" onclick="Workshop.check()">Run the checks</button>
                             </div>
                         </div>
@@ -237,11 +428,187 @@ const Workshop = (function () {
                 </section>
             </div>
         </div>`;
+
+        updateHintBtn(def);
     }
 
     // -------------------------------------------------------------------------
     // CHECK
     // -------------------------------------------------------------------------
+    // The mapping variant of the workspace: brief left, board right, results
+    // below — same skeleton as the debug workshop so the two feel like one thing.
+    function openMap(def) {
+        const el = root();
+        const need = Object.values(def.answer).reduce((a, b) => a + b.length, 0);
+
+        el.innerHTML = `
+        <div class="ws-ide ws-ide-map">
+            <header class="ws-ide-top">
+                <button class="ws-back" onclick="workshopHome(event)">&larr; All workshops</button>
+                <div class="ws-ide-id">
+                    <span class="ws-ide-kicker">${esc(def.kicker)}</span>
+                    <h2 class="ws-ide-title">${esc(def.title)}</h2>
+                </div>
+                <span class="ws-ide-progress" id="ws-progress">0 of ${need} links drawn</span>
+            </header>
+
+            <div class="ws-ide-body">
+                <section class="ws-pane ws-pane-brief">
+                    <div class="ws-pane-bar"><span class="ws-pane-name">Brief</span></div>
+                    <div class="ws-pane-scroll">
+                        <div class="ws-brief-label">The situation</div>
+                        ${paras(def.brief, 'ws-brief-p')}
+                        <div class="ws-given-label">How it works</div>
+                        <ul class="ws-given-list">
+                            ${def.given.map(g => `<li>${esc(g)}</li>`).join('')}
+                        </ul>
+                        <div class="ws-task">
+                            <div class="ws-task-label">Your job</div>
+                            <p>${esc(def.task)}</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="ws-pane ws-pane-work">
+                    <div class="ws-pane-bar">
+                        <span class="ws-pane-name">field map</span>
+                        <button class="ws-mini" onclick="Workshop.reset()">clear all</button>
+                    </div>
+                    <div class="ws-pane-scroll wsm-scroll">
+                        ${mapRowsHtml(def)}
+                    </div>
+
+                    <div class="ws-out">
+                        <div class="ws-out-tabs" role="tablist">
+                            <button class="ws-tab is-on" id="ws-tab-result" role="tab"
+                                    onclick="Workshop.pane('result')">Result</button>
+                            <button class="ws-tab" id="ws-tab-hints" role="tab"
+                                    onclick="Workshop.pane('hints')">Hints<span class="ws-tab-n" id="ws-hint-n" hidden>0</span></button>
+                            <div class="ws-out-actions">
+                                <button class="ws-hint-btn" id="ws-hint-btn" onclick="Workshop.hint()">
+                                    Hint <span class="ws-hint-left" id="ws-hint-left">${def.hints.length}</span>
+                                </button>
+                                <button class="ws-run-btn" onclick="Workshop.check()">Run the mapping</button>
+                            </div>
+                        </div>
+                        <div class="ws-out-body" id="ws-out-result">
+                            <div class="ws-idle">
+                                Drag from a field on the left to the element it becomes on the right &mdash;
+                                or tap one side then the other. Click a line to remove it.
+                                When the board looks right, run it.
+                            </div>
+                        </div>
+                        <div class="ws-out-body" id="ws-out-hints" hidden>
+                            <div class="ws-idle">No hints yet. ${def.hints.length} available if you get stuck.</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>`;
+
+        bindMap();
+        // Geometry is only correct once layout has settled.
+        requestAnimationFrame(function () { renderLinks(); syncMapUi(); });
+    }
+
+    // Grade a mapping: every required link present, and nothing extra.
+    function checkMap() {
+        const def = WORKSHOPS.DEFS[current];
+        const out = document.getElementById('ws-out-result');
+        if (!def || !out) return;
+        attempts++;
+        pane('result');
+
+        const want = [];
+        Object.keys(def.answer).forEach(s => def.answer[s].forEach(t => want.push(linkKey(s, t))));
+        const have = links.map(l => linkKey(l.s, l.t));
+
+        const correct = have.filter(k => want.indexOf(k) !== -1);
+        const wrong = have.filter(k => want.indexOf(k) === -1);
+        const missing = want.filter(k => have.indexOf(k) === -1);
+
+        const srcName = id => { const f = def.source.fields.find(x => x.id === id); return f ? f.tag : id; };
+        const tgtName = id => { const f = def.target.fields.find(x => x.id === id); return f ? f.path : id; };
+
+        if (!wrong.length && !missing.length) {
+            solved = true;
+            out.innerHTML = mapPassHtml(def);
+            out.scrollTop = 0;
+            updateHintBtn(def);
+            return;
+        }
+
+        let body = '';
+        if (wrong.length) {
+            body += `<div class="ws-findings">` + wrong.map(k => {
+                const [s, t] = k.split('>');
+                const why = def.traps[k];
+                return `<div class="ws-finding">
+                    <div class="ws-finding-top">
+                        <span class="ws-finding-rule">${esc(srcName(s))} &rarr; ${esc(tgtName(t))}</span>
+                        <span class="ws-finding-where">wrong</span>
+                    </div>
+                    <div class="ws-finding-msg">${why ? esc(why) : 'That is not where this field goes. Read what the element is for, on the right.'}</div>
+                </div>`;
+            }).join('') + `</div>`;
+        }
+        if (missing.length) {
+            body += `<div class="ws-integrity">
+                <div class="ws-integrity-label">Still unmapped</div>
+                <ul>${missing.map(k => {
+                    const [s] = k.split('>');
+                    return `<li>${esc(srcName(s))} &mdash; ${esc((def.source.fields.find(x => x.id === s) || {}).name || '')}</li>`;
+                }).filter((v, i, a) => a.indexOf(v) === i).join('')}</ul>
+                <p class="ws-note">Remember that a field can feed more than one element.</p>
+            </div>`;
+        }
+
+        out.innerHTML = block('fail',
+            `${correct.length} right, ${wrong.length} wrong, ${missing.length} missing`,
+            `Attempt ${attempts}. Fix the wrong ones first — they usually explain the missing ones.`,
+            body);
+        out.scrollTop = 0;
+        updateHintBtn(def);
+    }
+
+    function mapPassHtml(def) {
+        const usedHints = hintsUsed > 0
+            ? `You used ${hintsUsed} hint${hintsUsed === 1 ? '' : 's'} across ${attempts} attempt${attempts === 1 ? '' : 's'}.`
+            : `No hints, ${attempts} attempt${attempts === 1 ? '' : 's'}.`;
+        const next = (def.next || []).map(x => `
+            <li><a href="#/library/${x.id}" onclick="openArticle('${x.id}'); return false;">
+                ${esc(lessonTitle(x.id))}</a> <span>${esc(x.why)}</span></li>`).join('');
+
+        return `
+        <div class="ws-v ws-v-pass">
+            <div class="ws-v-head">
+                <span class="ws-v-badge">&#10003;</span>
+                <div>
+                    <div class="ws-v-title">Every field mapped correctly.</div>
+                    <div class="ws-v-sub">${esc(usedHints)}</div>
+                </div>
+            </div>
+            <div class="ws-debrief">
+                <div class="ws-debrief-label">What that exercise was really about</div>
+                ${paras(def.debrief, 'ws-debrief-p')}
+                ${next ? `<div class="ws-debrief-label">Read next</div><ul class="ws-next">${next}</ul>` : ''}
+                <div class="ws-again">
+                    <button class="ws-mini" onclick="Workshop.reset()">Clear and try again</button>
+                    <button class="ws-mini" onclick="workshopHome(event)">Back to all workshops</button>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // Which source fields are not yet correctly mapped — drives map hints.
+    function unsolvedSources(def) {
+        return Object.keys(def.answer).filter(s => {
+            const want = def.answer[s].slice().sort().join(',');
+            const have = links.filter(l => l.s === s).map(l => l.t).sort().join(',');
+            return want !== have;
+        });
+    }
+
     // Switch the bottom pane between the run result and the hint log.
     function pane(which) {
         const isHints = which === 'hints';
@@ -258,6 +625,7 @@ const Workshop = (function () {
 
     function check() {
         const def = WORKSHOPS.DEFS[current];
+        if (def && def.kind === 'map') { checkMap(); return; }
         const ta = document.getElementById('ws-src');
         const out = document.getElementById('ws-out-result');
         if (!def || !ta || !out) return;
@@ -274,6 +642,8 @@ const Workshop = (function () {
                 ? 'the message will not parse'
                 : `${def.defectCount} defect${def.defectCount === 1 ? '' : 's'} · ${cleared} cleared`;
         }
+        // Fixing something can change what is still hintable.
+        updateHintBtn(def);
 
         if (g.parseError) {
             out.innerHTML = block('fail', 'The message will not parse',
@@ -391,42 +761,111 @@ const Workshop = (function () {
     // -------------------------------------------------------------------------
     function hint() {
         const def = WORKSHOPS.DEFS[current];
-        const ta = document.getElementById('ws-src');
         const wrap = document.getElementById('ws-out-hints');
-        if (!def || !ta || !wrap) return;
-
+        if (!def || !wrap) return;
         pane('hints');
 
-        const g = gradeText(def, ta.value);
-        const remaining = (def.defects || []).filter(d => g.remainingDefects.indexOf(d.id) !== -1);
+        // Map workshops hint by source field; debug workshops hint by defect.
+        // Both obey the same rule: one hint per item, never repeated.
+        let remaining;
+        if (def.kind === 'map') {
+            const open_ = unsolvedSources(def);
+            remaining = (def.hints || [])
+                .filter(h => open_.indexOf(h.id) !== -1)
+                .map(h => ({ id: h.id, hint: h.hint }));
+        } else {
+            const ta = document.getElementById('ws-src');
+            if (!ta) return;
+            const g = gradeText(def, ta.value);
+            remaining = (def.defects || []).filter(d => g.remainingDefects.indexOf(d.id) !== -1);
+        }
+        // One hint per defect, ever. Without this, every click just reprints the
+        // hint for whichever defect happens to be first — the counter climbs and
+        // the learner gets nothing new.
+        const fresh = remaining.filter(d => hinted.indexOf(d.id) === -1);
 
         // Clear the idle placeholder the first time a real hint lands.
         const idle = wrap.querySelector('.ws-idle');
         if (idle) idle.remove();
 
-        if (!remaining.length) {
-            wrap.insertAdjacentHTML('beforeend', `
-            <div class="ws-hint">
-                <span class="ws-hint-n">nothing left to hint at</span>
-                <p>Every planted defect is already cleared. If the checks still fail it's an
-                integrity problem &mdash; something about the payment's meaning changed. Run the
-                checks and read the block at the top of the Result tab.</p>
-            </div>`);
+        // Say a thing once. Re-clicking shouldn't stack identical notices.
+        const notice = (key, label, body) => {
+            if (wrap.querySelector('[data-note="' + key + '"]')) { wrap.scrollTop = wrap.scrollHeight; return; }
+            wrap.insertAdjacentHTML('beforeend',
+                `<div class="ws-hint ws-hint-note" data-note="${key}">
+                    <span class="ws-hint-n">${label}</span><p>${body}</p>
+                </div>`);
             wrap.scrollTop = wrap.scrollHeight;
+        };
+
+        if (!remaining.length) {
+            notice('cleared', 'nothing left to hint at',
+                "Every planted defect is already cleared. If the checks still fail it's an " +
+                "integrity problem &mdash; something about the payment's meaning changed. Run the " +
+                "checks and read the block at the top of the Result tab.");
+            updateHintBtn(def);
+            return;
+        }
+
+        if (!fresh.length) {
+            notice('exhausted', 'no hints left',
+                "You've used every hint for what's still broken &mdash; there are " +
+                remaining.length + " defect" + (remaining.length === 1 ? '' : 's') +
+                " outstanding and the clues above cover all of them. Re-read them against the " +
+                "message, or run the checks: the findings name the element each time.");
+            updateHintBtn(def);
             return;
         }
 
         hintsUsed++;
-        const target = remaining[0];
+        const target = fresh[0];
+        hinted.push(target.id);
+
         wrap.insertAdjacentHTML('beforeend', `
         <div class="ws-hint">
-            <span class="ws-hint-n">hint ${hintsUsed}</span>
+            <span class="ws-hint-n">hint ${hintsUsed} of ${hintCeiling(def)}</span>
             <p>${esc(target.hint)}</p>
         </div>`);
 
         const badge = document.getElementById('ws-hint-n');
         if (badge) { badge.hidden = false; badge.textContent = String(hintsUsed); }
+        updateHintBtn(def);
         wrap.scrollTop = wrap.scrollHeight;
+    }
+
+    function hintCeiling(def) {
+        return def.kind === 'map' ? (def.hints || []).length : def.defectCount;
+    }
+
+    // Show how many hints remain, and disable the button once there's nothing
+    // fresh to give. Recomputed after every hint and every run, because fixing a
+    // defect can change what's still hintable.
+    function updateHintBtn(def) {
+        const btn = document.getElementById('ws-hint-btn');
+        const left = document.getElementById('ws-hint-left');
+        const ta = document.getElementById('ws-src');
+        if (!btn || !left || !def) return;
+        if (def.kind !== 'map' && !ta) return;
+
+        let fresh;
+        if (def.kind === 'map') {
+            const open_ = unsolvedSources(def);
+            fresh = (def.hints || [])
+                .filter(h => open_.indexOf(h.id) !== -1)
+                .filter(h => hinted.indexOf(h.id) === -1);
+        } else {
+            const g = gradeText(def, ta.value);
+            fresh = (def.defects || [])
+                .filter(d => g.remainingDefects.indexOf(d.id) !== -1)
+                .filter(d => hinted.indexOf(d.id) === -1);
+        }
+
+        left.textContent = String(fresh.length);
+        btn.disabled = fresh.length === 0;
+        btn.classList.toggle('is-spent', fresh.length === 0);
+        btn.title = fresh.length
+            ? fresh.length + ' hint' + (fresh.length === 1 ? '' : 's') + ' available'
+            : 'No hints left for what is still broken';
     }
 
     function reset() {
@@ -590,6 +1029,19 @@ const Workshop = (function () {
         .ws-out-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
         .ws-idle { font-size: 13px; line-height: 1.7; color: var(--text-faint); }
 
+        .ws-hint-left {
+            font-family: var(--font-mono); font-size: 9.5px; padding: 1px 6px; margin-left: 3px;
+            border-radius: var(--radius-pill); background: var(--surface-alt);
+            border: 1px solid var(--border); color: var(--text-faint);
+        }
+        .ws-hint-btn:disabled, .ws-hint-btn.is-spent { opacity: 0.45; cursor: not-allowed; }
+        .ws-hint-btn:disabled:hover, .ws-hint-btn.is-spent:hover {
+            border-color: var(--border); color: var(--text-muted);
+        }
+        /* A notice ("no hints left") is not a clue — mute it so it doesn't read as one. */
+        .ws-hint-note { border-left-color: var(--border-hi); background: var(--surface); }
+        .ws-hint-note p { color: var(--text-faint); }
+
         .ws-hint {
             padding: 12px 14px; border-radius: var(--radius-sm); background: var(--surface-alt);
             border: 1px solid var(--border); border-left: 3px solid var(--warning, #e3b341);
@@ -648,6 +1100,68 @@ const Workshop = (function () {
         .ws-next span { color: var(--text-faint); }
         .ws-again { display: flex; gap: 10px; flex-wrap: wrap; }
 
+        /* ---- Mapping board ---- */
+        .ws-ide-map .ws-pane-work { min-width: 0; }
+        .wsm-scroll { padding: 18px; }
+        .wsm-wrap {
+            position: relative;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 100px;
+            align-items: start;
+        }
+        .wsm-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+        .wsm-link {
+            fill: none; stroke: var(--primary); stroke-width: 2;
+            pointer-events: stroke; cursor: pointer;
+        }
+        .wsm-link:hover { stroke: var(--danger, #C13543); stroke-width: 3; }
+        .wsm-link.is-live { stroke-dasharray: 5 4; opacity: 0.75; pointer-events: none; }
+
+        .wsm-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        .wsm-col-head {
+            font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.07em;
+            text-transform: uppercase; color: var(--text-faint); margin-bottom: 2px;
+        }
+        .wsm-row {
+            position: relative; display: flex; align-items: center; gap: 10px;
+            width: 100%; text-align: left; cursor: pointer;
+            padding: 9px 12px; border-radius: var(--radius-sm);
+            background: var(--surface-alt); border: 1px solid var(--border);
+            transition: border-color var(--dur-fast) var(--ease-out),
+                        background var(--dur-fast) var(--ease-out);
+        }
+        .wsm-row:hover { border-color: var(--border-hi); }
+        .wsm-row.is-linked { border-color: var(--primary); background: var(--glass-tint, rgba(16,185,129,0.06)); }
+        .wsm-row.is-armed { border-color: var(--primary); box-shadow: 0 0 0 3px var(--glass-tint, rgba(16,185,129,0.18)); }
+        .wsm-tgt.is-open:not(.is-linked) { border-style: dashed; border-color: var(--primary); }
+        .wsm-tgt.is-none { background: transparent; border-style: dashed; }
+
+        .wsm-tag {
+            flex-shrink: 0; font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;
+            color: var(--primary); min-width: 46px;
+        }
+        .wsm-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .wsm-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
+        .wsm-val {
+            font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .wsm-path { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
+        .wsm-note { font-size: 10.5px; color: var(--text-faint); }
+        .wsm-count {
+            margin-left: auto; flex-shrink: 0;
+            font-family: var(--font-mono); font-size: 9.5px; padding: 1px 6px;
+            border-radius: var(--radius-pill); background: var(--primary); color: #fff;
+        }
+        .wsm-port {
+            position: absolute; top: 50%; width: 9px; height: 9px; border-radius: 50%;
+            background: var(--surface); border: 2px solid var(--border-hi);
+            transform: translateY(-50%);
+        }
+        .wsm-port-r { right: -5px; }
+        .wsm-port-l { left: -5px; position: absolute; }
+        .wsm-row.is-linked .wsm-port, .wsm-row.is-armed .wsm-port { border-color: var(--primary); background: var(--primary); }
+        .wsm-tgt { padding-left: 16px; }
+
         /* Below ~1040px the side-by-side stops being usable: the editor gets too
            narrow for XML lines. Drop to a single column with natural page scroll
            rather than trying to squeeze three panes into a phone. */
@@ -656,6 +1170,7 @@ const Workshop = (function () {
             .ws-ide-body { grid-template-columns: 1fr; }
             .ws-pane-brief .ws-pane-scroll { max-height: 340px; }
             .ws-pane-work { min-height: 620px; }
+            .wsm-wrap { gap: 46px; }
         }
         @media (max-width: 720px) {
             .ws-grid { grid-template-columns: 1fr; }
@@ -664,6 +1179,9 @@ const Workshop = (function () {
             .ws-src { font-size: 11.5px; }
             .ws-out-tabs { flex-wrap: wrap; }
             .ws-out-actions { margin-left: 0; width: 100%; }
+            .wsm-wrap { grid-template-columns: 1fr; gap: 18px; }
+            .wsm-svg { display: none; }   /* stacked: curves would cross the rows */
+            .wsm-scroll { padding: 12px; }
             .ws-run-btn { flex: 1; }
         }
         `;
