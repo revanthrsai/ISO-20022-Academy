@@ -4762,6 +4762,24 @@ body.pg2-locked { overflow: hidden; }
     color: var(--text-muted);
 }
 
+/* -- Overlay dismissal (bugfix) ------------------------------------------
+   `.pgv-modal { display: flex }` is a class selector, so it beats the browser's
+   built-in `[hidden] { display: none }`. A closed modal therefore stayed in the
+   layout — invisible at opacity 0, but still a full-size box at z-index 4001
+   eating every click underneath it. The mode switcher looked "disabled" until a
+   reload. Re-assert display:none at higher specificity, and drop pointer events
+   for the 220ms fade-out before `hidden` is applied.
+   The transform drawer shares the flaw; it merely hid it by sitting off-screen. */
+.pgv-modal[hidden],
+.pgv-scrim[hidden],
+.pg2-drawer[hidden],
+.pg2-scrim[hidden] { display: none; }
+
+.pgv-modal,
+.pgv-scrim { pointer-events: none; }
+.pgv-modal.is-open,
+.pgv-scrim.is-open { pointer-events: auto; }
+
 /* -- Back button for child pages (Glossary under Library, etc.) ----------- */
 .page-back {
     display: inline-flex;
