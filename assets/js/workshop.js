@@ -335,6 +335,10 @@ const Workshop = (function () {
         });
 
         window.addEventListener('resize', renderLinks);
+        // The board is sized to fit, but on a short viewport the scroll valve
+        // opens — redraw so the curves stay pinned to their rows.
+        const scroller = wrap.closest('.wsm-scroll');
+        if (scroller) scroller.addEventListener('scroll', renderLinks, { passive: true });
     }
 
     // Rows are divs, not buttons, so each can hold its own nested "clear" button
@@ -968,7 +972,7 @@ const Workshop = (function () {
         /* ---- IDE shell: brief | (editor over results) ---- */
         .ws-ide {
             display: flex; flex-direction: column;
-            height: calc(100vh - 190px); min-height: 600px;
+            height: calc(100vh - 165px); min-height: 600px;
         }
         .ws-ide-top {
             display: flex; align-items: center; gap: 18px;
@@ -1173,10 +1177,10 @@ const Workshop = (function () {
            has, so every field is on screen at once and a drag never has to chase
            a moving target. Below 1040px it stacks and scrolling returns. */
         .ws-ide-map .ws-pane-work { min-width: 0; }
-        .wsm-scroll { padding: 16px; overflow: hidden; flex: 1; min-height: 0; }
+        .wsm-scroll { padding: 14px; overflow: auto; flex: 1; min-height: 0; }
         .wsm-wrap {
-            position: relative; height: 100%;
-            display: grid; grid-template-columns: 1fr 1fr; gap: 96px;
+            position: relative; min-height: 100%;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 90px;
         }
         .wsm-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
         .wsm-link { fill: none; stroke: var(--primary); stroke-width: 2.5; pointer-events: none; }
@@ -1187,17 +1191,17 @@ const Workshop = (function () {
         .wsm-hit:hover + .wsm-link { stroke: var(--danger, #C13543); stroke-width: 3.5; }
         .wsm-link.is-live { stroke-dasharray: 5 4; opacity: 0.8; }
 
-        .wsm-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; height: 100%; }
+        .wsm-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; height: 100%; }
         .wsm-col-head {
             flex: 0 0 auto;
-            font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.07em;
-            text-transform: uppercase; color: var(--text-faint); margin-bottom: 2px;
+            font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.07em;
+            text-transform: uppercase; color: var(--text-faint); margin-bottom: 1px;
         }
         .wsm-row {
-            position: relative; display: flex; align-items: center; gap: 9px;
-            flex: 1 1 0; min-height: 34px;
+            position: relative; display: flex; align-items: center; gap: 8px;
+            flex: 1 1 0; min-height: 32px;
             width: 100%; text-align: left; cursor: pointer;
-            padding: 6px 11px; border-radius: var(--radius-sm);
+            padding: 5px 10px; border-radius: var(--radius-sm);
             background: var(--surface-alt); border: 1px solid var(--border);
             transition: border-color var(--dur-fast) var(--ease-out),
                         background var(--dur-fast) var(--ease-out);
@@ -1210,24 +1214,24 @@ const Workshop = (function () {
         .wsm-tgt.is-none { background: transparent; border-style: dashed; }
 
         .wsm-tag {
-            flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; font-weight: 700;
-            color: var(--primary); min-width: 44px;
+            flex-shrink: 0; font-family: var(--font-mono); font-size: 10.5px; font-weight: 700;
+            color: var(--primary); min-width: 42px;
         }
-        .wsm-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+        .wsm-body { display: flex; flex-direction: column; gap: 0; min-width: 0; flex: 1; }
         .wsm-name {
-            font-size: 12px; font-weight: 600; color: var(--text);
+            font-size: 11.5px; font-weight: 600; line-height: 1.25; color: var(--text);
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .wsm-val {
-            font-family: var(--font-mono); font-size: 10px; color: var(--text-faint);
+            font-family: var(--font-mono); font-size: 9.5px; line-height: 1.25; color: var(--text-faint);
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .wsm-path {
-            font-family: var(--font-mono); font-size: 11.5px; color: var(--text);
+            font-family: var(--font-mono); font-size: 11px; line-height: 1.25; color: var(--text);
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .wsm-note {
-            font-size: 10px; color: var(--text-faint);
+            font-size: 9.5px; line-height: 1.25; color: var(--text-faint);
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .wsm-count {
