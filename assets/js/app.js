@@ -216,7 +216,7 @@ function pgHead(active, copyHtml) {
             <aside class="pg-head-tools">
                 <div class="pg-modes" role="tablist" aria-label="Playground mode">
                     <button class="pg-mode${on('workbench')}" role="tab" aria-selected="${active === 'workbench'}"
-                            onclick="navigate('playground', event)">
+                            onclick="workbenchHome(event)">
                         <span class="pg-mode-name">Workbench</span>
                         <span class="pg-mode-sub">read &middot; transform</span>
                     </button>
@@ -273,10 +273,9 @@ function initPlayground() {
 // Deep links / glossary cross-links: any /playground/<slug> opens the workspace;
 // 'transformer' additionally pops the live-transform drawer once mounted.
 function openPlaygroundTool(slug) {
-    if (currentNavPage() !== 'playground' || !document.getElementById('xv-root')) {
-        navigate('playground');
-    }
+    if (!document.getElementById('xv-root')) navigate('playground');
     if (slug === 'transformer') setTimeout(function () { openTransform(); }, 80);
+    if (slug === 'validator') setTimeout(function () { openValidator(); }, 80);
 }
 
 // ── Dictionary (the reference tab) ──────────────────────────────────────────
@@ -295,6 +294,16 @@ function dictHome(evt) {
     ensureDict();
     if (window.AcademyDictionary) AcademyDictionary.showLanding();
     dictHash('#/dictionary');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+// The Workbench half of the Playground tab. Its own route so a deep link can
+// land straight on the message workspace rather than the Dictionary.
+function workbenchHome(evt) {
+    if (evt) evt.preventDefault();
+    if (!document.getElementById('xv-root')) navigate('playground');
+    dictHash('#/playground/workbench');
+    window.scrollTo({ top: 0, behavior: 'auto' });
 }
 function dictMessage(code) {
     ensureDict();
@@ -1346,7 +1355,9 @@ window.addEventListener('hashchange', function(){
     if (/^#\/workshop(\/|\?|$)/.test(h)) { if (!document.getElementById('ws-root')) navigate('workshop'); return; }
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
-    if (/^#\/playground(\?|$)/.test(h)) { if (!document.getElementById('xv-root')) navigate('playground'); return; }
+    // Bare #/playground lands on the Dictionary, matching the tab. The Workbench
+    // keeps its own route at #/playground/workbench.
+    if (/^#\/playground(\?|$)/.test(h)) { dictHome(); return; }
     if (/^#\/dictionary\/changes$/.test(h)) { dictChanges(); return; }
     if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
     const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);
@@ -1378,7 +1389,7 @@ function routeOnLoad(){
     if (/^#\/workshop(\/|\?|$)/.test(h)) { navigate('workshop'); return; }
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
-    if (/^#\/playground(\?|$)/.test(h)) { navigate('playground'); return; }
+    if (/^#\/playground(\?|$)/.test(h)) { dictHome(); return; }
     if (/^#\/dictionary\/changes$/.test(h)) { dictChanges(); return; }
     if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
     const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);

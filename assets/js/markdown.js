@@ -338,19 +338,21 @@ const Articles = (function () {
                     </p>
                 </div>
 
-                <!-- The Glossary lives under the Library since 1.6. This is its doorway:
-                     type a word, get the definition inline, no page change required. -->
-                <aside class="learn-gloss" data-reveal="up" aria-label="Glossary lookup">
-                    <div class="learn-gloss-label">Look something up</div>
-                    <p class="learn-gloss-sub">Hit a word you don't know? Define it without losing your place.</p>
-                    <input type="text" class="learn-gloss-input" id="learn-gloss-input"
-                           placeholder="settlement, IBAN, clearing&hellip;"
-                           autocomplete="off" spellcheck="false"
-                           oninput="libGlossarySearch(this.value)">
-                    <div class="learn-gloss-out" id="learn-gloss-out"></div>
-                    <a class="learn-gloss-all" href="#/glossary" onclick="navigate('glossary', event)">
-                        Browse all ${termCount} terms &rarr;
+                <!-- The Glossary lives under the Library since 1.6. This is its doorway.
+                     Deliberately a link, not a search box: inline results grew the panel
+                     downward and shoved the shelves off the screen. Sending people to the
+                     Glossary proper — which already has search and category filters —
+                     keeps this head a fixed height. ⌘K still searches from anywhere. -->
+                <aside class="learn-gloss" data-reveal="up" aria-label="Glossary">
+                    <div class="learn-gloss-label">Don't know a word?</div>
+                    <p class="learn-gloss-sub">
+                        ${termCount} payments terms &mdash; settlement, IBAN, clearing, charge bearer &mdash;
+                        each defined in a sentence or two, no spec required.
+                    </p>
+                    <a class="learn-gloss-cta" href="#/glossary" onclick="navigate('glossary', event)">
+                        Explore the Glossary &rarr;
                     </a>
+                    <div class="learn-gloss-hint">or press <kbd>&#8984;K</kbd> to search everything</div>
                 </aside>
             </div>
             ${progressNote()}
@@ -658,65 +660,4 @@ function toggleLearned(id, btn) {
             ? 'Saved — this lesson shows as learned in the Library.'
             : 'Track your progress — saved on this device.';
     }
-}
-
-// ── Library glossary lookup ─────────────────────────────────────────────────
-// The Glossary became a Library child route in 1.6, so the Library landing now
-// carries its doorway: type a word, see the top few definitions inline. Answering
-// in place matters more than it sounds — a learner mid-shelf who has to leave the
-// page to define one word usually doesn't come back to the shelf.
-function libGlossarySearch(q) {
-    const out = document.getElementById('learn-gloss-out');
-    if (!out) return;
-
-    const query = String(q || '').trim().toLowerCase();
-    if (!query || typeof DATA === 'undefined' || !DATA.glossary) { out.innerHTML = ''; return; }
-
-    const esc = (s) => String(s == null ? '' : s)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-    // Headword matches first, then definition matches — a search for "settlement"
-    // should lead with Settlement, not with everything that mentions it.
-    const head = [];
-    const body = [];
-    DATA.glossary.forEach(function (t) {
-        const term = (t.term || '').toLowerCase();
-        if (term.indexOf(query) !== -1) head.push(t);
-        else if ((t.definition || '').toLowerCase().indexOf(query) !== -1) body.push(t);
-    });
-    head.sort(function (a, b) {
-        const ai = a.term.toLowerCase().indexOf(query);
-        const bi = b.term.toLowerCase().indexOf(query);
-        if (ai !== bi) return ai - bi;
-        return a.term.length - b.term.length;
-    });
-
-    const hits = head.concat(body);
-    const total = hits.length;
-
-    if (!total) {
-        out.innerHTML = '<div class="learn-gloss-empty">No term matches &ldquo;' + esc(q) +
-            '&rdquo;. Try the full search (&#8984;K) &mdash; it covers lessons, messages and codes too.</div>';
-        return;
-    }
-
-    const shown = hits.slice(0, 3);
-    out.innerHTML = shown.map(function (t) {
-        return '<a class="learn-gloss-hit" href="#/glossary/' + esc(t.slug) + '"' +
-            ' onclick="openGlossaryTerm(\'' + esc(t.slug) + '\'); return false;">' +
-            '<span class="learn-gloss-term">' + esc(t.term) + '</span>' +
-            '<span class="learn-gloss-def">' + esc(t.definition) + '</span>' +
-            '</a>';
-    }).join('') + (total > shown.length
-        ? '<div class="learn-gloss-more">+' + (total - shown.length) + ' more &mdash; ' +
-          '<a href="#/glossary" onclick="navigate(\'glossary\', event)">see them all</a></div>'
-        : '');
-}
-
-// Open one glossary term from the Library lookup: switch to the Glossary and
-// deep-link straight to the term so its card is focused, not just listed.
-function openGlossaryTerm(slug) {
-    if (typeof glossaryState !== 'undefined') glossaryState.term = slug;
-    navigate('glossary');
-    if (typeof syncGlossaryHash === 'function') syncGlossaryHash();
 }
