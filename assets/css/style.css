@@ -4762,6 +4762,36 @@ body.pg2-locked { overflow: hidden; }
     color: var(--text-muted);
 }
 
+/* -- Back button for child pages (Glossary under Library, etc.) ----------- */
+.page-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 22px;
+    padding: 8px 16px 8px 13px;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease-out),
+                color var(--dur-fast) var(--ease-out),
+                transform var(--dur-fast) var(--ease-out);
+}
+.page-back:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateX(-2px);
+}
+.page-back-i { font-size: 14px; line-height: 1; }
+
+/* The Dictionary's heading moved into .pg-head, so its remaining hero is just
+   the search field — it no longer needs the standfirst spacing. */
+.dict-hero { margin-bottom: 26px; }
+
 /* -- Stacking ------------------------------------------------------------- */
 @media (max-width: 1040px) {
     .pg-head, .learn-head-split { gap: 30px; }

@@ -65,11 +65,11 @@ const AcademyDictionary = (function () {
                 + '</section>';
         }).join('');
 
+        // The eyebrow/title/standfirst live in the page head (app.js → pgHead) so
+        // they sit on the same line as the mode switcher. Only the search belongs
+        // here, because it is re-rendered whenever the landing is redrawn.
         el.innerHTML =
             '<div class="dict-hero">'
-            + '<div class="eyebrow">Reference</div>'
-            + '<h2 class="section-title">The ISO 20022 Dictionary</h2>'
-            + '<p class="section-description">Every message, every element — definition, cardinality, valid codes, and a live example. Open any message to explore its real anatomy, field by field.</p>'
             + '<input type="text" class="dict-search" id="dict-search" placeholder="Search elements and messages — try ChrgBr, UETR, pacs.008…" oninput="AcademyDictionary.filter(this.value)" autocomplete="off">'
             + '<div class="dict-results" id="dict-results" hidden></div>'
             + '</div>'

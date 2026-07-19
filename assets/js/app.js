@@ -170,7 +170,9 @@ const PAGES = {
     `,
     glossary: `
         <div class="page">
-            <button class="ws-back" onclick="navigate('library', event)">&larr; The Library</button>
+            <button class="page-back" onclick="navigate('library', event)">
+                <span class="page-back-i" aria-hidden="true">&larr;</span> Back to the Library
+            </button>
             <div class="eyebrow" data-reveal="fade">Reference</div>
             <h2 class="section-title" data-reveal="up">The language, defined.</h2>
             <p class="section-description" data-reveal="up">
@@ -186,7 +188,13 @@ const PAGES = {
     `,
     dictionary: `
         <div class="page">
-            ${pgHead('dictionary', '')}
+            ${pgHead('dictionary', `
+                <div class="eyebrow">Reference</div>
+                <h2 class="section-title">The ISO&nbsp;20022 Dictionary</h2>
+                <p class="section-description">
+                    Every message, every element &mdash; definition, cardinality, valid codes,
+                    and a live example. Open any message to explore its real anatomy, field by field.
+                </p>`)}
             <div id="dict-root"></div>
         </div>
     `,
@@ -215,15 +223,15 @@ function pgHead(active, copyHtml) {
             <div class="pg-head-copy">${copyHtml || ''}</div>
             <aside class="pg-head-tools">
                 <div class="pg-modes" role="tablist" aria-label="Playground mode">
-                    <button class="pg-mode${on('workbench')}" role="tab" aria-selected="${active === 'workbench'}"
-                            onclick="workbenchHome(event)">
-                        <span class="pg-mode-name">Workbench</span>
-                        <span class="pg-mode-sub">read &middot; transform</span>
-                    </button>
                     <button class="pg-mode${on('dictionary')}" role="tab" aria-selected="${active === 'dictionary'}"
                             onclick="dictHome(event)">
                         <span class="pg-mode-name">Dictionary</span>
                         <span class="pg-mode-sub">every element &amp; code</span>
+                    </button>
+                    <button class="pg-mode${on('workbench')}" role="tab" aria-selected="${active === 'workbench'}"
+                            onclick="workbenchHome(event)">
+                        <span class="pg-mode-name">Workbench</span>
+                        <span class="pg-mode-sub">read &middot; transform</span>
                     </button>
                 </div>
                 <button class="pg-paste" onclick="openValidator(event)">
