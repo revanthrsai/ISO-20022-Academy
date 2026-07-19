@@ -166,60 +166,102 @@ const Workshop = (function () {
         attempts = 0;
         solved = false;
 
+        // Three-pane workspace: brief on the left, editor top-right, results
+        // bottom-right. The brief stays visible while you work — a workshop where
+        // you have to scroll away from the task to edit is a workshop people quit.
         el.innerHTML = `
-        <div class="ws-run">
-            <button class="ws-back" onclick="workshopHome(event)">&larr; All workshops</button>
-
-            <header class="ws-run-head">
-                <span class="ws-run-kicker">${esc(def.kicker)}</span>
-                <h2 class="ws-run-title">${esc(def.title)}</h2>
+        <div class="ws-ide">
+            <header class="ws-ide-top">
+                <button class="ws-back" onclick="workshopHome(event)">&larr; All workshops</button>
+                <div class="ws-ide-id">
+                    <span class="ws-ide-kicker">${esc(def.kicker)}</span>
+                    <h2 class="ws-ide-title">${esc(def.title)}</h2>
+                </div>
+                <span class="ws-ide-progress" id="ws-progress">
+                    ${def.defectCount} defect${def.defectCount === 1 ? '' : 's'} &middot; none cleared
+                </span>
             </header>
 
-            <section class="ws-brief">
-                <div class="ws-brief-label">The situation</div>
-                ${paras(def.brief, 'ws-brief-p')}
-                <div class="ws-given">
-                    <div class="ws-given-label">What you know</div>
-                    <ul class="ws-given-list">
-                        ${def.given.map(g => `<li>${esc(g)}</li>`).join('')}
-                    </ul>
-                </div>
-                <div class="ws-task">
-                    <div class="ws-task-label">Your job</div>
-                    <p>${esc(def.task)}</p>
-                </div>
-            </section>
+            <div class="ws-ide-body">
+                <!-- LEFT · the brief -->
+                <section class="ws-pane ws-pane-brief">
+                    <div class="ws-pane-bar"><span class="ws-pane-name">Brief</span></div>
+                    <div class="ws-pane-scroll">
+                        <div class="ws-brief-label">The situation</div>
+                        ${paras(def.brief, 'ws-brief-p')}
 
-            <section class="ws-work">
-                <div class="ws-work-bar">
-                    <span class="ws-work-name">message.xml</span>
-                    <span class="ws-progress" id="ws-progress">
-                        ${def.defectCount} defect${def.defectCount === 1 ? '' : 's'} planted &middot; none cleared yet
-                    </span>
-                    <button class="ws-mini" onclick="Workshop.reset()">reset</button>
-                </div>
-                <textarea id="ws-src" class="ws-src" spellcheck="false">${esc(def.start)}</textarea>
-                <div class="ws-actions">
-                    <button class="ws-run-btn" onclick="Workshop.check()">Run the checks</button>
-                    <button class="ws-hint-btn" onclick="Workshop.hint()" id="ws-hint-btn">Give me a hint</button>
-                </div>
-            </section>
+                        <div class="ws-given-label">What you know</div>
+                        <ul class="ws-given-list">
+                            ${def.given.map(g => `<li>${esc(g)}</li>`).join('')}
+                        </ul>
 
-            <section class="ws-hints" id="ws-hints" hidden></section>
-            <section class="ws-verdict" id="ws-verdict"></section>
+                        <div class="ws-task">
+                            <div class="ws-task-label">Your job</div>
+                            <p>${esc(def.task)}</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- RIGHT · editor over results -->
+                <section class="ws-pane ws-pane-work">
+                    <div class="ws-pane-bar">
+                        <span class="ws-pane-name">message.xml</span>
+                        <button class="ws-mini" onclick="Workshop.reset()">reset</button>
+                    </div>
+                    <textarea id="ws-src" class="ws-src" spellcheck="false">${esc(def.start)}</textarea>
+
+                    <div class="ws-out">
+                        <div class="ws-out-tabs" role="tablist">
+                            <button class="ws-tab is-on" id="ws-tab-result" role="tab"
+                                    onclick="Workshop.pane('result')">Result</button>
+                            <button class="ws-tab" id="ws-tab-hints" role="tab"
+                                    onclick="Workshop.pane('hints')">Hints<span class="ws-tab-n" id="ws-hint-n" hidden>0</span></button>
+                            <div class="ws-out-actions">
+                                <button class="ws-hint-btn" onclick="Workshop.hint()">Hint</button>
+                                <button class="ws-run-btn" onclick="Workshop.check()">Run the checks</button>
+                            </div>
+                        </div>
+                        <div class="ws-out-body" id="ws-out-result">
+                            <div class="ws-idle">
+                                Repair the message, then run the checks. You're graded by the same
+                                rules engine the Playground validator uses &mdash; and the payment
+                                still has to mean what it meant when you started.
+                            </div>
+                        </div>
+                        <div class="ws-out-body" id="ws-out-hints" hidden>
+                            <div class="ws-idle">
+                                No hints yet. See if you can find all ${def.defectCount} without them.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </div>`;
-
-        if (window.Motion) Motion.scan(el);
     }
 
     // -------------------------------------------------------------------------
     // CHECK
     // -------------------------------------------------------------------------
+    // Switch the bottom pane between the run result and the hint log.
+    function pane(which) {
+        const isHints = which === 'hints';
+        const r = document.getElementById('ws-out-result');
+        const h = document.getElementById('ws-out-hints');
+        const tr = document.getElementById('ws-tab-result');
+        const th = document.getElementById('ws-tab-hints');
+        if (!r || !h) return;
+        r.hidden = isHints;
+        h.hidden = !isHints;
+        if (tr) tr.classList.toggle('is-on', !isHints);
+        if (th) th.classList.toggle('is-on', isHints);
+    }
+
     function check() {
         const def = WORKSHOPS.DEFS[current];
         const ta = document.getElementById('ws-src');
-        const out = document.getElementById('ws-verdict');
+        const out = document.getElementById('ws-out-result');
         if (!def || !ta || !out) return;
+        pane('result');
 
         attempts++;
         const g = gradeText(def, ta.value);
@@ -230,21 +272,21 @@ const Workshop = (function () {
             const cleared = def.defectCount - g.remainingDefects.length;
             prog.textContent = g.parseError
                 ? 'the message will not parse'
-                : `${def.defectCount} defect${def.defectCount === 1 ? '' : 's'} planted · ${cleared} cleared`;
+                : `${def.defectCount} defect${def.defectCount === 1 ? '' : 's'} · ${cleared} cleared`;
         }
 
         if (g.parseError) {
             out.innerHTML = block('fail', 'The message will not parse',
                 esc(g.parseError),
                 '<p class="ws-note">Fix the XML itself first — none of the other checks can run until the document is well-formed. A stray tag or an unclosed element is usually the cause.</p>');
-            out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            out.scrollTop = 0;
             return;
         }
 
         if (g.pass) {
             solved = true;
             out.innerHTML = passHtml(def);
-            out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            out.scrollTop = 0;
             return;
         }
 
@@ -278,7 +320,7 @@ const Workshop = (function () {
             `${n} thing${n === 1 ? '' : 's'} still wrong`,
             `Attempt ${attempts}. Keep going — you don't need the spec for any of these.`,
             body);
-        out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        out.scrollTop = 0;
     }
 
     function block(kind, title, sub, body) {
@@ -350,30 +392,41 @@ const Workshop = (function () {
     function hint() {
         const def = WORKSHOPS.DEFS[current];
         const ta = document.getElementById('ws-src');
-        const wrap = document.getElementById('ws-hints');
+        const wrap = document.getElementById('ws-out-hints');
         if (!def || !ta || !wrap) return;
+
+        pane('hints');
 
         const g = gradeText(def, ta.value);
         const remaining = (def.defects || []).filter(d => g.remainingDefects.indexOf(d.id) !== -1);
 
+        // Clear the idle placeholder the first time a real hint lands.
+        const idle = wrap.querySelector('.ws-idle');
+        if (idle) idle.remove();
+
         if (!remaining.length) {
-            wrap.hidden = false;
-            wrap.innerHTML = `<div class="ws-hint"><span class="ws-hint-n">hint</span>
-                <p>Every planted defect is already cleared. If the checks still fail, it's an
-                integrity problem — something about the payment's meaning changed. Run the checks
-                and read the top block.</p></div>`;
+            wrap.insertAdjacentHTML('beforeend', `
+            <div class="ws-hint">
+                <span class="ws-hint-n">nothing left to hint at</span>
+                <p>Every planted defect is already cleared. If the checks still fail it's an
+                integrity problem &mdash; something about the payment's meaning changed. Run the
+                checks and read the block at the top of the Result tab.</p>
+            </div>`);
+            wrap.scrollTop = wrap.scrollHeight;
             return;
         }
 
         hintsUsed++;
         const target = remaining[0];
-        wrap.hidden = false;
-        wrap.innerHTML += `
+        wrap.insertAdjacentHTML('beforeend', `
         <div class="ws-hint">
             <span class="ws-hint-n">hint ${hintsUsed}</span>
             <p>${esc(target.hint)}</p>
-        </div>`;
-        wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        </div>`);
+
+        const badge = document.getElementById('ws-hint-n');
+        if (badge) { badge.hidden = false; badge.textContent = String(hintsUsed); }
+        wrap.scrollTop = wrap.scrollHeight;
     }
 
     function reset() {
@@ -421,81 +474,164 @@ const Workshop = (function () {
         .ws-foot-note { margin-top: 32px; font-size: 13.5px; line-height: 1.7;
             color: var(--text-faint); max-width: 620px; }
 
-        .ws-run { max-width: 900px; }
-        .ws-back { background: transparent; border: 0; padding: 0; cursor: pointer;
-            font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); margin-bottom: 22px; }
-        .ws-back:hover { color: var(--primary); }
-        .ws-run-kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
-            text-transform: uppercase; color: var(--primary); }
-        .ws-run-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(30px, 4.4vw, 46px);
-            line-height: 1.08; letter-spacing: -0.02em; color: var(--text); margin: 8px 0 28px; }
+        /* ---- IDE shell: brief | (editor over results) ---- */
+        .ws-ide {
+            display: flex; flex-direction: column;
+            height: calc(100vh - 190px); min-height: 600px;
+        }
+        .ws-ide-top {
+            display: flex; align-items: center; gap: 18px;
+            padding-bottom: 14px; margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .ws-back {
+            background: transparent; border: 1px solid var(--border); cursor: pointer;
+            padding: 7px 14px; border-radius: var(--radius-pill);
+            font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);
+            transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+        }
+        .ws-back:hover { border-color: var(--primary); color: var(--primary); }
+        .ws-ide-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+        .ws-ide-kicker {
+            font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+            text-transform: uppercase; color: var(--primary);
+        }
+        .ws-ide-title {
+            font-family: var(--font-display); font-weight: 800; font-size: 20px;
+            letter-spacing: -0.01em; color: var(--text); margin: 0;
+        }
+        .ws-ide-progress {
+            margin-left: auto; flex-shrink: 0;
+            font-family: var(--font-mono); font-size: 11px; color: var(--primary);
+            padding: 5px 12px; border-radius: var(--radius-pill);
+            background: var(--glass-tint, rgba(16,185,129,0.08)); border: 1px solid var(--border);
+        }
 
-        .ws-brief { padding: 26px; border-radius: var(--radius-md); background: var(--surface);
-            border: 1px solid var(--border); margin-bottom: 24px; }
-        .ws-brief-label, .ws-given-label, .ws-task-label, .ws-integrity-label, .ws-debrief-label {
-            font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em;
-            text-transform: uppercase; color: var(--text-faint); margin-bottom: 10px; }
-        .ws-brief-p { font-size: 15px; line-height: 1.75; color: var(--text); margin: 0 0 14px; }
-        .ws-given { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
-        .ws-given-list { margin: 0; padding-left: 18px; }
-        .ws-given-list li { font-size: 14px; line-height: 1.7; color: var(--text-muted); }
-        .ws-task { margin-top: 20px; padding: 16px 18px; border-radius: var(--radius-sm);
-            background: var(--glass-tint, rgba(16,185,129,0.06)); border: 1px solid var(--primary-deep, var(--border)); }
-        .ws-task p { margin: 0; font-size: 14.5px; line-height: 1.7; color: var(--text); }
-
-        .ws-work { border: 1px solid var(--border); border-radius: var(--radius-md);
-            background: var(--surface); overflow: hidden; margin-bottom: 20px; }
-        .ws-work-bar { display: flex; align-items: center; gap: 12px; padding: 11px 14px;
-            border-bottom: 1px solid var(--border); background: var(--bg-deep); }
-        .ws-work-name { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
-        .ws-progress { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--primary); }
-        .ws-mini { background: transparent; border: 1px solid var(--border); color: var(--text-muted);
-            font-family: var(--font-mono); font-size: 10.5px; padding: 4px 10px;
-            border-radius: var(--radius-xs); cursor: pointer; }
+        .ws-ide-body {
+            flex: 1; min-height: 0;
+            display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 16px;
+        }
+        .ws-pane {
+            display: flex; flex-direction: column; min-width: 0; min-height: 0;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-md); overflow: hidden;
+        }
+        .ws-pane-bar {
+            display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+            padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--bg-deep);
+        }
+        .ws-pane-name { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); }
+        .ws-mini {
+            margin-left: auto; background: transparent; border: 1px solid var(--border);
+            color: var(--text-muted); font-family: var(--font-mono); font-size: 10.5px;
+            padding: 4px 10px; border-radius: var(--radius-xs); cursor: pointer;
+        }
         .ws-mini:hover { border-color: var(--border-hi); color: var(--text); }
-        .ws-src { width: 100%; min-height: 440px; resize: vertical; border: 0; outline: 0; display: block;
-            padding: 16px; background: transparent; color: var(--primary-bright);
-            font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; white-space: pre; tab-size: 2; }
-        .ws-actions { display: flex; gap: 10px; padding: 14px; border-top: 1px solid var(--border); background: var(--bg-deep); }
-        .ws-run-btn { padding: 10px 22px; border-radius: var(--radius-pill); border: 0; cursor: pointer;
-            background: var(--primary); color: #fff; font-weight: 700; font-size: 13.5px; }
+        .ws-pane-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }
+
+        /* ---- Left pane: the brief ---- */
+        .ws-brief-label, .ws-given-label, .ws-task-label,
+        .ws-integrity-label, .ws-debrief-label {
+            font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+            text-transform: uppercase; color: var(--text-faint); margin: 20px 0 9px;
+        }
+        .ws-pane-scroll > .ws-brief-label:first-child { margin-top: 0; }
+        .ws-brief-p { font-size: 14px; line-height: 1.75; color: var(--text); margin: 0 0 12px; }
+        .ws-given-list { margin: 0; padding-left: 17px; }
+        .ws-given-list li { font-size: 13.5px; line-height: 1.7; color: var(--text-muted); }
+        .ws-task {
+            margin-top: 20px; padding: 14px 16px; border-radius: var(--radius-sm);
+            background: var(--glass-tint, rgba(16,185,129,0.06));
+            border: 1px solid var(--primary-deep, var(--border));
+        }
+        .ws-task .ws-task-label { margin-top: 0; }
+        .ws-task p { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--text); }
+
+        /* ---- Right pane: editor over output ---- */
+        .ws-src {
+            flex: 1 1 55%; min-height: 180px; resize: none; border: 0; outline: 0; display: block;
+            width: 100%; padding: 14px; background: transparent; color: var(--primary-bright);
+            font-family: var(--font-mono); font-size: 12px; line-height: 1.6;
+            white-space: pre; overflow: auto; tab-size: 2;
+        }
+        .ws-out {
+            flex: 1 1 45%; min-height: 0; display: flex; flex-direction: column;
+            border-top: 1px solid var(--border);
+        }
+        .ws-out-tabs {
+            display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+            padding: 8px 10px; background: var(--bg-deep); border-bottom: 1px solid var(--border);
+        }
+        .ws-tab {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border: 0; border-radius: var(--radius-pill);
+            background: transparent; cursor: pointer;
+            font-family: var(--font-display); font-weight: 600; font-size: 12.5px;
+            color: var(--text-faint);
+        }
+        .ws-tab:hover { color: var(--text); }
+        .ws-tab.is-on { background: var(--surface); color: var(--primary); }
+        .ws-tab-n {
+            font-family: var(--font-mono); font-size: 9.5px; padding: 1px 6px;
+            border-radius: var(--radius-pill); background: var(--warning, #e3b341); color: #3a2c00;
+        }
+        .ws-out-actions { margin-left: auto; display: flex; gap: 8px; }
+        .ws-run-btn {
+            padding: 7px 18px; border-radius: var(--radius-pill); border: 0; cursor: pointer;
+            background: var(--primary); color: #fff; font-weight: 700; font-size: 12.5px;
+        }
         .ws-run-btn:hover { background: var(--primary-bright); }
-        .ws-hint-btn { padding: 10px 18px; border-radius: var(--radius-pill); cursor: pointer;
-            background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-size: 13px; }
+        .ws-hint-btn {
+            padding: 7px 14px; border-radius: var(--radius-pill); cursor: pointer;
+            background: transparent; border: 1px solid var(--border);
+            color: var(--text-muted); font-size: 12.5px;
+        }
         .ws-hint-btn:hover { border-color: var(--border-hi); color: var(--text); }
+        .ws-out-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
+        .ws-idle { font-size: 13px; line-height: 1.7; color: var(--text-faint); }
 
-        .ws-hints { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-        .ws-hint { padding: 14px 16px; border-radius: var(--radius-sm); background: var(--surface-alt);
-            border: 1px solid var(--border); border-left: 3px solid var(--warning, #e3b341); }
-        .ws-hint-n { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.07em;
-            text-transform: uppercase; color: var(--text-faint); }
-        .ws-hint p { margin: 6px 0 0; font-size: 14px; line-height: 1.7; color: var(--text-muted); }
+        .ws-hint {
+            padding: 12px 14px; border-radius: var(--radius-sm); background: var(--surface-alt);
+            border: 1px solid var(--border); border-left: 3px solid var(--warning, #e3b341);
+            margin-bottom: 10px;
+        }
+        .ws-hint-n {
+            font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.07em;
+            text-transform: uppercase; color: var(--text-faint);
+        }
+        .ws-hint p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.7; color: var(--text-muted); }
 
-        .ws-v { border-radius: var(--radius-md); border: 1px solid var(--border); padding: 22px; }
+        .ws-v { border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 16px; }
         .ws-v-fail { border-color: var(--danger, #f1707a); background: rgba(241,112,122,0.06); }
         .ws-v-pass { border-color: var(--success, #4ad6a0); background: rgba(74,214,160,0.07); }
-        .ws-v-head { display: flex; align-items: center; gap: 14px; }
-        .ws-v-badge { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; color: #fff;
+        .ws-v-head { display: flex; align-items: center; gap: 12px; }
+        .ws-v-badge {
+            flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; color: #fff;
             display: flex; align-items: center; justify-content: center;
-            font-family: var(--font-display); font-weight: 800; font-size: 16px; }
+            font-family: var(--font-display); font-weight: 800; font-size: 14px;
+        }
         .ws-v-fail .ws-v-badge { background: var(--danger, #C13543); }
         .ws-v-pass .ws-v-badge { background: var(--success, #4ad6a0); }
-        .ws-v-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--text); }
-        .ws-v-sub { margin-top: 2px; font-size: 13px; color: var(--text-muted); }
+        .ws-v-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--text); }
+        .ws-v-sub { margin-top: 2px; font-size: 12.5px; color: var(--text-muted); }
 
-        .ws-integrity { margin-top: 18px; padding: 15px 17px; border-radius: var(--radius-sm);
-            background: var(--surface); border: 1px solid var(--danger, #f1707a); }
-        .ws-integrity ul { margin: 0; padding-left: 18px; }
-        .ws-integrity li { font-size: 13.5px; line-height: 1.7; color: var(--text); }
-        .ws-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.65; color: var(--text-muted); }
+        .ws-integrity {
+            margin-top: 14px; padding: 13px 15px; border-radius: var(--radius-sm);
+            background: var(--surface); border: 1px solid var(--danger, #f1707a);
+        }
+        .ws-integrity ul { margin: 0; padding-left: 17px; }
+        .ws-integrity li { font-size: 13px; line-height: 1.7; color: var(--text); }
+        .ws-note { margin: 9px 0 0; font-size: 12px; line-height: 1.65; color: var(--text-muted); }
 
-        .ws-findings { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
-        .ws-finding { padding: 13px 15px; border-radius: var(--radius-sm); background: var(--surface);
-            border: 1px solid var(--border); border-left: 3px solid var(--danger, #f1707a); }
+        .ws-findings { display: flex; flex-direction: column; gap: 9px; margin-top: 14px; }
+        .ws-finding {
+            padding: 12px 14px; border-radius: var(--radius-sm); background: var(--surface);
+            border: 1px solid var(--border); border-left: 3px solid var(--danger, #f1707a);
+        }
         .ws-finding-top { display: flex; align-items: center; gap: 10px; }
-        .ws-finding-rule { font-family: var(--font-display); font-weight: 700; font-size: 13.5px; color: var(--text); }
-        .ws-finding-where { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--primary); }
-        .ws-finding-msg { margin-top: 6px; font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+        .ws-finding-rule { font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--text); }
+        .ws-finding-where { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--primary); }
+        .ws-finding-msg { margin-top: 6px; font-size: 12.5px; line-height: 1.6; color: var(--text-muted); }
 
         .ws-debrief { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--border); }
         .ws-solved { padding: 14px 16px; border-radius: var(--radius-sm); background: var(--surface);
@@ -512,9 +648,23 @@ const Workshop = (function () {
         .ws-next span { color: var(--text-faint); }
         .ws-again { display: flex; gap: 10px; flex-wrap: wrap; }
 
+        /* Below ~1040px the side-by-side stops being usable: the editor gets too
+           narrow for XML lines. Drop to a single column with natural page scroll
+           rather than trying to squeeze three panes into a phone. */
+        @media (max-width: 1040px) {
+            .ws-ide { height: auto; min-height: 0; }
+            .ws-ide-body { grid-template-columns: 1fr; }
+            .ws-pane-brief .ws-pane-scroll { max-height: 340px; }
+            .ws-pane-work { min-height: 620px; }
+        }
         @media (max-width: 720px) {
             .ws-grid { grid-template-columns: 1fr; }
-            .ws-src { min-height: 320px; font-size: 11.5px; }
+            .ws-ide-top { flex-wrap: wrap; gap: 10px; }
+            .ws-ide-progress { margin-left: 0; }
+            .ws-src { font-size: 11.5px; }
+            .ws-out-tabs { flex-wrap: wrap; }
+            .ws-out-actions { margin-left: 0; width: 100%; }
+            .ws-run-btn { flex: 1; }
         }
         `;
         const style = document.createElement('style');
@@ -531,7 +681,7 @@ const Workshop = (function () {
     // Styles are needed the moment any view renders.
     injectStyles();
 
-    return { init, showLanding, open, check, hint, reset };
+    return { init, showLanding, open, check, hint, reset, pane };
 })();
 
 window.Workshop = Workshop;
