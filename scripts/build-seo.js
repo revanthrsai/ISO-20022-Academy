@@ -305,6 +305,7 @@ Object.keys(DICT.MESSAGES).forEach(code => { elemsIn(sampleXml(code)).forEach(n 
 
 fs.rmSync(path.join(ROOT, 'dictionary'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'glossary'), { recursive: true, force: true });
+fs.rmSync(path.join(ROOT, 'workshop'), { recursive: true, force: true });
 
 function writePage(rel, html) {
     const dir = path.join(ROOT, rel);
@@ -431,6 +432,38 @@ GLOSS.forEach(t => {
         body: `<p>${esc(t.definition || '')}</p>` }));
     refCount++;
 });
+
+// Workshops — the hands-on half. Only the ones that are actually playable get a
+// page; an indexed "coming soon" is a thin-content penalty waiting to happen.
+const WS = loadGlobal('assets/js/workshops.data.js', 'WORKSHOPS') || { LIST: [], DEFS: {} };
+if (WS.LIST.length) {
+    const cards = WS.LIST.filter(w => w.ready).map(w =>
+        `<h2>${esc(w.title)}</h2><p><em>${esc(w.kicker)} &middot; ~${w.minutes} min</em></p><p>${esc(w.blurb)}</p>` +
+        `<p>What it exercises: ${(w.skills || []).map(esc).join(', ')}.</p>`).join('');
+    writePage('workshop', refPage({
+        rel: 'workshop', type: 'WebPage', kicker: 'Hands-on', title: 'ISO 20022 Workshops', titleClass: 'txt',
+        standfirst: 'Practise on real broken messages, not multiple choice.',
+        desc: 'Hands-on ISO 20022 workshops: debug a broken pacs.008, migrate an MT103, and handle R-transactions. Checked automatically against real validation rules.',
+        appUrl: `${SITE}/#/workshop`,
+        body: cards
+    }));
+    refCount++;
+
+    WS.LIST.filter(w => w.ready).forEach(w => {
+        const d = WS.DEFS[w.id] || {};
+        const skills = (w.skills || []).map(s => `<li>${esc(s)}</li>`).join('');
+        writePage(`workshop/${w.id}`, refPage({
+            rel: `workshop/${w.id}`, type: 'LearningResource', kicker: `Workshop &middot; ${esc(w.kicker)}`,
+            title: w.title, titleClass: 'txt',
+            standfirst: esc(w.blurb),
+            desc: `${w.blurb} A hands-on ISO 20022 workshop, checked automatically.`,
+            appUrl: `${SITE}/#/workshop/${w.id}`,
+            body: `<p>${esc(w.blurb)}</p><h2>What you practise</h2><ul>${skills}</ul>` +
+                  (d.task ? `<h2>The task</h2><p>${esc(d.task)}</p>` : '')
+        }));
+        refCount++;
+    });
+}
 
 // sitemap.xml + robots.txt
 const today = new Date().toISOString().slice(0, 10);

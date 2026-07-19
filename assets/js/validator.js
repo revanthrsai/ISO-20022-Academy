@@ -678,7 +678,10 @@ const SchemaValidator = (function () {
         render();
     }
 
-    return { init, load, onInput, clear, getXml, loadXml };
+    // `validate` is exported so the Workshop can grade with the exact same rules
+    // the Playground shows — one engine, so a workshop can never disagree with
+    // the validator a learner just used.
+    return { init, load, onInput, clear, getXml, loadXml, validate };
 })();
 
 window.SchemaValidator = SchemaValidator;

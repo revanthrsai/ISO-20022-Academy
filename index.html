@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>ISO 20022 Academy | Interactive ISO 20022 Learning Platform</title>
-    <meta name="description" content="Learn ISO 20022 through interactive lessons, real payment message examples (pacs.008, pain.001, camt.053), a live playground, and an extensive glossary. Free and no signup required.">
+    <meta name="description" content="Learn ISO 20022 through interactive lessons, hands-on workshops, real payment message examples (pacs.008, pain.001, camt.053), a live MT/MX playground, and a full message dictionary. Free and no signup required.">
     <link rel="canonical" href="https://iso20022academy.in/">
     <link rel="icon" href="/favicon.ico" sizes="48x48">
     <link rel="icon" type="image/png" sizes="192x192" href="/assets/images/favicon-192.png">
@@ -58,8 +58,9 @@
                 <!-- Learning Journey retired from global nav in 1.3; journey kept as non-nav route -->
                 <button class="nav-item" data-page="library" onclick="navigate('library', event)">Library</button>
                 <button class="nav-item" data-page="playground" onclick="navigate('playground', event)">Playground</button>
-                <button class="nav-item" data-page="glossary" onclick="navigate('glossary', event)">Glossary</button>
-                <button class="nav-item" data-page="dictionary" onclick="navigate('dictionary', event)">Dictionary</button>
+                <!-- Glossary folded under Library (1.6); Dictionary folded into Playground (1.6).
+                     Both remain live routes and highlight their parent tab via NAV_PARENT. -->
+                <button class="nav-item" data-page="workshop" onclick="navigate('workshop', event)">Workshop</button>
                 <span class="nav-indicator" id="nav-indicator" aria-hidden="true"></span>
             </nav>
         </div>
@@ -122,6 +123,7 @@
                     <a href="#/history" onclick="navigate('history', event)">History</a>
                     <a href="#/library" onclick="navigate('library', event)">Library</a>
                     <a href="#/playground" onclick="navigate('playground', event)">Playground</a>
+                    <a href="#/workshop" onclick="navigate('workshop', event)">Workshop</a>
                     <a href="#/glossary" onclick="navigate('glossary', event)">Glossary</a>
                     <a href="#/dictionary" onclick="navigate('dictionary', event)">Dictionary</a>
                 </nav>
@@ -189,6 +191,9 @@
     <script src="assets/js/changes.data.js"></script>
     <script src="assets/js/dictionary.js"></script>
     <script src="assets/js/journey.js"></script>
+    <script src="assets/js/validator.js"></script>
+    <script src="assets/js/workshops.data.js"></script>
+    <script src="assets/js/workshop.js"></script>
     <script src="assets/js/quiz.data.js"></script>
     <script src="assets/js/quiz.js"></script>
     <script src="assets/js/deadlines.data.js"></script>

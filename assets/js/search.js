@@ -89,8 +89,19 @@ const Search = (function () {
                 });
             });
         }
+        // Workshops — the hands-on half
+        if (typeof WORKSHOPS !== 'undefined' && Array.isArray(WORKSHOPS.LIST)) {
+            WORKSHOPS.LIST.forEach(w => {
+                if (!w.ready) return;
+                items.push({
+                    type: 'Workshop', label: w.title, sub: w.kicker + ' · ~' + w.minutes + ' min',
+                    kw: (w.id + ' ' + (w.skills || []).join(' ') + ' workshop practice hands on').toLowerCase(),
+                    badge: 'do', run: () => { if (typeof openWorkshop === 'function') openWorkshop(w.id); }
+                });
+            });
+        }
         // Pages
-        [['History', 'history'], ['Library', 'library'], ['Playground', 'playground'], ['Glossary', 'glossary'], ['Dictionary', 'dictionary']].forEach(([label, page]) => {
+        [['History', 'history'], ['Library', 'library'], ['Playground', 'playground'], ['Workshop', 'workshop'], ['Glossary', 'glossary'], ['Dictionary', 'dictionary']].forEach(([label, page]) => {
             items.push({ type: 'Page', label, sub: 'Go to the ' + label + ' section', kw: page, badge: '↵',
                 run: () => { if (typeof navigate === 'function') navigate(page); } });
         });

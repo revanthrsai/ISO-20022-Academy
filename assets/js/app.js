@@ -134,10 +134,12 @@ const PAGES = {
     `,
     playground: `
         <div class="page">
+            ${pgModes('workbench')}
             <p class="pg2-intro">
-                <strong>The Playground.</strong> Pick any message from the <strong>ISO&nbsp;20022 catalogue</strong>
-                to read its XML &mdash; then hit <strong>Transform</strong> to run it through the live
-                MT&nbsp;&#8644;&nbsp;MX engine. Or paste your own message into the viewer.
+                <strong>The Workbench.</strong> Pick any message from the <strong>ISO&nbsp;20022 catalogue</strong>
+                to read its XML &mdash; then <strong>Transform</strong> it through the live
+                MT&nbsp;&#8644;&nbsp;MX engine, or <strong>Validate</strong> it against the rules that
+                actually bite in production. Or paste your own message into the viewer.
             </p>
 
             <div class="pg2">
@@ -157,6 +159,10 @@ const PAGES = {
                             <span class="pg2-msg-code">pacs.008</span>
                             <span class="pg2-msg-sub">FI-to-FI Customer Credit Transfer</span>
                         </div>
+                        <button class="pg2-check" id="pg2-check" onclick="openValidator(event)"
+                                title="Check this message against the ISO rules that bite in production">
+                            <span class="pg2-check-i" aria-hidden="true">&#10003;</span> Validate
+                        </button>
                         <button class="pg2-xform" id="pg2-xform" onclick="openTransform(event)" disabled
                                 title="The live engine transforms pacs.008 &#8644; MT103">
                             <span class="pg2-xform-i" aria-hidden="true">&#9889;</span> Transform
@@ -169,6 +175,7 @@ const PAGES = {
     `,
     glossary: `
         <div class="page">
+            <button class="ws-back" onclick="navigate('library', event)">&larr; The Library</button>
             <div class="eyebrow" data-reveal="fade">Reference</div>
             <h2 class="section-title" data-reveal="up">The language, defined.</h2>
             <p class="section-description" data-reveal="up">
@@ -183,15 +190,55 @@ const PAGES = {
         </div>
     `,
     dictionary: `
-        <div class="page"><div id="dict-root"></div></div>
+        <div class="page">
+            ${pgModes('dictionary')}
+            <div id="dict-root"></div>
+        </div>
     `,
     journey: `
         <div class="page"><div id="journey-root"></div></div>
+    `,
+    workshop: `
+        <div class="page"><div id="ws-root"></div></div>
     `
 };
 
+// ── Playground mode switcher ────────────────────────────────────────────────
+// The Playground is one tab with two faces: the Workbench (catalogue + viewer +
+// Transform/Validate) and the Dictionary (every message, element and code set).
+// Hoisted function declaration — PAGES interpolates it at load time.
+function pgModes(active) {
+    const on = (k) => k === active ? ' is-on' : '';
+    return `
+        <div class="pg-modes" role="tablist" aria-label="Playground mode">
+            <button class="pg-mode${on('workbench')}" role="tab" aria-selected="${active === 'workbench'}"
+                    onclick="navigate('playground', event)">
+                <span class="pg-mode-name">Workbench</span>
+                <span class="pg-mode-sub">read &middot; transform &middot; validate</span>
+            </button>
+            <button class="pg-mode${on('dictionary')}" role="tab" aria-selected="${active === 'dictionary'}"
+                    onclick="dictHome(event)">
+                <span class="pg-mode-name">Dictionary</span>
+                <span class="pg-mode-sub">every message, element &amp; code</span>
+            </button>
+        </div>`;
+}
+
 // Ordered top-level sections, for the prev/next header arrows.
-const NAV_ORDER = ['history', 'library', 'playground', 'glossary', 'dictionary'];
+// Four tabs since 1.6: learn the story → read the lessons → handle real messages
+// → prove you can. Glossary and Dictionary kept every route they ever had; they
+// simply stopped owning a tab and now render beneath a parent one.
+const NAV_ORDER = ['history', 'library', 'playground', 'workshop'];
+
+// Sections that render without a tab of their own. They light up their parent's
+// tab instead, so the header never looks "nowhere" on a child route. Every old
+// URL (#/glossary, #/dictionary/...) still resolves — nav changed, routes did not.
+const NAV_PARENT = {
+    glossary: 'library',
+    journey: 'library',
+    dictionary: 'playground'
+};
+function navTabFor(page) { return NAV_PARENT[page] || page; }
 
 // ── Playground workspace ────────────────────────────────────────────────────
 // One screen, no tool tabs: the catalogue tree (left) loads a message into the
@@ -222,8 +269,10 @@ function openPlaygroundTool(slug) {
 // ── Dictionary (the reference tab) ──────────────────────────────────────────
 // Three deep-linkable views rendered into #dict-root by the AcademyDictionary
 // module: landing, one message (interactive anatomy), one element.
+// Since 1.6 the Dictionary lives under the Playground tab, so currentNavPage()
+// reports 'playground' here — the only reliable test is whether its mount exists.
 function ensureDict() {
-    if (currentNavPage() !== 'dictionary' || !document.getElementById('dict-root')) navigate('dictionary');
+    if (!document.getElementById('dict-root')) navigate('dictionary');
 }
 function dictHash(target) {
     if (!window.CLEAN_URLS && typeof history !== 'undefined' && location.hash !== target) history.replaceState(null, '', target);
@@ -352,6 +401,103 @@ function closeTransform() {
         drawer.setAttribute('aria-hidden', 'true');
         if (scrim) scrim.hidden = true;
     }, 280);
+}
+
+// ── Validator slide-over ────────────────────────────────────────────────────
+// Same body-mounted pattern as the transform drawer (a fixed element nested in
+// the page's animated subtree sizes to that ancestor, not the viewport). The
+// checking itself is SchemaValidator's — eight rule groups, entirely in-browser,
+// so it answers instantly and works with the engine asleep.
+function ensureValidatorDrawer() {
+    let drawer = document.getElementById('pgv-drawer');
+    if (drawer) return drawer;
+
+    const scrim = document.createElement('div');
+    scrim.className = 'pg2-scrim';
+    scrim.id = 'pgv-scrim';
+    scrim.hidden = true;
+    scrim.addEventListener('click', closeValidator);
+
+    drawer = document.createElement('aside');
+    drawer.className = 'pg2-drawer pg2-drawer-wide';
+    drawer.id = 'pgv-drawer';
+    drawer.hidden = true;
+    drawer.setAttribute('aria-hidden', 'true');
+    drawer.setAttribute('aria-label', 'Validate message');
+    drawer.innerHTML =
+        '<div class="pg2-drawer-bar">'
+        + '<div class="pg2-drawer-t">'
+        + '<span class="pg2-drawer-title">Validate</span>'
+        + '<span class="pg2-drawer-sub">eight rule groups &middot; checked in your browser</span>'
+        + '</div>'
+        + '<span class="pg2-drawer-esc">Esc</span>'
+        + '<button class="pg2-drawer-x" type="button" aria-label="Close (Esc)">&times;</button>'
+        + '</div>'
+        + '<div class="pg2-drawer-body"><div class="val" id="val-root"></div></div>';
+
+    document.body.appendChild(scrim);
+    document.body.appendChild(drawer);
+
+    const x = drawer.querySelector('.pg2-drawer-x');
+    if (x) x.addEventListener('click', closeValidator);
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !drawer.hidden) closeValidator();
+    });
+    return drawer;
+}
+
+// Open the validator, seeded with whatever is in the viewer right now. Nothing
+// loaded? It falls back to its own sample set so the panel is never empty.
+function openValidator(evt) {
+    if (evt) evt.preventDefault();
+    if (!window.SchemaValidator) return;
+
+    const drawer = ensureValidatorDrawer();
+    const scrim = document.getElementById('pgv-scrim');
+    if (!drawer) return;
+
+    scrim.hidden = false;
+    drawer.hidden = false;
+    drawer.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(function () { drawer.classList.add('is-open'); scrim.classList.add('is-open'); });
+    document.body.classList.add('pg2-locked');
+
+    SchemaValidator.init('val-root');
+    const src = (window.XmlViewer ? XmlViewer.getXml() : '').trim();
+    if (src) SchemaValidator.loadXml(src);
+}
+
+function closeValidator() {
+    const drawer = document.getElementById('pgv-drawer');
+    const scrim = document.getElementById('pgv-scrim');
+    if (!drawer) return;
+    drawer.classList.remove('is-open');
+    if (scrim) scrim.classList.remove('is-open');
+    document.body.classList.remove('pg2-locked');
+    setTimeout(function () {
+        drawer.hidden = true;
+        drawer.setAttribute('aria-hidden', 'true');
+        if (scrim) scrim.hidden = true;
+    }, 280);
+}
+
+// ── Workshop glue ───────────────────────────────────────────────────────────
+function ensureWorkshop() {
+    if (!document.getElementById('ws-root')) navigate('workshop');
+}
+function openWorkshop(id, evt) {
+    if (evt) evt.preventDefault();
+    ensureWorkshop();
+    if (window.Workshop) Workshop.open(id);
+    dictHash('#/workshop/' + id);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+}
+function workshopHome(evt) {
+    if (evt) evt.preventDefault();
+    ensureWorkshop();
+    if (window.Workshop) Workshop.showLanding();
+    dictHash('#/workshop');
+    window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
 function runTransformInto(body, src, dir) {
@@ -485,12 +631,17 @@ function updateNavArrows() {
 function navigate(page, evt) {
     const content = document.getElementById('content');
     const navItems = document.querySelectorAll('.nav-item');
-    const triggerEl = (evt && evt.target.closest('.nav-item')) || document.querySelector(`.nav-item[data-page="${page}"]`);
+    // A child route (glossary, dictionary, journey) has no tab of its own — light
+    // up its parent's. Clicks that originate outside the nav (footer links, the
+    // Playground mode switcher) fall through to the data-page lookup.
+    const tabPage = navTabFor(page);
+    const triggerEl = (evt && evt.target.closest('.nav-item')) || document.querySelector(`.nav-item[data-page="${tabPage}"]`);
 
     if (evt) evt.preventDefault();
 
-    // Never carry the Transform slide-over (and its scroll lock) into another page.
+    // Never carry a slide-over (and its scroll lock) into another page.
     if (typeof closeTransform === 'function') closeTransform();
+    if (typeof closeValidator === 'function') closeValidator();
     // Detach the Life-of-a-Payment scroll driver when leaving it.
     if (window.PaymentJourney) PaymentJourney.teardown();
 
@@ -523,6 +674,8 @@ function navigate(page, evt) {
         if (window.AcademyDictionary) AcademyDictionary.init('dict-root');
     } else if (page === 'journey') {
         if (window.PaymentJourney) PaymentJourney.init('journey-root');
+    } else if (page === 'workshop') {
+        if (window.Workshop) Workshop.showLanding();
     } else if (page === 'library') {
         renderArticleIndex();
     } else if (page === 'history') {
@@ -1164,13 +1317,17 @@ window.addEventListener('hashchange', function(){
         return;
     }
     if (/^#\/glossary(\/|\?|$)/.test(h)) {
-        if (currentNavPage() !== 'glossary') navigate('glossary');
+        // Glossary renders under the Library tab now — test its mount, not the tab.
+        if (!document.getElementById('glossary-grid')) navigate('glossary');
         else { applyGlossaryHash(); renderGlossary(); }
         return;
     }
+    const mw = h.match(/^#\/workshop\/([a-z0-9-]+)$/);
+    if (mw) { openWorkshop(mw[1]); return; }
+    if (/^#\/workshop(\/|\?|$)/.test(h)) { if (!document.getElementById('ws-root')) navigate('workshop'); return; }
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
-    if (/^#\/playground(\?|$)/.test(h)) { if (currentNavPage() !== 'playground') navigate('playground'); return; }
+    if (/^#\/playground(\?|$)/.test(h)) { if (!document.getElementById('xv-root')) navigate('playground'); return; }
     if (/^#\/dictionary\/changes$/.test(h)) { dictChanges(); return; }
     if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
     const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);
@@ -1179,11 +1336,13 @@ window.addEventListener('hashchange', function(){
     if (mde) { dictElement(mde[1] === '_' ? '' : mde[1], mde[2]); return; }
     const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
     if (mdm) { dictMessage(mdm[1]); return; }
-    if (/^#\/dictionary(\/|$)/.test(h)) { if (currentNavPage() !== 'dictionary') navigate('dictionary'); return; }
+    if (/^#\/dictionary(\/|$)/.test(h)) { if (!document.getElementById('dict-root')) navigate('dictionary'); return; }
     if (/^#\/journey$/.test(h)) { navigate('journey'); return; }
+    // #/library/glossary — the Glossary's new home as a Library child route.
+    if (/^#\/library\/glossary(\/|\?|$)/.test(h)) { navigate('glossary'); return; }
     const ml = h.match(/^#\/library\/([a-z0-9-]+)$/);
     if (ml && typeof getArticle === 'function' && getArticle(ml[1])) { openArticle(ml[1]); return; }
-    if (/^#\/library(\/|\?|$)/.test(h)) { if (currentNavPage() !== 'library') navigate('library'); return; }
+    if (/^#\/library(\/|\?|$)/.test(h)) { if (!document.getElementById('learn-root')) navigate('library'); return; }
 });
 
 // First paint: honor a deep-linked chapter, otherwise open the History landing.
@@ -1194,6 +1353,10 @@ function routeOnLoad(){
     const ch = mh && getHistoryChapter(mh[1]);
     if (ch && ch.status === 'ready') { renderHistoryChapter(mh[1]); return; }
     if (/^#\/glossary(\/|\?|$)/.test(h)) { navigate('glossary'); return; }
+    if (/^#\/library\/glossary(\/|\?|$)/.test(h)) { navigate('glossary'); return; }
+    const mw = h.match(/^#\/workshop\/([a-z0-9-]+)$/);
+    if (mw) { openWorkshop(mw[1]); return; }
+    if (/^#\/workshop(\/|\?|$)/.test(h)) { navigate('workshop'); return; }
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
     if (/^#\/playground(\?|$)/.test(h)) { navigate('playground'); return; }

@@ -32,7 +32,8 @@ Every feature answers one of four questions:
 | Why does ISO 20022 exist? | **History** | `#/history` |
 | How does it work? | **Library** | `#/library` |
 | Can I work with it? | **Playground** | `#/playground` |
-| What does this term mean? | **Glossary** | `#/glossary` |
+| What does this term mean? | **Glossary** (under Library) | `#/glossary` |
+| Can I actually do this? | **Workshop** | `#/workshop` |
 
 **Status (2026-07):** live in production as a **full-stack product**. The static
 academy (History, Library, Playground, Glossary) deploys to **GitHub Pages** from
@@ -136,10 +137,33 @@ this table immediately; no persistent personalities or storyline.
 
 ## 3. Information Architecture & Routes
 
-**Five** top-level sections, in learning-then-reference order:
-`History · Library · Playground · Glossary · Dictionary`. (This was four through
-2026-07; the **Dictionary** reference tab was added as the fifth — the earlier
-"never past four" rule is retired.) The home route `#/` redirects to `#/history`.
+**Four** top-level tabs, in a learn-then-do order:
+`History · Library · Playground · Workshop`.
+
+The count went 4 → 5 → 4. The Dictionary was briefly a fifth tab (2026-07); at
+1.6 the nav was rebalanced around what a visitor is trying to *do* rather than
+what kind of content a thing is:
+
+| Tab | It answers | Absorbed |
+|---|---|---|
+| History | how did we get here | — |
+| Library | teach me | **Glossary** (`#/library/glossary`), the Journey |
+| Playground | let me handle a real message | **Dictionary** (mode switcher) |
+| Workshop | can I actually do it | *(new)* |
+
+**Routes were not touched.** Glossary and Dictionary kept every URL they ever
+had — they simply stopped owning a tab. `NAV_PARENT` in `app.js` maps a tabless
+section to the tab that should light up for it, so `#/glossary` highlights
+Library and `#/dictionary/...` highlights Playground. This matters because
+`build-seo.js` had already published ~380 indexed pages under `/glossary/` and
+`/dictionary/`; changing nav must never change URLs.
+
+Guards that used `currentNavPage() !== '<page>'` were rewritten to test for the
+view's **mount element** instead (`#dict-root`, `#glossary-grid`, `#xv-root`,
+`#ws-root`) — with parent-tab highlighting, the tab name no longer identifies
+the view.
+
+The home route `#/` redirects to `#/history`.
 
 Hash-based routing, with one query-string layer for shareable filter state:
 
@@ -156,7 +180,33 @@ Hash-based routing, with one query-string layer for shareable filter state:
 #/dictionary                       → the Dictionary landing (families → messages)
 #/dictionary/<message>             → one message + its interactive anatomy
 #/dictionary/<message>/<Element>   → one element's entry (deep-linkable, SEO)
+#/dictionary/codes                 → the code-set index
+#/dictionary/codes/<set>           → one code set (filterable)
+#/dictionary/changes               → the What's-Changing hub
+#/library/glossary                 → the Glossary's new canonical home
+#/workshop                         → the Workshop landing (scenario cards)
+#/workshop/<id>                    → one workshop, running
 ```
+
+### The Workshop (1.6)
+
+The hands-on half. `workshops.data.js` holds scenarios; `workshop.js` owns the
+state machine (`brief → work → verdict → retry | debrief`) and grading.
+
+Two rules make it real rather than decorative:
+
+1. **It grades with the Playground's own engine.** `SchemaValidator.validate()`
+   is exported specifically so a workshop can never disagree with the validator
+   the learner just used in the Workbench. One rules engine, two surfaces.
+2. **Passing requires the payment to still mean what it meant.** Each workshop
+   carries `integrity` assertions alongside the validation rules. Without them
+   the winning move is to delete whatever the validator complains about — the
+   exact instinct a payments engineer must not learn. Deleting `<CdtrAcct>` to
+   silence a bad-IBAN error fails the workshop and says why.
+
+`RULE_TO_DEFECT` in `workshop.js` maps validator rule names to planted defect
+ids, which drives the "2 of 3 cleared" progress line and keeps hints honest —
+a hint is only ever offered for a defect still present in the learner's text.
 
 The **Dictionary** is a data-driven reference (`assets/js/dictionary.data.js`
 + `dictionary.js`): family → message → element, where each message page renders
