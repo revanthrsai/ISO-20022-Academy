@@ -134,13 +134,12 @@ const PAGES = {
     `,
     playground: `
         <div class="page">
-            ${pgModes('workbench')}
-            <p class="pg2-intro">
-                <strong>The Workbench.</strong> Pick any message from the <strong>ISO&nbsp;20022 catalogue</strong>
-                to read its XML &mdash; then <strong>Transform</strong> it through the live
-                MT&nbsp;&#8644;&nbsp;MX engine, or <strong>Validate</strong> it against the rules that
-                actually bite in production. Or paste your own message into the viewer.
-            </p>
+            ${pgHead('workbench', `
+                <p class="pg2-intro">
+                    <strong>The Workbench.</strong> Pick any message from the <strong>ISO&nbsp;20022 catalogue</strong>
+                    to read its XML &mdash; then <strong>Transform</strong> it through the live
+                    MT&nbsp;&#8644;&nbsp;MX engine. Or paste your own message into the viewer.
+                </p>`)}
 
             <div class="pg2">
                 <!-- LEFT · the catalogue as a compact collapsible tree -->
@@ -159,10 +158,6 @@ const PAGES = {
                             <span class="pg2-msg-code">pacs.008</span>
                             <span class="pg2-msg-sub">FI-to-FI Customer Credit Transfer</span>
                         </div>
-                        <button class="pg2-check" id="pg2-check" onclick="openValidator(event)"
-                                title="Check this message against the ISO rules that bite in production">
-                            <span class="pg2-check-i" aria-hidden="true">&#10003;</span> Validate
-                        </button>
                         <button class="pg2-xform" id="pg2-xform" onclick="openTransform(event)" disabled
                                 title="The live engine transforms pacs.008 &#8644; MT103">
                             <span class="pg2-xform-i" aria-hidden="true">&#9889;</span> Transform
@@ -191,7 +186,7 @@ const PAGES = {
     `,
     dictionary: `
         <div class="page">
-            ${pgModes('dictionary')}
+            ${pgHead('dictionary', '')}
             <div id="dict-root"></div>
         </div>
     `,
@@ -203,24 +198,42 @@ const PAGES = {
     `
 };
 
-// ── Playground mode switcher ────────────────────────────────────────────────
-// The Playground is one tab with two faces: the Workbench (catalogue + viewer +
-// Transform/Validate) and the Dictionary (every message, element and code set).
+// ── Playground page head ────────────────────────────────────────────────────
+// Page copy on the left, controls on the right — the same shape the Library uses
+// for its Glossary lookup, so the two tabs feel like one system.
+//
+// The right rail carries the mode switcher (Workbench | Dictionary) and, beneath
+// it, the paste-your-own-message entry point. Validation deliberately does NOT
+// sit beside Transform: Transform acts on the message the catalogue loaded,
+// while validation is something you bring your own message to.
+//
 // Hoisted function declaration — PAGES interpolates it at load time.
-function pgModes(active) {
+function pgHead(active, copyHtml) {
     const on = (k) => k === active ? ' is-on' : '';
     return `
-        <div class="pg-modes" role="tablist" aria-label="Playground mode">
-            <button class="pg-mode${on('workbench')}" role="tab" aria-selected="${active === 'workbench'}"
-                    onclick="navigate('playground', event)">
-                <span class="pg-mode-name">Workbench</span>
-                <span class="pg-mode-sub">read &middot; transform &middot; validate</span>
-            </button>
-            <button class="pg-mode${on('dictionary')}" role="tab" aria-selected="${active === 'dictionary'}"
-                    onclick="dictHome(event)">
-                <span class="pg-mode-name">Dictionary</span>
-                <span class="pg-mode-sub">every message, element &amp; code</span>
-            </button>
+        <div class="pg-head">
+            <div class="pg-head-copy">${copyHtml || ''}</div>
+            <aside class="pg-head-tools">
+                <div class="pg-modes" role="tablist" aria-label="Playground mode">
+                    <button class="pg-mode${on('workbench')}" role="tab" aria-selected="${active === 'workbench'}"
+                            onclick="navigate('playground', event)">
+                        <span class="pg-mode-name">Workbench</span>
+                        <span class="pg-mode-sub">read &middot; transform</span>
+                    </button>
+                    <button class="pg-mode${on('dictionary')}" role="tab" aria-selected="${active === 'dictionary'}"
+                            onclick="dictHome(event)">
+                        <span class="pg-mode-name">Dictionary</span>
+                        <span class="pg-mode-sub">every element &amp; code</span>
+                    </button>
+                </div>
+                <button class="pg-paste" onclick="openValidator(event)">
+                    <span class="pg-paste-i" aria-hidden="true">&#10003;</span>
+                    <span class="pg-paste-t">
+                        <span class="pg-paste-title">Paste your own message</span>
+                        <span class="pg-paste-sub">Validate it against the ISO rules &rarr;</span>
+                    </span>
+                </button>
+            </aside>
         </div>`;
 }
 
@@ -403,82 +416,88 @@ function closeTransform() {
     }, 280);
 }
 
-// ── Validator slide-over ────────────────────────────────────────────────────
-// Same body-mounted pattern as the transform drawer (a fixed element nested in
-// the page's animated subtree sizes to that ancestor, not the viewport). The
-// checking itself is SchemaValidator's — eight rule groups, entirely in-browser,
-// so it answers instantly and works with the engine asleep.
-function ensureValidatorDrawer() {
-    let drawer = document.getElementById('pgv-drawer');
-    if (drawer) return drawer;
+// ── Validator popup ─────────────────────────────────────────────────────────
+// A centred modal rather than a slide-over. Transform is a side-by-side diff, so
+// a drawer suits it; validation is a workspace you paste into and read down, so
+// it wants the middle of the screen and both panes at full width.
+//
+// Body-mounted for the same reason the transform drawer is: a fixed element
+// nested inside the page's animated subtree sizes to that ancestor, not the
+// viewport, and gets clipped. Built once, reused.
+function ensureValidatorModal() {
+    let modal = document.getElementById('pgv-modal');
+    if (modal) return modal;
 
     const scrim = document.createElement('div');
-    scrim.className = 'pg2-scrim';
+    scrim.className = 'pgv-scrim';
     scrim.id = 'pgv-scrim';
     scrim.hidden = true;
     scrim.addEventListener('click', closeValidator);
 
-    drawer = document.createElement('aside');
-    drawer.className = 'pg2-drawer pg2-drawer-wide';
-    drawer.id = 'pgv-drawer';
-    drawer.hidden = true;
-    drawer.setAttribute('aria-hidden', 'true');
-    drawer.setAttribute('aria-label', 'Validate message');
-    drawer.innerHTML =
-        '<div class="pg2-drawer-bar">'
-        + '<div class="pg2-drawer-t">'
-        + '<span class="pg2-drawer-title">Validate</span>'
-        + '<span class="pg2-drawer-sub">eight rule groups &middot; checked in your browser</span>'
+    modal = document.createElement('div');
+    modal.className = 'pgv-modal';
+    modal.id = 'pgv-modal';
+    modal.hidden = true;
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Validate a message');
+    modal.innerHTML =
+        '<div class="pgv-bar">'
+        + '<div class="pgv-t">'
+        + '<span class="pgv-title">Validate a message</span>'
+        + '<span class="pgv-sub">eight rule groups &middot; checked in your browser, instantly</span>'
         + '</div>'
-        + '<span class="pg2-drawer-esc">Esc</span>'
-        + '<button class="pg2-drawer-x" type="button" aria-label="Close (Esc)">&times;</button>'
+        + '<span class="pgv-esc">Esc</span>'
+        + '<button class="pgv-x" type="button" aria-label="Close (Esc)">&times;</button>'
         + '</div>'
-        + '<div class="pg2-drawer-body"><div class="val" id="val-root"></div></div>';
+        + '<div class="pgv-body"><div class="val" id="val-root"></div></div>';
 
     document.body.appendChild(scrim);
-    document.body.appendChild(drawer);
+    document.body.appendChild(modal);
 
-    const x = drawer.querySelector('.pg2-drawer-x');
+    // Wired directly rather than via inline onclick so the close works no matter
+    // what scope the modal is opened from.
+    const x = modal.querySelector('.pgv-x');
     if (x) x.addEventListener('click', closeValidator);
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !drawer.hidden) closeValidator();
+        if (e.key === 'Escape' && !modal.hidden) closeValidator();
     });
-    return drawer;
+    return modal;
 }
 
-// Open the validator, seeded with whatever is in the viewer right now. Nothing
-// loaded? It falls back to its own sample set so the panel is never empty.
+// Open the validator, seeded with whatever the viewer currently holds. Nothing
+// loaded? SchemaValidator falls back to its own sample set, so it's never empty.
 function openValidator(evt) {
     if (evt) evt.preventDefault();
     if (!window.SchemaValidator) return;
 
-    const drawer = ensureValidatorDrawer();
+    const modal = ensureValidatorModal();
     const scrim = document.getElementById('pgv-scrim');
-    if (!drawer) return;
+    if (!modal) return;
 
     scrim.hidden = false;
-    drawer.hidden = false;
-    drawer.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(function () { drawer.classList.add('is-open'); scrim.classList.add('is-open'); });
+    modal.hidden = false;
+    requestAnimationFrame(function () { modal.classList.add('is-open'); scrim.classList.add('is-open'); });
     document.body.classList.add('pg2-locked');
 
     SchemaValidator.init('val-root');
     const src = (window.XmlViewer ? XmlViewer.getXml() : '').trim();
     if (src) SchemaValidator.loadXml(src);
+    const ta = document.getElementById('val-src');
+    if (ta) ta.focus();
 }
 
 function closeValidator() {
-    const drawer = document.getElementById('pgv-drawer');
+    const modal = document.getElementById('pgv-modal');
     const scrim = document.getElementById('pgv-scrim');
-    if (!drawer) return;
-    drawer.classList.remove('is-open');
+    if (!modal) return;
+    modal.classList.remove('is-open');
     if (scrim) scrim.classList.remove('is-open');
     document.body.classList.remove('pg2-locked');
     setTimeout(function () {
-        drawer.hidden = true;
-        drawer.setAttribute('aria-hidden', 'true');
+        modal.hidden = true;
         if (scrim) scrim.hidden = true;
-    }, 280);
+    }, 220);
 }
 
 // ── Workshop glue ───────────────────────────────────────────────────────────
