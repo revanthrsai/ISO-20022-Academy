@@ -1,6 +1,48 @@
 // UI Module - Handle interactive elements and detail panel
 
 // ---------------------------------------------------------------------------
+// Mobile nav drawer (≤720px) — burger opens a left slide-in sidebar mirroring
+// the header tabs. Active state is synced from the real header nav on open, so
+// the drawer never keeps its own routing state. Scrim tap, Esc, the close
+// button or picking an item all dismiss it.
+// ---------------------------------------------------------------------------
+function openMobileNav() {
+    const drawer = document.getElementById('mobile-nav');
+    const scrim = document.getElementById('mobile-nav-scrim');
+    const burger = document.getElementById('nav-burger');
+    if (!drawer || !scrim) return;
+    // Mirror the header's active tab into the drawer.
+    const active = document.querySelector('#nav .nav-item.active');
+    const page = active && active.getAttribute('data-page');
+    drawer.querySelectorAll('.mobile-nav-item').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-page') === page);
+    });
+    drawer.classList.add('open');
+    scrim.classList.add('open');
+    if (burger) burger.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeMobileNav() {
+    const drawer = document.getElementById('mobile-nav');
+    const scrim = document.getElementById('mobile-nav-scrim');
+    const burger = document.getElementById('nav-burger');
+    if (!drawer || !drawer.classList.contains('open')) return;
+    drawer.classList.remove('open');
+    scrim.classList.remove('open');
+    if (burger) burger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+}
+
+function toggleMobileNav() {
+    const drawer = document.getElementById('mobile-nav');
+    if (!drawer) return;
+    drawer.classList.contains('open') ? closeMobileNav() : openMobileNav();
+}
+
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMobileNav(); });
+
+// ---------------------------------------------------------------------------
 // Message Explorer (Phase 6) — each message opens as a full Lesson-Spine node,
 // concept BEFORE payload. The panel reads top-to-bottom as a story:
 //   business story → why it exists → who creates/receives → business process

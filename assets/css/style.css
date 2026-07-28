@@ -584,15 +584,116 @@ body {
     min-width: 0;
     gap: 2px;
 }
-@media (max-width: 700px) {
-    .nav {
-        overflow-x: auto;
-        scrollbar-width: none;
-        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 88%, transparent 100%);
-        mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 88%, transparent 100%);
-    }
-    .nav::-webkit-scrollbar { display: none; }
+/* ===== MOBILE NAV DRAWER (burger + left slide-in sidebar, ≤720px) ===== */
+.nav-burger {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background-color: var(--glass-bg-strong);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.18s ease, background-color 0.18s ease, transform 0.15s ease;
 }
+.nav-burger:hover { color: var(--text); background-color: var(--glass-border); }
+.nav-burger:active { transform: scale(0.92); }
+.nav-burger:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--primary-bright); }
+
+.mobile-nav-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 4500;
+    background: rgba(4, 12, 9, 0.5);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s var(--ease-out);
+}
+.mobile-nav-scrim.open { opacity: 1; pointer-events: auto; }
+
+.mobile-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 4501;
+    width: min(280px, 82vw);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--glass-border);
+    box-shadow: 12px 0 40px -18px rgba(0, 0, 0, 0.6);
+    transform: translateX(-102%);
+    transition: transform 0.38s var(--ease-out), visibility 0s linear 0.38s;
+    visibility: hidden;
+}
+.mobile-nav.open { transform: translateX(0); visibility: visible; transition-delay: 0s; }
+
+.mobile-nav-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid var(--glass-border);
+}
+.mobile-nav-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.01em;
+}
+.mobile-nav-title em { font-style: normal; font-weight: 500; color: var(--text-muted); }
+.mobile-nav-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    border-radius: 9px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.18s ease, background-color 0.18s ease;
+}
+.mobile-nav-close:hover { color: var(--text); background-color: var(--glass-border); }
+.mobile-nav-close:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--primary-bright); }
+
+.mobile-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 12px;
+}
+.mobile-nav-item {
+    padding: 13px 16px;
+    background: none;
+    border: none;
+    border-radius: 12px;
+    text-align: left;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease-out), background-color 0.2s ease;
+}
+.mobile-nav-item:hover { color: var(--text); background: var(--glass-tint-strong); }
+.mobile-nav-item.active {
+    color: var(--primary-bright);
+    background: var(--glass-tint-strong);
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+.mobile-nav-item:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--primary-bright); }
 
 .nav-item {
     position: relative;
@@ -2374,37 +2475,15 @@ body.kinetic-ready .scroll-cue {
 @media (max-width: 860px) {
     .logo-text em { display: none; }
 }
-/* Tablet/phone: the four-item nav can't keep the desktop gliding pill without
-   risking overflow, so it becomes a tidy horizontal scroller that always shows
-   the active item from the left, with a soft fade hinting there's more. */
+/* Tablet/phone: the congested horizontal nav scroller is replaced by a burger
+   button opening a left slide-in sidebar (see MOBILE NAV DRAWER styles). */
 @media (max-width: 720px) {
     .header { padding: 0 16px; }
     .header-left { gap: 12px; flex: 1; min-width: 0; }
     .logo-text { display: none; }
     .logo { flex-shrink: 0; }
-    .nav {
-        flex: 1;
-        min-width: 0;
-        overflow-x: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        justify-content: flex-start;
-        -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 22px), transparent 100%);
-        mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 22px), transparent 100%);
-    }
-    .nav::-webkit-scrollbar { display: none; }
-    .nav-item { padding: 8px 13px; font-size: 13px; }
-    /* the gliding pill is hard to keep aligned inside a scroller — fall back
-       to a simple per-item tint on small screens */
-    .nav-indicator { display: none; }
-    .nav-item.active {
-        background: var(--glass-tint-strong);
-        border-radius: 999px;
-        box-shadow: inset 0 1px 0 var(--glass-highlight);
-    }
-}
-@media (max-width: 380px) {
-    .nav-item { padding: 7px 10px; font-size: 12.5px; }
+    .nav { display: none; }
+    .nav-burger { display: inline-flex; }
 }
 @media (max-width: 480px) {
 }
