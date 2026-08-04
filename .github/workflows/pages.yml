@@ -52,6 +52,15 @@ jobs:
       - name: Generate Playground sample manifest
         run: node scripts/build-samples.js
 
+      # Minify shipped JS + CSS in place before upload. Whitespace/syntax only —
+      # identifier renaming stays OFF because the modules share top-level
+      # globals (Quiz, WORKSHOPS, Spine…) across separate <script> files.
+      # The repo itself stays readable; only the deployed artifact is minified.
+      - name: Minify JS and CSS
+        run: |
+          npx --yes esbuild assets/js/*.js --minify-whitespace --minify-syntax --allow-overwrite --outdir=assets/js
+          npx --yes esbuild assets/css/style.css --minify --allow-overwrite --outfile=assets/css/style.css
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

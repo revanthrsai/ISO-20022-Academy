@@ -146,7 +146,7 @@ function mdToHtml(md) {
 }
 
 // ---- Page template ---------------------------------------------------------
-function pageHtml(meta, bodyHtml, id, titleById) {
+function pageHtml(meta, bodyHtml, id, titleById, neighbors) {
     const url = `${SITE}/library/${id}/`;
     const app = `${SITE}/#/library/${id}`;
     const title = `${meta.title} · ISO 20022 Academy`;
@@ -154,6 +154,14 @@ function pageHtml(meta, bodyHtml, id, titleById) {
     const rel = (Array.isArray(meta.related) ? meta.related : [])
         .filter(rid => rid !== id && titleById[rid]);
     const relatedHtml = rel.length ? `<div class="related"><h2>Related lessons</h2><ul>${rel.map(rid => `<li><a href="/library/${rid}/">${esc(titleById[rid])}</a></li>`).join('')}</ul></div>` : '';
+    // Prev / next walk the curriculum in reading order — for readers and for
+    // crawlers (every page links its neighbours, so the whole library is
+    // reachable from any entry point).
+    const { prev, next } = neighbors || {};
+    const pagerHtml = (prev || next) ? `<nav class="pager" aria-label="Lesson order">
+      ${prev ? `<a class="pager-prev" href="/library/${prev.id}/" rel="prev"><span>&larr; Previous</span>${esc(titleById[prev.id].split(':')[0])}</a>` : '<span></span>'}
+      ${next ? `<a class="pager-next" href="/library/${next.id}/" rel="next"><span>Next &rarr;</span>${esc(titleById[next.id].split(':')[0])}</a>` : ''}
+    </nav>` : '';
     const jsonld = {
         '@context': 'https://schema.org',
         '@type': 'TechArticle',
@@ -183,46 +191,68 @@ function pageHtml(meta, bodyHtml, id, titleById) {
 <meta property="og:image" content="${SITE}/assets/images/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">${JSON.stringify(jsonld)}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@600;700;800&family=Newsreader:ital,opsz,wght@0,18..72,400;0,18..72,500;1,18..72,400&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#FAF9F5; --ink:#1A211C; --muted:#5C685F; --primary:#0E9F70; --border:#E4E2DA; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.7 Georgia,'Times New Roman',serif; }
-  .wrap { max-width:720px; margin:0 auto; padding:40px 20px 80px; }
+  /* These pages are where search lands — they carry the same brand as the app:
+     Newsreader for reading, Jakarta for headings, the emerald palette. */
+  :root { --bg:#FAF9F5; --ink:#1A211C; --muted:#5C685F; --primary:#0E9F70; --border:#E4E2DA; --heads:'Plus Jakarta Sans',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.7 'Newsreader',Georgia,serif; }
+  .wrap { max-width:720px; margin:0 auto; padding:0 20px 80px; }
   a { color:var(--primary); }
-  .brand { font-family:system-ui,sans-serif; font-weight:700; color:var(--ink); text-decoration:none; font-size:15px; }
+  .topbar { position:sticky; top:0; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); margin:0 -20px 34px; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+  .brand { font-family:var(--heads); font-weight:800; color:var(--ink); text-decoration:none; font-size:15px; letter-spacing:-.01em; }
   .brand em { color:var(--primary); font-style:normal; }
-  .kicker { font-family:ui-monospace,monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--primary); margin:34px 0 8px; }
-  h1 { font-family:system-ui,sans-serif; font-size:34px; line-height:1.15; letter-spacing:-.02em; margin:0 0 10px; }
+  .topnav { display:flex; gap:16px; font-family:var(--heads); font-size:13.5px; font-weight:600; }
+  .topnav a { text-decoration:none; color:var(--muted); }
+  .topnav a:hover { color:var(--primary); }
+  .kicker { font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--primary); margin:10px 0 8px; }
+  h1 { font-family:var(--heads); font-weight:800; font-size:clamp(30px,5vw,38px); line-height:1.12; letter-spacing:-.02em; margin:0 0 10px; }
   .standfirst { color:var(--muted); font-size:19px; font-style:italic; margin:0 0 14px; }
-  .meta { color:var(--muted); font-size:14px; font-family:system-ui,sans-serif; margin-bottom:26px; }
-  .cta { display:inline-block; font-family:system-ui,sans-serif; font-weight:600; font-size:15px; color:#fff; background:var(--primary); padding:11px 20px; border-radius:10px; text-decoration:none; margin:6px 0 30px; }
+  .meta { color:var(--muted); font-size:14px; font-family:var(--heads); margin-bottom:26px; }
+  .cta { display:inline-block; font-family:var(--heads); font-weight:700; font-size:15px; color:#fff; background:var(--primary); padding:11px 20px; border-radius:999px; text-decoration:none; margin:6px 0 30px; box-shadow:0 6px 18px -8px var(--primary); }
   blockquote { margin:0 0 1em; padding:14px 18px; background:#EAF4EE; border-left:3px solid var(--primary); border-radius:8px; }
-  h2 { font-family:system-ui,sans-serif; font-size:24px; margin-top:1.6em; letter-spacing:-.01em; }
-  h3 { font-family:system-ui,sans-serif; font-size:19px; margin-top:1.4em; }
-  code { font-family:ui-monospace,monospace; font-size:.88em; background:#EFEEE7; padding:1px 5px; border-radius:4px; }
+  h2 { font-family:var(--heads); font-weight:700; font-size:24px; margin-top:1.6em; letter-spacing:-.01em; }
+  h3 { font-family:var(--heads); font-weight:700; font-size:19px; margin-top:1.4em; }
+  code { font-family:var(--mono); font-size:.85em; background:#EFEEE7; padding:1px 5px; border-radius:4px; }
   pre { background:#10201A; color:#D9E6DE; padding:16px; border-radius:10px; overflow-x:auto; }
   pre code { background:none; color:inherit; padding:0; }
-  table { border-collapse:collapse; width:100%; margin:0 0 1.4em; font-family:system-ui,sans-serif; font-size:15px; }
+  table { border-collapse:collapse; width:100%; margin:0 0 1.4em; font-family:var(--heads); font-size:15px; }
   th, td { border:1px solid var(--border); padding:8px 12px; text-align:left; vertical-align:top; }
   th { background:#EFEEE7; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
   ol, ul { padding-left:1.3em; }
-  .more a { font-family:system-ui,sans-serif; font-weight:600; text-decoration:none; }
-  .qa { background:#F3F1EA; border-radius:8px; padding:12px 16px; font-family:system-ui,sans-serif; font-size:15px; }
+  .more a { font-family:var(--heads); font-weight:600; text-decoration:none; }
+  .qa { background:#F3F1EA; border-radius:8px; padding:12px 16px; font-family:var(--heads); font-size:15px; }
+  .pager { display:flex; justify-content:space-between; gap:14px; margin-top:44px; font-family:var(--heads); font-size:14px; font-weight:600; }
+  .pager a { flex:0 1 46%; text-decoration:none; color:var(--ink); border:1px solid var(--border); border-radius:12px; padding:12px 16px; }
+  .pager a:hover { border-color:var(--primary); }
+  .pager a span { display:block; font-family:var(--mono); font-size:10.5px; font-weight:400; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+  .pager-next { text-align:right; margin-left:auto; }
   .related { margin-top:44px; padding-top:20px; border-top:1px solid var(--border); }
   .related h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
-  .related ul { list-style:none; padding:0; font-family:system-ui,sans-serif; }
+  .related ul { list-style:none; padding:0; font-family:var(--heads); }
   .related li { margin:8px 0; }
-  .foot { margin-top:48px; padding-top:18px; border-top:1px solid var(--border); color:var(--muted); font-family:system-ui,sans-serif; font-size:13px; }
+  .foot { margin-top:48px; padding-top:18px; border-top:1px solid var(--border); color:var(--muted); font-family:var(--heads); font-size:13px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <a class="brand" href="${SITE}/">ISO 20022 <em>Academy</em></a>
+  <header class="topbar">
+    <a class="brand" href="${SITE}/">ISO 20022 <em>Academy</em></a>
+    <nav class="topnav" aria-label="Site">
+      <a href="${SITE}/#/library">Library</a>
+      <a href="${SITE}/#/playground">Playground</a>
+      <a href="${SITE}/#/workshop">Workshop</a>
+    </nav>
+  </header>
   <div class="kicker">${esc(String(meta.level))} · Library</div>
   <h1>${esc(meta.title)}</h1>
   ${meta.summary ? `<p class="standfirst">${esc(meta.summary)}</p>` : ''}
   <div class="meta">${meta.minutes ? meta.minutes + ' min read · ' : ''}free, no signup</div>
   <a class="cta" href="${app}">Read in the interactive Academy &rarr;</a>
   ${bodyHtml}
+  ${pagerHtml}
   ${relatedHtml}
   <div class="foot">Part of <a href="${SITE}/">ISO 20022 Academy</a> — lessons, a message playground, quizzes, and a glossary for the language of modern payments. Written by <a href="https://www.linkedin.com/in/revanth-sai-2002/">Revanth Sai Rayapati</a>.</div>
 </div>
@@ -247,14 +277,16 @@ for (const file of fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.md') && 
     titleById[id] = String(parsed.meta.title);
 }
 
-// Pass 2: render each page.
+// Pass 2: render each page. Filename sort == numeric prefix == reading order,
+// so each page's neighbours are simply the adjacent entries.
 const urls = [`${SITE}/`];
-for (const p of pages) {
+pages.forEach((p, i) => {
     const dir = path.join(OUT_DIR, p.id);
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'index.html'), pageHtml(p.meta, mdToHtml(p.body), p.id, titleById));
+    const neighbors = { prev: pages[i - 1] || null, next: pages[i + 1] || null };
+    fs.writeFileSync(path.join(dir, 'index.html'), pageHtml(p.meta, mdToHtml(p.body), p.id, titleById, neighbors));
     urls.push(`${SITE}/library/${p.id}/`);
-}
+});
 
 // ---------------------------------------------------------------------------
 // REFERENCE PAGES — dictionary messages/elements, code sets/codes, the

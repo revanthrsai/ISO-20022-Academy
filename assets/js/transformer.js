@@ -625,6 +625,21 @@ const MsgTransformer = (function () {
             + '<button class="mxt-engine-retry" onclick="MsgTransformer.runLiveEngine()">Retry</button></div>';
     }
 
+    // Warm-up ping (2026-08): the engine sleeps on free hosting, so the first
+    // transform of the day used to eat the whole cold start in front of the
+    // user. Fired once per session as soon as any transform surface opens, so
+    // the engine is usually awake before anyone presses the button. Fire and
+    // forget — failure means nothing here; the real request has its own
+    // warming state and retry.
+    let warmed = false;
+    function warmEngine() {
+        if (warmed) return;
+        warmed = true;
+        try {
+            fetch(TRANSFORM_API.replace(/\/+$/, '') + '/api/health', { cache: 'no-store' }).catch(function () {});
+        } catch (e) { /* fetch unavailable — nothing to warm */ }
+    }
+
     function runLiveEngine() {
         const out = document.getElementById('mxt-engine-out');
         const btn = document.getElementById('mxt-engine-btn');
@@ -721,9 +736,10 @@ const MsgTransformer = (function () {
         plain = false;
         injectStyles();
         render();
+        warmEngine(); // wake the free-tier engine while the user is still reading
     }
 
-    return { init, edit, editFromMx, hover, setDir, setPlain, reset, loadModel, getXml, loadXml, runLiveEngine, copyEngine, callEngine };
+    return { init, edit, editFromMx, hover, setDir, setPlain, reset, loadModel, getXml, loadXml, runLiveEngine, copyEngine, callEngine, warmEngine };
 })();
 
 window.MsgTransformer = MsgTransformer;

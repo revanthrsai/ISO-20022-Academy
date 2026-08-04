@@ -1,7 +1,7 @@
 // ===========================================================================
 // toc.data.js  —  GENERATED FILE. DO NOT EDIT BY HAND.
 // ===========================================================================
-// Built by scripts/build-toc.js on 2026-07-19 from 44 files in /content.
+// Built by scripts/build-toc.js on 2026-08-04 from 44 files in /content.
 // To change an article's listing, edit its frontmatter and rebuild
 // (Netlify does this automatically on deploy; locally: node scripts/build-toc.js).
 // ---------------------------------------------------------------------------

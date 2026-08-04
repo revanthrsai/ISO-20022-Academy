@@ -276,6 +276,9 @@ function pgEsc(s) {
 function initPlayground() {
     if (window.XmlViewer) XmlViewer.init('xv-root');
     if (window.SampleLibrary) SampleLibrary.init('smp-root');
+    // The Workbench's Transform button hits the live engine — start waking it
+    // now (free hosting sleeps; the ping is once per session, fire-and-forget).
+    if (window.MsgTransformer && MsgTransformer.warmEngine) MsgTransformer.warmEngine();
 }
 
 // Deep links / glossary cross-links: any /playground/<slug> opens the workspace;
