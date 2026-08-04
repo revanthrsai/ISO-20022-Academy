@@ -123,6 +123,17 @@ const WORKSHOPS = (function () {
             difficulty: 'Advanced',
             skills: ['Return vs. reject vs. recall', 'pacs.004', 'Reason codes', 'Return charges'],
             ready: true
+        },
+        {
+            id: 'address-deadline',
+            n: '04',
+            title: 'The Address Deadline',
+            kicker: 'Compliance deadline',
+            blurb: 'Run the tape forward to the first Monday after CBPR+ stops accepting free-text addresses. A payment bounced. Work out why, what the minimum legal repair is, and where the real fix has to live.',
+            minutes: 20,
+            difficulty: 'Core',
+            skills: ['PstlAdr anatomy', 'Hybrid vs fully structured', 'ISO country codes', 'Root-causing data quality'],
+            ready: true
         }
     ];
 
@@ -510,6 +521,155 @@ const WORKSHOPS = (function () {
                 { id: '402-return', why: 'The return, in full' },
                 { id: '407-the-r-transactions-map', why: 'All four R-transactions on one map' },
                 { id: '408-reason-codes', why: 'Why the code you pick decides what the customer is told' }
+            ]
+        },
+
+        // ---------------------------------------------------------------------
+        // WORKSHOP 4 · THE ADDRESS DEADLINE
+        // The November 2026 structured-address mandate, worked as five decisions.
+        // The trap sequence mirrors how this goes wrong in real remediation
+        // projects: people misdiagnose *what* the rule requires (step 1), then
+        // over- or under-repair (step 2), then get the town/country pair subtly
+        // wrong (step 3), then patch the message instead of the database
+        // (step 4) — and never learn why the rule exists at all (step 5).
+        // Facts align with lesson 603 and the deadlines calendar (2026-11-14).
+        // ---------------------------------------------------------------------
+        'address-deadline': {
+            kind: 'decide',
+            title: 'The Address Deadline',
+            kicker: 'Compliance deadline',
+
+            brief:
+                "Run the tape forward to Monday 16 November 2026 — the first business day after " +
+                "CBPR+ stops accepting free-text-only addresses on cross-border payments.\n\n" +
+                "Bob's monthly payment to Sweety went out the way it has all year. This time it " +
+                "bounced at the first screening hop. The creditor's PstlAdr block carries exactly " +
+                "two AdrLine elements — “FLAT 3B LOTUS HEIGHTS” and “KORAMANGALA " +
+                "BENGALURU INDIA” — and nothing else. No structured elements at all.\n\n" +
+                "Operations want it repaired and re-sent this morning — and want to know why " +
+                "December's run won't do the same thing.",
+
+            given: [
+                'The mandate took effect 14 November 2026 (CBPR+ · key market infrastructures)',
+                'In scope: pacs.008/009/004/003 and the pain.001 flows that feed them',
+                'There is no Swift contingency for non-compliant addresses',
+                'Sweety lives at Flat 3B, Lotus Heights, Koramangala, Bengaluru, India'
+            ],
+
+            task:
+                'Five decisions, in order. The first is a diagnosis — get it right or every ' +
+                'repair that follows fixes the wrong thing.',
+
+            steps: [
+                {
+                    id: 'why-rejected',
+                    q: 'What exactly makes this address non-compliant?',
+                    type: 'pick',
+                    options: [
+                        { id: 'adrline-dead', label: 'AdrLine is no longer a legal element', sub: 'free-text lines were removed from the schema' },
+                        { id: 'no-floor',     label: 'No structured town and country',        sub: 'the address is free-text only' },
+                        { id: 'too-long',     label: 'The lines exceed the length limit',     sub: '70 characters per AdrLine' },
+                        { id: 'no-pstcd',     label: 'The postcode is missing',               sub: 'PstCd became mandatory' }
+                    ],
+                    answer: 'no-floor',
+                    wrong: {
+                        'adrline-dead': 'Tempting — but AdrLine survives the deadline. The hybrid shape explicitly permits up to two 70-character AdrLine elements, as long as town and country are structured beside them. The element is not dead; travelling *alone* is what stopped being legal.',
+                        'too-long': 'Both lines are comfortably inside 70 characters — and length was never the November rule. A short blob is still a blob: the screening machine cannot tell KORAMANGALA is a neighbourhood, BENGALURU a town, or INDIA a country.',
+                        'no-pstcd': 'PstCd is a nice-to-have, not the floor. The mandate’s minimum is the pair screening actually needs: town and country in their own named elements. An address can pass with no postcode at all.'
+                    },
+                    why: 'The floor is always the same pair: TwnNm and Ctry, structured. This address carries everything as free text, so the machine reading it is back to guessing which word is the town — which is precisely what the mandate exists to end.'
+                },
+                {
+                    id: 'min-repair',
+                    q: 'Operations want the minimum compliant repair, this morning. Which is it?',
+                    type: 'pick',
+                    options: [
+                        { id: 'full',    label: 'Fully structured, every component', sub: 'StrtNm, BldgNb, PstCd, TwnNm, Ctry — no AdrLine' },
+                        { id: 'hybrid',  label: 'Hybrid: structure town + country', sub: 'TwnNm + Ctry, keep ≤2 AdrLine for the rest' },
+                        { id: 'shovel',  label: 'Move the whole text into StrtNm',  sub: 'one structured element, validation passes' },
+                        { id: 'drop',    label: 'Drop the address block entirely',  sub: 'no address, nothing to reject' }
+                    ],
+                    answer: 'hybrid',
+                    wrong: {
+                        full: 'The destination, not the minimum. Fully structured is where the industry is steering — but it demands you already know which fragment is the street and which the building, and that certainty lives in the customer record, not in this morning’s queue. The mandate’s pragmatic middle exists for exactly this repair.',
+                        shovel: 'This passes schema validation and is the worst option on the card. Screening now *confidently* parses garbage — a neighbourhood, a town and a country all filed as a street name. Structure faked is worse than structure absent, because nothing downstream knows to distrust it.',
+                        drop: 'Global transparency rules require the parties to a payment to be identifiable — an address is part of how. Deleting data to dodge a data-quality rule trades a format rejection for a compliance investigation.'
+                    },
+                    why: 'Hybrid is the deadline’s deliberate escape valve: TwnNm and Ctry structured — the parts screening needs — with up to two AdrLine elements carrying what you cannot yet decompose. Minimum repair, honest data.'
+                },
+                {
+                    id: 'right-block',
+                    q: 'Which repaired block is actually correct?',
+                    type: 'pick',
+                    options: [
+                        { id: 'kora',    label: '<TwnNm>Koramangala</TwnNm> <Ctry>IN</Ctry>', sub: 'the line before the city name' },
+                        { id: 'india',   label: '<TwnNm>Bengaluru</TwnNm> <Ctry>INDIA</Ctry>', sub: 'country written out in full' },
+                        { id: 'correct', label: '<TwnNm>Bengaluru</TwnNm> <Ctry>IN</Ctry>',    sub: 'town, plus the two-letter code' },
+                        { id: 'both',    label: '<TwnNm>Koramangala Bengaluru</TwnNm> <Ctry>IN</Ctry>', sub: 'keep both words to be safe' }
+                    ],
+                    answer: 'correct',
+                    wrong: {
+                        kora: 'Koramangala is a neighbourhood of Bengaluru, not the town. File it as TwnNm and screening now checks the wrong geography — the machine believes you, which is exactly why feeding it a plausible-looking wrong value is dangerous. The district can stay in an AdrLine.',
+                        india: 'Ctry is an ISO 3166 two-letter code, not a word. INDIA fails validation; IN cannot be mistaken for a word in the street. That unmistakability is the whole reason the element is a code.',
+                        both: '"Both to be safe" puts a compound blob back inside a structured element — the swamp reforming one field down. TwnNm holds the town. The rest of the address has a legal home: the remaining AdrLine.'
+                    },
+                    why: 'Bengaluru is the town; IN is the code. The precision matters because downstream nobody re-checks it: structured elements are *believed*. That trust is the feature — and the responsibility.'
+                },
+                {
+                    id: 'real-fix',
+                    q: 'This payment now passes. Where must the fix live so December’s doesn’t bounce too?',
+                    type: 'pick',
+                    options: [
+                        { id: 'formatter', label: 'The bank’s outbound formatter',      sub: 'auto-structure every address at send time' },
+                        { id: 'master',    label: 'The customer record, and the pain.001', sub: 'fix the data where the address is born' },
+                        { id: 'swift',     label: 'Swift in-flight enrichment',            sub: 'let the network repair it in transit' },
+                        { id: 'inbound',   label: 'HDFC’s inbound parser',             sub: 'the receiver can reassemble the blob' }
+                    ],
+                    answer: 'master',
+                    wrong: {
+                        formatter: 'A formatter can only emit what it is given — perfect XML over a 1998 blob emits a blob. Worse, an auto-structurer that guesses is the shovel from step two running at industrial scale. Some banks do run parsing assists, but as a bridge while the data is cleansed, never as the fix.',
+                        swift: 'There is no Swift contingency for this mandate — that is stated policy, not an oversight. Nothing in transit will repair the address; non-compliant messages are rejected or delayed, which is how this morning started.',
+                        inbound: 'The receiver is the one party who *cannot* know Sweety’s address better than the sender. An unstructured address cannot self-structure downstream — that is why the mandate reaches back to pain.001, where the instruction is born.'
+                    },
+                    why: 'The deadline is a data project wearing XML clothes. The address lives in a customer master; the pain.001 carries it into the world; every message after that inherits it. Fix the record once and every future payment is born compliant.'
+                },
+                {
+                    id: 'why-rule',
+                    q: 'Compliance asks: why did regulators actually force this?',
+                    type: 'pick',
+                    options: [
+                        { id: 'screening', label: 'Sanctions screening precision', sub: 'labelled town + country sharpen every check' },
+                        { id: 'tidy',      label: 'Data hygiene',                  sub: 'structured XML is simply better practice' },
+                        { id: 'speed',     label: 'Settlement speed',              sub: 'structured payments clear faster' },
+                        { id: 'fees',      label: 'Cost reduction',                sub: 'free-text repair fees were adding up' }
+                    ],
+                    answer: 'screening',
+                    wrong: {
+                        tidy: 'Nobody mandates an industry-wide, deadline-backed migration for tidiness. The structure is the means; the end is what a machine can now do with it.',
+                        speed: 'Settlement timing is set by rails and cut-offs, not address shape. A structured address does not clear faster — it *screens* cleaner, which is a different bottleneck.',
+                        fees: 'Repair fees are real but incidental. The cost that moved regulators is measured in compliance queues and missed hits, not repair charges.'
+                    },
+                    why: 'A watchlist check against KORAMANGALA BENGALURU INDIA is word-matching; against <TwnNm>Bengaluru</TwnNm><Ctry>IN</Ctry> it is a precise geographic test. Fewer false positives, fewer missed true ones — the entire industry’s screening machinery gets sharper because the data finally says what it means.'
+                }
+            ],
+
+            debrief:
+                "Five decisions, and the shape repeats what every real remediation desk learns: the " +
+                "rule is not \"AdrLine is dead\", it is \"town and country must be labelled\". The " +
+                "minimum repair is hybrid, the correct repair names the *actual* town with the " +
+                "*actual* code — and the lasting repair is not in the message at all.\n\n" +
+                "The step most people fail in production is the shovel: moving the blob into " +
+                "StrtNm because it makes the validator go green. Remember what structure means " +
+                "downstream — structured elements are believed. Faking them does not hide bad " +
+                "data; it launders it.\n\n" +
+                "And the deadline itself? A data-cleansing project with an XML costume. If your " +
+                "customer master holds addresses as three untyped lines from 1998, that is where " +
+                "November 2026 actually lives.",
+
+            next: [
+                { id: '603-structured-addresses', why: 'The field, both legal shapes, and the deadline in full' },
+                { id: '301-pacs-008', why: 'Where PstlAdr rides in the message that moves the money' },
+                { id: '208-the-end-of-mt', why: 'The previous deadline this one follows' }
             ]
         }
     };
