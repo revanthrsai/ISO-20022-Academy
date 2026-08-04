@@ -4,7 +4,7 @@
 // the hash is stripped from the address bar right after each render. Incoming
 // deep links (#/library etc.) still open correctly on load; the bar then always
 // shows the bare site URL. Flip to false to restore shareable hash URLs.
-window.CLEAN_URLS = true; // bar always shows the bare domain, no child routes
+window.CLEAN_URLS = false; // routes stay visible and shareable: #/library, #/workshop/…
 function stripHash() {
     if (!window.CLEAN_URLS || !location.hash) return;
     history.replaceState(null, '', location.pathname + location.search);
@@ -733,6 +733,9 @@ function navigate(page, evt) {
         if (location.hash !== secTarget) history.replaceState(null, '', secTarget);
     }
 
+    // The curriculum spine lives on the reading surfaces only.
+    if (window.Spine) { if (page === 'library') Spine.mount(); else Spine.unmount(); }
+
     // Hand the freshly-rendered subtree to the shared motion engine.
     if (window.Motion) Motion.scan(content);
 }
@@ -1411,7 +1414,10 @@ function routeOnLoad(){
     const ml = h.match(/^#\/library\/([a-z0-9-]+)$/);
     if (ml && typeof getArticle === 'function' && getArticle(ml[1])) { openArticle(ml[1]); return; }
     if (/^#\/library(\/|\?|$)/.test(h)) { navigate('library'); return; }
-    navigate('history');
+    // Default landing (2026-08): the Library, not the History film. Visitors
+    // arrive wanting to learn the standard; the cinematic history keeps its
+    // own tab instead of gatekeeping the front door.
+    navigate('library');
 }
 
 function initRevealAnimations() {
@@ -1419,17 +1425,20 @@ function initRevealAnimations() {
         document.querySelectorAll('.reveal-section');
     const observer =
         new IntersectionObserver(
-            (entries) => {
+            (entries, obs) => {
                 entries.forEach(entry => {
+                    // Reveal once and stop watching (2026-08 motion taming).
+                    // Un-revealing on exit meant fast scrolling could land on a
+                    // section mid-transition — a blank viewport. Content that
+                    // has been shown stays shown.
                     if (entry.isIntersecting) {
                         entry.target.classList.add('in-view');
-                    } else {
-                        entry.target.classList.remove('in-view');
+                        obs.unobserve(entry.target);
                     }
                 });
             },
             {
-                threshold: 0.25
+                threshold: 0.12
             }
         );
     sections.forEach(section => {

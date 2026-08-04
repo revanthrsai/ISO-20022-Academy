@@ -324,17 +324,36 @@ const Articles = (function () {
         }).join('');
 
         const termCount = (typeof DATA !== 'undefined' && DATA.glossary) ? DATA.glossary.length : 0;
+        // Honest proof numbers for the hero strip — counted from the data, never typed in.
+        const lessonCount = (typeof ACADEMY_TOC !== 'undefined')
+            ? ACADEMY_TOC.filter(a => a.status !== 'draft').length : 0;
+        const workshopCount = (typeof WORKSHOPS !== 'undefined' && Array.isArray(WORKSHOPS.LIST))
+            ? WORKSHOPS.LIST.length : 0;
 
+        // The Library is the site's front door (2026-08): it opens with the H1,
+        // the value proposition, and the two things a new visitor actually wants
+        // to do — start lesson one, or open the tools.
         return `
             <div class="learn-head learn-head-split" data-reveal-group>
                 <div class="learn-head-copy">
-                    <div class="eyebrow" data-reveal="fade">The Library</div>
-                    <h2 class="section-title" data-reveal="up">Read your way up.</h2>
+                    <div class="eyebrow" data-reveal="fade">Free &middot; no signup &middot; built by one payments engineer</div>
+                    <h1 class="section-title" data-reveal="up">Learn ISO&nbsp;20022 the way you wish someone had taught you.</h1>
                     <p class="section-description" data-reveal="up">
-                        New here? <a class="learn-cine-link" href="#/journey" onclick="navigate('journey', event)">&#9654;&nbsp;Watch <strong>The Life of a Payment</strong></a> &mdash; one payment, Dubai to Bangalore, in a single cinematic scroll.
+                        Interactive lessons, a live MT&nbsp;&#8644;&nbsp;MX playground, and hands-on workshops
+                        for the standard behind modern payments &mdash; from &ldquo;what is money&rdquo; to reading a real pacs.008.
                     </p>
-                    <p class="section-description" data-reveal="up">
-                        Then know them in detail by going through each level below.
+                    <div class="learn-hero-ctas" data-reveal="up">
+                        <button class="learn-hero-cta learn-hero-cta-primary" onclick="openArticle('101-what-is-money')">Start with Lesson&nbsp;1 &rarr;</button>
+                        <button class="learn-hero-cta" onclick="dictHome(event)">Open the Playground</button>
+                    </div>
+                    <div class="learn-hero-proof" data-reveal="up" aria-label="What's inside">
+                        <span>${lessonCount} lessons</span><span class="learn-hero-proof-dot" aria-hidden="true">&middot;</span>
+                        <span>${workshopCount} workshops</span><span class="learn-hero-proof-dot" aria-hidden="true">&middot;</span>
+                        <span>${termCount} glossary terms</span><span class="learn-hero-proof-dot" aria-hidden="true">&middot;</span>
+                        <span>a live MT&nbsp;&#8644;&nbsp;MX engine</span>
+                    </div>
+                    <p class="section-description learn-hero-cine" data-reveal="up">
+                        New here? <a class="learn-cine-link" href="#/journey" onclick="navigate('journey', event)">&#9654;&nbsp;Watch <strong>The Life of a Payment</strong></a> &mdash; one payment, Dubai to Bangalore, in a single cinematic scroll.
                     </p>
                 </div>
 
@@ -538,6 +557,7 @@ async function openArticle(id) {
     try {
         const loaded = await Articles.load(id);
         content.innerHTML = Articles.articleHtml(loaded);
+        if (window.Spine) Spine.mount(id); // keep the curriculum map beside the text
         if (window.Motion) Motion.scan(content);
         initArticleToc();
     } catch (e) {
@@ -660,4 +680,5 @@ function toggleLearned(id, btn) {
             ? 'Saved — this lesson shows as learned in the Library.'
             : 'Track your progress — saved on this device.';
     }
+    if (window.Spine) Spine.refresh(); // the rail's counts just changed
 }

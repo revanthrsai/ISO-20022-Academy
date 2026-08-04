@@ -795,6 +795,110 @@ body {
     transition: width 0.3s ease;
 }
 
+/* ============================
+   CURRICULUM SPINE (left rail)
+   Mounts on Library + article views only (body.has-spine).
+   ============================ */
+body.has-spine .sidebar {
+    width: 264px;
+    flex: 0 0 264px;
+    overflow: visible;
+}
+.spine {
+    position: sticky;
+    top: 92px;
+    max-height: calc(100vh - 112px);
+    overflow-y: auto;
+    padding: 18px 14px 24px 24px;
+    font-size: 13px;
+    scrollbar-width: thin;
+}
+.spine-top {
+    display: block;
+    text-decoration: none;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+.spine-eyebrow {
+    display: block;
+    font-family: var(--font-mono, monospace);
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 4px;
+}
+.spine-total { font-weight: 700; font-size: 15px; }
+.spine-total span { font-weight: 500; color: var(--text-muted); font-size: 12.5px; }
+.spine-bar, .spine-level-bar {
+    height: 3px;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+    margin: 8px 0 14px;
+}
+.spine-bar i, .spine-level-bar i {
+    display: block; height: 100%;
+    background: var(--primary);
+    border-radius: inherit;
+    transition: width .4s ease;
+}
+.spine-level { border-top: 1px solid var(--border); padding: 6px 0; }
+.spine-level-head {
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer; list-style: none;
+    padding: 6px 0;
+    color: var(--text);
+}
+.spine-level-head::-webkit-details-marker { display: none; }
+.spine-level-tag {
+    font-family: var(--font-mono, monospace);
+    font-size: 10.5px;
+    color: var(--primary);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 1px 7px;
+}
+.spine-level-name { flex: 1; font-weight: 600; font-size: 12.5px; }
+.spine-level-count { font-family: var(--font-mono, monospace); font-size: 10.5px; color: var(--text-muted); }
+.spine-level-bar { margin: 2px 0 8px; }
+.spine-list { list-style: none; margin: 0 0 8px; padding: 0; }
+.spine-item a {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 6px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-muted);
+}
+.spine-item a:hover { background: var(--surface); color: var(--text); }
+.spine-item.is-here a { background: var(--surface); color: var(--text); font-weight: 600; }
+.spine-mark {
+    flex: 0 0 6px; width: 6px; height: 6px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+}
+.spine-item.is-done .spine-mark { background: var(--primary); border-color: var(--primary); }
+.spine-item.is-here .spine-mark { border-color: var(--primary); }
+.spine-item-title {
+    flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: 12.5px;
+}
+.spine-item-min { font-family: var(--font-mono, monospace); font-size: 10px; opacity: .7; }
+.spine-ref {
+    display: block;
+    margin-top: 10px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 12px; font-weight: 600;
+    color: var(--text-muted);
+    text-decoration: none;
+}
+.spine-ref:hover { color: var(--primary); }
+/* The rail steps aside on narrow screens; the Library index is the map there. */
+@media (max-width: 1100px) {
+    body.has-spine .sidebar { width: 0; flex-basis: 0; overflow: hidden; }
+}
+
 .content-area {
     flex: 1;
     min-width: 0;
@@ -1520,7 +1624,11 @@ body {
 .story-section h2 {
     font-size: clamp(40px, 7vw, 96px);
     max-width: 100%;
+    /* 2026-08 motion taming: a scaled or mid-animation headline must never
+       push the page sideways or clip mid-word. */
+    overflow-wrap: break-word;
 }
+.story-section, .scrub-section, .hero-stage { overflow-x: clip; }
 @media (max-width: 600px) {
     .story-section h2 { font-size: clamp(30px, 9.4vw, 40px); }
 }
@@ -4616,6 +4724,51 @@ body.pg2-locked { overflow: hidden; }
 /* The copy keeps the generous measure it had before the split. */
 .pg-head-copy { flex: 1 1 520px; min-width: 0; }
 .learn-head-copy { flex: 1 1 560px; min-width: 0; }
+
+/* -- Library hero (2026-08): the site's front door ------------------------ */
+/* H1 + value prop + two CTAs + honest proof numbers. Inherits .section-title
+   type; these rules only add the action row and the proof strip. */
+.learn-hero-ctas {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 22px 0 14px;
+}
+.learn-hero-cta {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 12px 22px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
+}
+.learn-hero-cta:hover { border-color: var(--primary); transform: translateY(-1px); }
+.learn-hero-cta-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    box-shadow: 0 6px 18px -8px var(--primary);
+}
+.learn-hero-cta-primary:hover { filter: brightness(1.05); }
+.learn-hero-proof {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-family: var(--font-mono, monospace);
+    font-size: 12.5px;
+    letter-spacing: .02em;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+}
+.learn-hero-proof-dot { opacity: .5; }
+.learn-hero-cine { margin-top: 2px; }
 
 /* The right rail is a fixed lane so headings never squeeze it. */
 .pg-head-tools {

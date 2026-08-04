@@ -459,7 +459,7 @@ const Quiz = (function () {
                     <span class="quiz-cta-ico" aria-hidden="true">?</span>
                     <span class="quiz-cta-body">
                         <span class="quiz-cta-title">Test yourself on Level ${Number(level)}</span>
-                        <span class="quiz-cta-sub">${n} scenario-based question${n === 1 ? '' : 's'} — see how much stuck.</span>
+                        <span class="quiz-cta-sub">${n} scenario-based question${n === 1 ? '' : 's'} — see what stuck.</span>
                     </span>
                     ${bestHtml}
                     <span class="quiz-cta-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
