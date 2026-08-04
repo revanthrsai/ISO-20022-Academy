@@ -3304,7 +3304,27 @@ body.kinetic-ready .scroll-cue {
 /* pill-shaped controls keep a pill ring; larger cards keep their own radius */
 .nav-item:focus-visible,
 .filter-chip:focus-visible,
+.learn-hero-cta:focus-visible,
 .tag:focus-visible { border-radius: var(--radius-pill); }
+
+/* ---- SKIP LINK ---------------------------------------------------------
+   Off-screen until focused, then a normal-looking button at top-left. */
+.skip-link {
+    position: fixed;
+    top: 10px;
+    left: -9999px;
+    z-index: 200;
+    background: var(--primary);
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 11px 18px;
+    border-radius: var(--radius-pill);
+    text-decoration: none;
+    box-shadow: 0 8px 24px -10px rgba(0,0,0,.5);
+}
+.skip-link:focus { left: 14px; }
 .learn-card:focus-visible { border-radius: var(--radius-md); }
 .md-embed:focus-visible { border-radius: 14px; }
 
@@ -4726,14 +4746,23 @@ body.pg2-locked { overflow: hidden; }
 .learn-head-copy { flex: 1 1 560px; min-width: 0; }
 
 /* -- Library hero (2026-08): the site's front door ------------------------ */
-/* H1 + value prop + two CTAs + honest proof numbers. Inherits .section-title
-   type; these rules only add the action row and the proof strip. */
+/* H1 + value prop + two CTAs + honest proof numbers.
+   The hero H1 runs deliberately smaller than the display --fs-h1 used on the
+   cinematic History scenes: this headline shares its screen with a paragraph,
+   two buttons and the proof strip, and at 72px it pushed the CTAs below the
+   fold — which defeats the entire point of having them. */
+.learn-head-copy h1.section-title {
+    font-size: clamp(32px, 3.6vw, 50px);
+    line-height: 1.08;
+    margin-bottom: 14px;
+}
+.learn-head-copy .section-description { font-size: clamp(15px, 1.2vw, 17px); max-width: 46ch; }
 .learn-hero-ctas {
     display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
-    margin: 22px 0 14px;
+    margin: 18px 0 12px;
 }
 .learn-hero-cta {
     appearance: none;
@@ -4769,6 +4798,14 @@ body.pg2-locked { overflow: hidden; }
 }
 .learn-hero-proof-dot { opacity: .5; }
 .learn-hero-cine { margin-top: 2px; }
+/* On a phone the two CTAs stack full-width — a thumb target, not a pill to aim
+   at — and the proof strip drops to the compact scale. */
+@media (max-width: 560px) {
+    .learn-hero-ctas { flex-direction: column; align-items: stretch; gap: 10px; }
+    .learn-hero-cta { width: 100%; text-align: center; padding: 14px 20px; }
+    .learn-hero-proof { font-size: 11.5px; gap: 8px; }
+    .learn-head-copy .section-description { max-width: none; }
+}
 
 /* The right rail is a fixed lane so headings never squeeze it. */
 .pg-head-tools {
