@@ -3307,6 +3307,65 @@ body.kinetic-ready .scroll-cue {
 .learn-hero-cta:focus-visible,
 .tag:focus-visible { border-radius: var(--radius-pill); }
 
+/* ============================
+   WHAT'S NEW — dated timeline
+   Two columns on desktop (date rail left, entry right); stacks on mobile.
+   ============================ */
+.upd {
+    display: flex;
+    gap: 32px;
+    padding: 26px 0;
+    border-top: 1px solid var(--border);
+}
+.upd:first-child { border-top: none; padding-top: 8px; }
+.upd-side { flex: 0 0 168px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.upd-date {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: .01em;
+}
+.upd-kind {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 2px 9px;
+}
+.upd-kind-improvement { color: var(--text-muted); }
+.upd-body { flex: 1; min-width: 0; }
+.upd-title {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    margin: 0 0 8px;
+    color: var(--text);
+}
+.upd-text {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--text-muted);
+    margin: 0;
+    max-width: 68ch;
+}
+.upd-links { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 12px; }
+.upd-link {
+    font-family: var(--font-display);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+}
+.upd-link:hover { text-decoration: underline; }
+@media (max-width: 720px) {
+    .upd { flex-direction: column; gap: 10px; padding: 22px 0; }
+    .upd-side { flex-direction: row; align-items: center; gap: 10px; }
+}
+
 /* ---- SKIP LINK ---------------------------------------------------------
    Off-screen until focused, then a normal-looking button at top-left. */
 .skip-link {

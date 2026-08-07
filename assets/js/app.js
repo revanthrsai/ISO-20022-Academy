@@ -132,6 +132,19 @@ const PAGES = {
     library: `
         <div class="page"><div id="learn-root"><!-- renderArticleIndex() fills this --></div></div>
     `,
+    'whats-new': `
+        <div class="page">
+            <button class="page-back" onclick="navigate('library', event)">
+                <span class="page-back-i" aria-hidden="true">&larr;</span> Back to the Library
+            </button>
+            <div class="eyebrow" data-reveal="fade">What's new</div>
+            <h2 class="section-title" data-reveal="up">What changed, and when.</h2>
+            <p class="section-description" data-reveal="up">
+                Every lesson, workshop and tool as it landed &mdash; newest first.
+            </p>
+            <div id="updates-root"><!-- renderUpdates() fills this --></div>
+        </div>
+    `,
     playground: `
         <div class="page">
             ${pgHead('workbench', `
@@ -257,7 +270,8 @@ const NAV_ORDER = ['history', 'library', 'playground', 'workshop'];
 const NAV_PARENT = {
     glossary: 'library',
     journey: 'library',
-    dictionary: 'playground'
+    dictionary: 'playground',
+    'whats-new': 'library'
 };
 function navTabFor(page) { return NAV_PARENT[page] || page; }
 
@@ -717,6 +731,8 @@ function navigate(page, evt) {
         if (window.Workshop) Workshop.showLanding();
     } else if (page === 'library') {
         renderArticleIndex();
+    } else if (page === 'whats-new') {
+        renderUpdates();
     } else if (page === 'history') {
         initScrubTimeline();
         initRevealAnimations();
@@ -1381,6 +1397,7 @@ window.addEventListener('hashchange', function(){
     const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
     if (mdm) { dictMessage(mdm[1]); return; }
     if (/^#\/dictionary(\/|$)/.test(h)) { if (!document.getElementById('dict-root')) navigate('dictionary'); return; }
+    if (/^#\/whats-new(\/|\?|$)/.test(h)) { if (!document.getElementById('updates-root')) navigate('whats-new'); return; }
     if (/^#\/journey$/.test(h)) { navigate('journey'); return; }
     // #/library/glossary — the Glossary's new home as a Library child route.
     if (/^#\/library\/glossary(\/|\?|$)/.test(h)) { navigate('glossary'); return; }
@@ -1413,6 +1430,7 @@ function routeOnLoad(){
     const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
     if (mdm) { dictMessage(mdm[1]); return; }
     if (/^#\/dictionary(\/|$)/.test(h)) { navigate('dictionary'); return; }
+    if (/^#\/whats-new(\/|\?|$)/.test(h)) { navigate('whats-new'); return; }
     if (/^#\/journey$/.test(h)) { navigate('journey'); return; }
     const ml = h.match(/^#\/library\/([a-z0-9-]+)$/);
     if (ml && typeof getArticle === 'function' && getArticle(ml[1])) { openArticle(ml[1]); return; }
@@ -1421,6 +1439,77 @@ function routeOnLoad(){
     // arrive wanting to learn the standard; the cinematic history keeps its
     // own tab instead of gatekeeping the front door.
     navigate('library');
+}
+
+// ===========================================================================
+// WHAT'S NEW  —  renders ACADEMY_UPDATES (assets/js/updates.data.js) as a
+// dated timeline. Data-only: adding an entry to that file is the whole job of
+// publishing an update; nothing here needs touching.
+// ===========================================================================
+const UPDATE_KINDS = {
+    workshop:    { label: 'Workshop' },
+    lesson:      { label: 'Lessons' },
+    tool:        { label: 'Tool' },
+    improvement: { label: 'Improvement' }
+};
+
+function updDate(iso) {
+    // "7 August 2026" — spelled out, because a changelog is read, not parsed.
+    const d = new Date(iso + 'T00:00:00');
+    if (isNaN(d)) return iso;
+    return d.getDate() + ' ' +
+        ['January','February','March','April','May','June','July','August','September','October','November','December'][d.getMonth()] +
+        ' ' + d.getFullYear();
+}
+
+function renderUpdates() {
+    const root = document.getElementById('updates-root');
+    if (!root) return;
+    const list = (typeof ACADEMY_UPDATES !== 'undefined' && Array.isArray(ACADEMY_UPDATES))
+        ? ACADEMY_UPDATES.slice() : [];
+    if (!list.length) {
+        root.innerHTML = '<p class="section-description">No updates recorded yet.</p>';
+        return;
+    }
+    // Newest first regardless of the order they were typed in.
+    list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+    root.innerHTML = list.map(u => {
+        const kind = UPDATE_KINDS[u.kind] || { label: 'Update' };
+        const links = (u.links || []).map(l =>
+            `<a class="upd-link" href="${escAttr(l.route)}" onclick="updGo('${escAttr(l.route)}', event)">${escHtml(l.label)} &rarr;</a>`
+        ).join('');
+        return `
+            <article class="upd" data-reveal="up">
+                <div class="upd-side">
+                    <time class="upd-date" datetime="${escAttr(u.date)}">${escHtml(updDate(u.date))}</time>
+                    <span class="upd-kind upd-kind-${escAttr(u.kind)}">${escHtml(kind.label)}</span>
+                </div>
+                <div class="upd-body">
+                    <h3 class="upd-title">${escHtml(u.title)}</h3>
+                    <p class="upd-text">${escHtml(u.body)}</p>
+                    ${links ? `<div class="upd-links">${links}</div>` : ''}
+                </div>
+            </article>`;
+    }).join('');
+    if (window.Motion) Motion.scan(root);
+}
+
+// Small escapers — the updates file is authored by hand, so treat it as text.
+function escHtml(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function escAttr(s) {
+    return escHtml(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// An update's link is an ordinary hash route: let the router resolve it so
+// deep links, back/forward and copy-link all behave normally.
+function updGo(route, evt) {
+    if (evt) evt.preventDefault();
+    if (location.hash === route) return;
+    location.hash = route;
 }
 
 function initRevealAnimations() {
