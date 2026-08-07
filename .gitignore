@@ -3,6 +3,15 @@ Thumbs.db
 *.log
 .vscode/
 
+# Local dev only. The deployed site is zero-dependency — nothing here is
+# needed to run it. jsdom is installed by hand to run scripts/test-*.js
+# (`npm i jsdom`), and the Pages workflow uploads the whole directory as the
+# artifact, so an accidentally committed node_modules would be published to
+# the live site.
+/node_modules/
+/package.json
+/package-lock.json
+
 assets/video/
 docs/curriculum-roadmap.md
 docs/ENGINE-SPEC.md
