@@ -134,6 +134,28 @@ const WORKSHOPS = (function () {
             difficulty: 'Core',
             skills: ['PstlAdr anatomy', 'Hybrid vs fully structured', 'ISO country codes', 'Root-causing data quality'],
             ready: true
+        },
+        {
+            id: 'reconciliation-desk',
+            n: '05',
+            title: 'The Reconciliation Desk',
+            kicker: 'Reconciliation challenge',
+            blurb: 'Sweety’s statement will not tie out and three entries are stuck in the exception queue. Prove the statement first, then work out why each entry failed to match — and which failure is not the bank’s fault.',
+            minutes: 25,
+            difficulty: 'Core',
+            skills: ['Balance chain (OPBD/CLBD)', 'Batch-booked entries', 'Strd vs Ustrd matching', 'BookgDt vs ValDt'],
+            ready: true
+        },
+        {
+            id: 'cover-payment',
+            n: '06',
+            title: 'The Cover Payment',
+            kicker: 'Routing challenge',
+            blurb: 'HDFC has a customer payment it was told about and cover funds it cannot tie to anything. Work out which routing was used, which leg went missing, and what the message was legally required to carry.',
+            minutes: 25,
+            difficulty: 'Advanced',
+            skills: ['Serial vs cover routing', 'pacs.009 CORE vs COV', 'UndrlygCstmrCdtTrf', 'Reconciling on UETR'],
+            ready: true
         }
     ];
 
@@ -670,6 +692,305 @@ const WORKSHOPS = (function () {
                 { id: '603-structured-addresses', why: 'The field, both legal shapes, and the deadline in full' },
                 { id: '301-pacs-008', why: 'Where PstlAdr rides in the message that moves the money' },
                 { id: '208-the-end-of-mt', why: 'The previous deadline this one follows' }
+            ]
+        },
+
+        // ---------------------------------------------------------------------
+        // WORKSHOP 5 · THE RECONCILIATION DESK
+        // The corporate side of the standard, worked as a morning triage. The
+        // sequence is deliberately the ERP's own order of operations: prove the
+        // statement is whole BEFORE trusting any line in it (step 1), then work
+        // the exception queue one failure-family at a time — a batch entry read
+        // at the wrong level (2), a free-text remittance that cannot be parsed
+        // (3), a date confusion that is not an error at all (4) — and finally
+        // name the single lever that shortens the queue for good (5).
+        // Facts, references and the balance chain align with lesson 311.
+        // ---------------------------------------------------------------------
+        'reconciliation-desk': {
+            kind: 'decide',
+            title: 'The Reconciliation Desk',
+            kicker: 'Reconciliation challenge',
+
+            brief:
+                "06:10, Bengaluru. Sweety's finance system has pulled last night's camt.053 for " +
+                "the company account and stopped with a red banner: the statement did not tie out, " +
+                "and three entries are sitting in the exception queue.\n\n" +
+                "The statement says opening booked 120,000.00 INR and closing booked 153,000.00 INR. " +
+                "The entries it carries add up to +28,000.00.\n\n" +
+                "The queue holds: a single 4,400,000.00 debit posted the night payroll ran; a " +
+                "33,000.00 credit whose remittance information reads “payment for June invoice thx”; " +
+                "and a 5,000.00 credit that the ledger insists arrived yesterday, not today.\n\n" +
+                "Sweety wants her coffee. Work the desk.",
+
+            given: [
+                'Opening booked (OPBD) 120,000.00 INR · Closing booked (CLBD) 153,000.00 INR',
+                'The entries present sum to +28,000.00 INR',
+                'Payroll that night paid 200 salaries totalling 4,400,000.00',
+                'The company issues ISO 11649 creditor references (RF…) on every invoice'
+            ],
+
+            task:
+                'Five decisions, in the order an ERP actually takes them. The first is not a ' +
+                'matching question — it is whether the file can be trusted at all.',
+
+            steps: [
+                {
+                    id: 'whole',
+                    q: 'The banner fired before a single entry was matched. What did the system check, and what does the result mean?',
+                    type: 'pick',
+                    options: [
+                        { id: 'chain',  label: 'The balance chain — and an entry is missing', sub: 'OPBD + entries ≠ CLBD, so the statement is incomplete' },
+                        { id: 'dupe',   label: 'Duplicate detection — an entry is counted twice', sub: 'the file over-reports' },
+                        { id: 'queue',  label: 'The exception queue — three unmatched entries', sub: 'matching failed first' },
+                        { id: 'nothing',label: 'Nothing is wrong — 5,000 is simply pending',  sub: 'the gap resolves itself tomorrow' }
+                    ],
+                    answer: 'chain',
+                    wrong: {
+                        dupe: 'A duplicate would push the entry sum *past* the closing balance, not leave it short. Here 120,000 + 28,000 = 148,000 against a stated close of 153,000 — the file reports 5,000 less movement than it claims to have ended with. Something is absent, not doubled.',
+                        queue: 'The queue is a *matching* problem, and matching happens after the statement is trusted. The banner fired first because the arithmetic failed first — and reconciling entries inside a statement that cannot prove it is whole is how you build confidently wrong books.',
+                        nothing: 'Pending items are exactly why the check exists. A booked closing balance must be reconcilable from booked entries; if 5,000 is missing from the movements but present in CLBD, that gap has to be explained before anything downstream is trusted — not waved through.'
+                    },
+                    why: 'Opening + entries must equal closing: 120,000 + 28,000 = 148,000, but CLBD says 153,000. The statement is short by exactly 5,000 — the same figure as the disputed credit. The equation is the first thing a reconciliation engine checks, because it is the statement proving it is whole.'
+                },
+                {
+                    id: 'batch',
+                    q: 'Payroll paid 200 people, but the statement carries one 4,400,000.00 entry. What must the system do with it?',
+                    type: 'pick',
+                    options: [
+                        { id: 'explode', label: 'Read down to the TxDtls', sub: 'one entry, 200 transactions inside it' },
+                        { id: 'split',   label: 'Ask the bank to re-issue it unbatched', sub: 'one entry per employee' },
+                        { id: 'headline',label: 'Match the headline against the payroll run', sub: 'one payment, one total' },
+                        { id: 'ignore',  label: 'Exclude it from reconciliation', sub: 'payroll reconciles in the HR system' }
+                    ],
+                    answer: 'explode',
+                    wrong: {
+                        split: 'The bank is not doing anything wrong. Batch booking is a legitimate, normal posting choice — a batch-booked entry carries a Btch summary (NbOfTxs and total) precisely so it can be posted as one line and still be reconciled. Asking for a re-issue outsources your own parsing gap.',
+                        headline: 'Tempting, and it will even appear to work — the total matches. But you have then reconciled one payment where there are two hundred, so no individual salary is ever confirmed and a single failed credit inside the batch is invisible. It is the same trap as accepting a PART status without reading the transactions underneath.',
+                        ignore: 'The money left the bank account, so it belongs to the bank reconciliation whether or not HR tracks it separately. Excluding it also breaks the balance chain you just validated.'
+                    },
+                    why: 'A batch-booked entry is a summary with many TxDtls beneath it — one per employee. Always reconcile at transaction level: the headline figure tells you the batch settled, not that every person in it got paid.'
+                },
+                {
+                    id: 'ustrd',
+                    q: 'The 33,000.00 credit says “payment for June invoice thx”. Why did it fail, and what is the right move now?',
+                    type: 'pick',
+                    options: [
+                        { id: 'unstructured', label: 'It arrived as Ustrd — match on fallbacks, then fix upstream', sub: 'free text cannot be reliably parsed' },
+                        { id: 'parse',        label: 'Parse the text for “June” and the amount',  sub: 'the invoice is inferable' },
+                        { id: 'bankfault',    label: 'The bank stripped the reference — raise it with them', sub: 'the Strd block was dropped in transit' },
+                        { id: 'writeoff',     label: 'Leave it in unapplied cash indefinitely',  sub: 'nothing more can be done' }
+                    ],
+                    answer: 'unstructured',
+                    wrong: {
+                        parse: 'This is the single most expensive habit on a reconciliation desk. Free text can be *guessed* at, never parsed reliably — and a wrong automatic match is far worse than no match, because it clears the wrong invoice silently and someone chases a customer who already paid. If you cannot match confidently, the queue is the correct destination.',
+                        bankfault: 'Nothing was stripped. The entry still carries EndToEndId and UETR in Refs — what is missing is a structured CdtrRefInf, and it is missing because the *payer* never supplied one. Blaming the bank hides the actual fix.',
+                        writeoff: 'The entry has more identifiers than the remittance line: EndToEndId BOB-INV0042 and a UETR are both present. There is a confident match available before any human types anything.'
+                    },
+                    why: 'Ustrd is free text; Strd carries a machine-readable reference like RF18INV0042. The documented match order still saves this one — structured reference, then EndToEndId, then UETR, then amount-plus-name as a fuzzy last resort. EndToEndId BOB-INV0042 resolves it cleanly.'
+                },
+                {
+                    id: 'dates',
+                    q: 'The 5,000.00 credit shows BookgDt today and ValDt yesterday. The ledger booked it yesterday. Who is wrong?',
+                    type: 'pick',
+                    options: [
+                        { id: 'nobody',  label: 'Nobody — the two dates mean different things', sub: 'reconcile on BookgDt, forecast on ValDt' },
+                        { id: 'bank',    label: 'The bank — the dates should match',            sub: 'a posting error' },
+                        { id: 'ledger',  label: 'The ledger — it should always use ValDt',      sub: 'value date is authoritative' },
+                        { id: 'both',    label: 'Both — the entry is a duplicate',              sub: 'the same credit posted twice' }
+                    ],
+                    answer: 'nobody',
+                    wrong: {
+                        bank: 'They routinely differ, entirely legitimately — back-valued credits, weekend and holiday value dating, correspondent timing. Two separate elements exist precisely because the two facts are separate; if they always matched, ISO would only have needed one.',
+                        ledger: 'Value date tells treasury when funds are *available* to spend, which is a forecasting question. Reconciliation posts off the booking date — when the movement actually hit the books. Swap them and your bank reconciliation drifts against your cash position every time a value date is back-dated.',
+                        both: 'Nothing here suggests duplication: one entry, one AcctSvcrRef. Reaching for "duplicate" whenever two dates disagree manufactures exceptions out of normal banking.'
+                    },
+                    why: 'BookgDt is when it hit the books; ValDt is when the money is usable. Booked ≠ available. This entry is fine — and it is the 5,000 that closes the balance-chain gap from step one, which is why proving the statement first told you exactly where to look.'
+                },
+                {
+                    id: 'lever',
+                    q: 'Sweety asks what actually shortens this queue for good. What do you tell her?',
+                    type: 'pick',
+                    options: [
+                        { id: 'strd',   label: 'Get payers to send structured references', sub: 'RF-format creditor reference on every payment' },
+                        { id: 'fuzzier',label: 'Loosen the fuzzy matching rules',          sub: 'match more entries automatically' },
+                        { id: 'staff',  label: 'Staff the exception queue properly',       sub: 'clear it faster each morning' },
+                        { id: 'daily',  label: 'Ask the bank for intraday camt.052s',      sub: 'see the entries sooner' }
+                    ],
+                    answer: 'strd',
+                    wrong: {
+                        fuzzier: 'Loosening thresholds converts unmatched entries into *wrongly* matched ones — clearing the wrong invoice, chasing a customer who has already paid, and a queue that looks shorter while the books get worse. Precision is the point of the reference.',
+                        staff: 'That makes the symptom survivable, permanently. Every entry in that queue is human minutes that a structured reference would have made unnecessary — you would be hiring to do what one field does for free.',
+                        daily: 'Intraday reporting tells you about movements *earlier*; it does not make them more matchable. An unstructured credit at 11:00 is exactly as unmatchable as the same credit at 06:00.'
+                    },
+                    why: 'The company already issues RF-format references on its invoices — the gap is payers not quoting them back in Strd. A finance team’s auto-reconciliation rate rises and falls almost entirely on which shape the money arrives in, which is the corporate case for the whole standard in one field.'
+                }
+            ],
+
+            debrief:
+                "Notice the order you just worked in: prove the statement, then match. That sequence " +
+                "is not fussiness — the missing 5,000 in step one turned out to be the perfectly " +
+                "healthy entry in step four, and you would never have found it by starting with the " +
+                "exception queue.\n\n" +
+                "Three exceptions, three different families. A batch entry read at the wrong level " +
+                "is a parsing failure. A free-text remittance is an upstream data failure. Two dates " +
+                "disagreeing is not a failure at all — it is two different facts being reported " +
+                "correctly. Most reconciliation pain is one of those three, and telling them apart " +
+                "is most of the skill.\n\n" +
+                "And the lasting fix is never in the reconciliation engine. It is one field, " +
+                "supplied by whoever sends the money.",
+
+            next: [
+                { id: '311-camt-053-reconciliation', why: 'The statement read line by line, the way an ERP does' },
+                { id: '601-remittance-information', why: 'The field that decides whether matching is automatic' },
+                { id: '303-camt-family', why: 'Where the statement sits among the reporting messages' }
+            ]
+        },
+
+        // ---------------------------------------------------------------------
+        // WORKSHOP 6 · THE COVER PAYMENT
+        // Serial vs cover routing, from the receiving end — the seat where the
+        // distinction actually bites. The learner reasons from symptom (an
+        // instruction with no matching funds) to routing model (2), to the leg
+        // that ties them (3), to the block that exists because of a real
+        // money-laundering reform (4), and finally to the CORE/COV distinction
+        // being about whose money moves, not how much (5).
+        // Facts, BICs and the shared UETR align with lesson 312.
+        // ---------------------------------------------------------------------
+        'cover-payment': {
+            kind: 'decide',
+            title: 'The Cover Payment',
+            kicker: 'Routing challenge',
+
+            brief:
+                "You are on the payments desk at HDFC Bank in Mumbai.\n\n" +
+                "At 09:31 a pacs.008 arrived directly from Emirates NBD in Dubai: Bob Marsh is " +
+                "paying Sweety Rao USD 400.00, UETR eb6305c9-1f7c-4a9b-9b1e-2c2f4e7a91d4. It is a " +
+                "clean, complete customer instruction — and no money came with it.\n\n" +
+                "At 09:44 USD 400.00 landed in your nostro from a correspondent, CORRINBB. The " +
+                "message that carried it names two banks, quotes no customer, and carries a " +
+                "different UETR.\n\n" +
+                "Sweety is waiting. Operations want to know whether to credit her.",
+
+            given: [
+                'The pacs.008 came straight from EBILAEAD — no intermediary touched it',
+                'The funds arrived separately, via CORRINBB',
+                'The instruction and the funds do not share a UETR',
+                'Amounts match exactly: USD 400.00 on both'
+            ],
+
+            task:
+                'Five decisions. Start by naming what you are looking at — the rest follows from ' +
+                'the routing model.',
+
+            steps: [
+                {
+                    id: 'routing',
+                    q: 'Information arrived direct; funds arrived separately. Which routing is this?',
+                    type: 'pick',
+                    options: [
+                        { id: 'cover',  label: 'Cover',  sub: 'instruction direct, funds behind it through correspondents' },
+                        { id: 'serial', label: 'Serial', sub: 'passed hand to hand, each bank relaying and settling' },
+                        { id: 'onus',   label: 'On-us',  sub: 'both parties bank with the same institution' },
+                        { id: 'broken', label: 'A broken serial chain', sub: 'an intermediary dropped the message' }
+                    ],
+                    answer: 'cover',
+                    wrong: {
+                        serial: 'In serial routing the pacs.008 is relayed hop by hop, each bank settling with the next — so the information and the money arrive together, from the same place. Here the instruction came straight from Dubai while the money came from a different bank entirely. Two paths means cover.',
+                        onus: 'On-us means both parties hold accounts at the same bank, so nothing crosses a border and no correspondent is involved. There are three institutions in this story and an ocean between two of them.',
+                        broken: 'Nothing is broken yet — this is the *designed* behaviour of cover routing. Two flows arriving separately, minutes apart, is exactly what you should expect. The problem is narrower than "the chain failed", and jumping there hides it.'
+                    },
+                    why: 'Cover routing splits a cross-border payment into two parallel flows: the pacs.008 goes straight to the creditor agent so the information arrives fast, and the funds are reimbursed separately through a chain of pacs.009 COV messages. Serial keeps them together; cover deliberately does not.'
+                },
+                {
+                    id: 'funds-msg',
+                    q: 'What is the message that brought the funds?',
+                    type: 'pick',
+                    options: [
+                        { id: 'pacs009cov',  label: 'A pacs.009 COV',  sub: 'FI transfer covering a customer payment' },
+                        { id: 'pacs009core', label: 'A pacs.009 CORE', sub: 'the bank moving its own money' },
+                        { id: 'pacs008',     label: 'A second pacs.008', sub: 'the same customer payment again' },
+                        { id: 'camt054',     label: 'A camt.054',      sub: 'a credit notification' }
+                    ],
+                    answer: 'pacs009cov',
+                    wrong: {
+                        pacs009core: 'This is the answer the evidence in front of you *supports* — and that is exactly the finding. It names only banks and carries no customer, which is what a CORE looks like. Hold that thought: it should have been a COV, and the next two steps are about what is missing.',
+                        pacs008: 'A pacs.008 carries a customer payment, with human parties as Dbtr and Cdtr. The message that brought the funds names two financial institutions and no customer — different message, different job. And you would not fund a payment by sending the same instruction twice.',
+                        camt054: 'A camt.054 *notifies* you of a credit; it reports, it does not settle. Something had to actually move the USD 400.00 into your nostro, and a reporting message cannot do that.'
+                    },
+                    why: 'The funds leg behind a customer payment is a pacs.009 COV — SttlmMtd COVE, and an UndrlygCstmrCdtTrf block naming the customer it funds. What you received behaves like a CORE: bank parties only, no underlying block. That gap is the whole case.'
+                },
+                {
+                    id: 'link',
+                    q: 'What was supposed to prove these two are one payment?',
+                    type: 'pick',
+                    options: [
+                        { id: 'uetr',   label: 'A shared UETR on both legs', sub: 'the same value on instruction and cover' },
+                        { id: 'amount', label: 'The matching amount and currency', sub: 'USD 400.00 on both' },
+                        { id: 'e2e',    label: 'The EndToEndId',            sub: 'BOB-INV0042 carried through' },
+                        { id: 'time',   label: 'Arrival within the same window', sub: 'thirteen minutes apart' }
+                    ],
+                    answer: 'uetr',
+                    wrong: {
+                        amount: 'Amount is not identity. Every USD 400.00 payment you receive today matches on amount and currency — that is a coincidence filter, not proof, and reconciling on it is how you credit the wrong customer with someone else’s money.',
+                        e2e: 'EndToEndId is real and useful, but it is the *customer’s* reference, assigned by the debtor and meaningful between Bob and Sweety. It is not guaranteed unique across the interbank world, which is precisely the gap the UETR was created to close.',
+                        time: 'Proximity in time is a hint, never evidence. On a busy corridor several payments of the same amount arrive in the same window, and end-of-day the correlation collapses entirely.'
+                    },
+                    why: 'The cover leg and the customer leg are one payment only because they carry the same UETR — a globally unique value, deliberately copied onto both. It is the single thread tying funds to instruction, which is why a mismatched one leaves you holding money you cannot attribute.'
+                },
+                {
+                    id: 'underlying',
+                    q: 'The cover names no customer. Why does that matter beyond your reconciliation?',
+                    type: 'pick',
+                    options: [
+                        { id: 'screening', label: 'The funds chain cannot screen the real parties', sub: 'the block is mandatory for exactly this reason' },
+                        { id: 'nicety',    label: 'It is a helpful convention, not a requirement',  sub: 'useful for matching only' },
+                        { id: 'billing',   label: 'Charges cannot be allocated correctly',          sub: 'ChrgBr needs the customer' },
+                        { id: 'nothing',   label: 'It does not — the pacs.008 already has them',    sub: 'the details exist elsewhere' }
+                    ],
+                    answer: 'screening',
+                    wrong: {
+                        nicety: 'It is an obligation, not a courtesy. A cover message is *required* to carry the underlying customer details — the requirement was created deliberately, after the industry discovered what happens without it.',
+                        billing: 'Charge handling rides on the customer leg and does not depend on the cover naming anyone. This is a real field, but the wrong problem.',
+                        nothing: 'That is precisely the pre-2009 assumption, and precisely the hole. *You* hold the pacs.008 — the correspondents in the funds chain do not. Every bank that touches the cash needs to see who is really paying whom, and they only have the cover message.'
+                    },
+                    why: 'Under the old MT202 a cover named only banks, so the correspondents moving the actual cash could not see the originator or beneficiary — a genuine money-laundering blind spot. After FATF pressure, MT202COV made the underlying details mandatory; UndrlygCstmrCdtTrf is the ISO 20022 form of that rule. A COV without it recreates the gap the reform closed.'
+                },
+                {
+                    id: 'core-cov',
+                    q: 'A colleague says “it is a CORE because it is only 400 dollars — COV is for the big ones.” Is that right?',
+                    type: 'pick',
+                    options: [
+                        { id: 'whose',  label: 'No — it is about whose money moves and whether a customer sits behind it', sub: 'amount is irrelevant' },
+                        { id: 'yes',    label: 'Yes — COV is used above scheme thresholds',        sub: 'value decides the form' },
+                        { id: 'partly', label: 'Partly — small covers may omit the underlying block', sub: 'a de minimis exemption applies' },
+                        { id: 'corridor', label: 'No — the corridor decides it',                   sub: 'some routes mandate COV' }
+                    ],
+                    answer: 'whose',
+                    wrong: {
+                        yes: 'There is no value threshold. A pacs.009 is used whenever the *bank’s* own money moves, and it is a COV whenever that movement is covering a customer payment — at 400 dollars or 400 million.',
+                        partly: 'No de minimis exemption exists for the underlying block, and this is a dangerous belief to hold: the screening rationale applies at every amount, and structuring below a threshold is exactly the behaviour the rule was written to defeat.',
+                        corridor: 'Corridors and market practice shape *whether cover routing is used at all*, but once a cover funds a customer payment, the form of the message follows from that fact, not from geography.'
+                    },
+                    why: 'Whose money is moving? Customer’s → pacs.008. Bank’s own → pacs.009. And a pacs.009 is COV rather than CORE when it funds an underlying customer payment — identified by SttlmMtd COVE and the UndrlygCstmrCdtTrf block. Amount never enters the decision.'
+                }
+            ],
+
+            debrief:
+                "The answer to “do I credit Sweety” is yes — you hold a complete, valid customer " +
+                "instruction and USD 400.00 in your nostro. What you do not hold is proof they are " +
+                "the same payment, and that is a defect in the cover leg, not in the instruction.\n\n" +
+                "Two things went wrong upstream, and they are different in kind. The missing shared " +
+                "UETR is an operational failure: it costs you a manual investigation today. The " +
+                "missing UndrlygCstmrCdtTrf is a compliance failure: it means correspondents moved " +
+                "money without being able to see whose it was — the exact blind spot MT202COV was " +
+                "created to close in 2009, and that pacs.009 COV inherits.\n\n" +
+                "The thing worth carrying out of this: cover routing is not a broken serial chain. " +
+                "It is two flows by design, and it only works because one value appears on both.",
+
+            next: [
+                { id: '312-pacs-009-cover', why: 'pacs.009 CORE and COV, field by field' },
+                { id: '503-cross-border-payment', why: 'Both legs running in parallel, end to end' },
+                { id: '309-the-four-identifiers', why: 'Why the UETR is the one that ties legs together' }
             ]
         }
     };
