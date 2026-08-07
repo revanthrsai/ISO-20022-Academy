@@ -1,11 +1,33 @@
-// jsdom does not execute <script defer> when parsing, so instead of trusting it
-// we REPRODUCE defer semantics exactly: parse the document first, then execute
+#!/usr/bin/env node
+// ===========================================================================
+// scripts/test-boot.js — boot + shell regression suite.
+//
+// jsdom does not execute <script defer> when parsing, so instead of trusting
+// it we REPRODUCE defer semantics exactly: parse the document first, then run
 // every script in document order with readyState='interactive', then fire
 // DOMContentLoaded. That is precisely what a browser does with defer — and it
 // is the only thing defer changes about this site's boot.
-const { JSDOM } = require('/tmp/node_modules/jsdom');
+//
+// Needs jsdom, which the deploy deliberately does not (the site stays
+// zero-dependency). Run it by hand from anywhere in the repo:
+//
+//     npm i jsdom && node scripts/test-boot.js
+//
+// Exits non-zero on any failure.
+// ===========================================================================
+'use strict';
+
 const fs = require('fs'), path = require('path');
-const ROOT = '/sessions/lucid-elegant-mendel/mnt/ISO-20022-Academy';
+const ROOT = path.join(__dirname, '..');   // repo root, wherever it is checked out
+
+let JSDOM;
+try {
+    ({ JSDOM } = require('jsdom'));
+} catch (e) {
+    console.error('\n  test-boot needs jsdom. Install it first:\n\n      npm i jsdom\n');
+    process.exit(2);
+}
+
 const html = fs.readFileSync(path.join(ROOT,'index.html'),'utf8');
 
 const order = [...html.matchAll(/<script[^>]*\bsrc="([^"]+)"/g)].map(m => m[1]);
@@ -34,22 +56,57 @@ for (const rel of order) {
 w.document.dispatchEvent(new w.Event('DOMContentLoaded',{bubbles:true}));
 
 setTimeout(()=>{
-  const d=w.document, t=(l,ok)=>console.log((ok?' ok  ':'FAIL ')+l);
+  const d = w.document;
+  let pass = 0, fail = 0;
+  const t = (label, ok) => { ok ? pass++ : fail++; console.log((ok ? '  ok  ' : ' FAIL ') + label); };
+
+  // Counts come from the data files, never typed in here — otherwise this
+  // suite starts failing the day a lesson or workshop is added.
+  // NB: a top-level `const` in a classic script lands in the global LEXICAL
+  // scope, not on window (the same trap spine.js documents), so these are read
+  // with w.eval rather than w.<name>.
+  const g = expr => w.eval(expr);
+  const lessons   = g('ACADEMY_TOC').filter(a => a.status === 'published').length;
+  const workshops = g('WORKSHOPS').LIST.length;
+  const terms     = g('DATA').glossary.length;
+
+  console.log('\n── shell ────────────────────────────────────────────────');
   t(`every <script src> carries defer (${order.length} tags)`, deferred);
-  t(`all ${ran} local scripts executed in document order`, ran === order.length-1);
+  t(`all ${ran} local scripts executed in document order`, ran === order.length - 1);
   t('skip link is the first body element', d.body.firstElementChild.classList.contains('skip-link'));
-  t('skip link targets #content', d.querySelector('.skip-link').getAttribute('href')==='#content');
-  t('main is a focus target', d.getElementById('content').getAttribute('tabindex')==='-1');
-  t('app boots with readyState=interactive', typeof w.navigate==='function');
-  t('landed on Library', !!d.getElementById('learn-root'));
-  t('hero H1 rendered', !!d.querySelector('.learn-head-copy h1'));
-  t('two CTAs rendered', d.querySelectorAll('.learn-hero-cta').length===2);
-  t('proof shows 4 workshops', /4 workshops/.test((d.querySelector('.learn-hero-proof')||{}).textContent||''));
-  t('spine mounted, 44 lessons', d.body.classList.contains('has-spine') && d.querySelectorAll('.spine-item').length===44);
-  t('workshop 4 wired', w.WORKSHOPS.LIST.length===4 && !!w.WORKSHOPS.DEFS['address-deadline']);
-  w.navigate('workshop'); t('nav to Workshop works', !!d.getElementById('ws-root'));
-  w.navigate('library');  t('nav back to Library works', !!d.getElementById('learn-root'));
-  t('no runtime errors', errs.length===0);
-  if (errs.length) console.log('  ', errs.slice(0,4));
-  process.exit(0);
-},400);
+  t('skip link targets #content', d.querySelector('.skip-link').getAttribute('href') === '#content');
+  t('main is a focus target', d.getElementById('content').getAttribute('tabindex') === '-1');
+  t('no preloader markup left behind', !d.getElementById('preloader'));
+
+  console.log('\n── boot ─────────────────────────────────────────────────');
+  t('app boots with readyState=interactive', typeof w.navigate === 'function');
+  t('shareable routes enabled (CLEAN_URLS off)', w.CLEAN_URLS === false);
+  t('lands on the Library, not History', !!d.getElementById('learn-root'));
+
+  console.log('\n── hero ─────────────────────────────────────────────────');
+  t('H1 rendered', !!d.querySelector('.learn-head-copy h1'));
+  t('two CTAs rendered', d.querySelectorAll('.learn-hero-cta').length === 2);
+  const proof = (d.querySelector('.learn-hero-proof') || {}).textContent || '';
+  t(`proof strip matches data (${lessons} lessons)`,   proof.includes(lessons + ' lessons'));
+  t(`proof strip matches data (${workshops} workshops)`, proof.includes(workshops + ' workshops'));
+  t(`proof strip matches data (${terms} terms)`,       proof.includes(terms + ' glossary terms'));
+
+  console.log('\n── spine + navigation ───────────────────────────────────');
+  t(`spine mounted with all ${lessons} lessons`,
+    d.body.classList.contains('has-spine') && d.querySelectorAll('.spine-item').length === lessons);
+  w.navigate('workshop');
+  t('nav to Workshop works', !!d.getElementById('ws-root'));
+  t('spine unmounts off the reading surfaces', !d.body.classList.contains('has-spine'));
+  w.navigate('library');
+  t('nav back to Library works', !!d.getElementById('learn-root'));
+  t('spine remounts', d.body.classList.contains('has-spine'));
+
+  console.log('\n── content wiring ───────────────────────────────────────');
+  t('every workshop in LIST has a definition',
+    g('WORKSHOPS').LIST.every(x => !!g('WORKSHOPS').DEFS[x.id]));
+  t('no runtime errors', errs.length === 0);
+  if (errs.length) console.log('   ', errs.slice(0, 4));
+
+  console.log(`\n${fail ? 'FAILED' : 'PASSED'} — ${pass} passed, ${fail} failed\n`);
+  process.exit(fail ? 1 : 0);
+}, 400);
