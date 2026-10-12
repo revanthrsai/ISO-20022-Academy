@@ -25,6 +25,13 @@
 
 const ACADEMY_UPDATES = [
     {
+        date: '2026-10-12',
+        kind: 'tool',
+        title: 'The Playground is now a Live Translator',
+        body: 'Paste any ISO 20022 or SWIFT MT message and the Playground tells you what it is, picks the format it maps to, and translates it on the live Java engine. Ask for a pair that doesn’t exist, like MT103 to pain.001, and it explains why and shows the translations that do. The Library is also a course outline now: six sections that open to their numbered chapters.',
+        links: [{ label: 'Open the Translator', route: '#/playground' }, { label: 'Browse the course', route: '#/library' }]
+    },
+    {
         date: '2026-08-07',
         kind: 'workshop',
         title: 'Two more workshops: reconciliation and cover payments',

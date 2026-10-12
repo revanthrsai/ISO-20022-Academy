@@ -289,7 +289,7 @@ pages.forEach((p, i) => {
 });
 
 // ---------------------------------------------------------------------------
-// REFERENCE PAGES — dictionary messages/elements, code sets/codes, the
+// REFERENCE PAGES — dictionary elements, code sets/codes, the
 // what's-changing hub, and glossary terms. Loaded from the browser data files
 // via a vm shim so there is one source of truth. Each gets a real crawlable
 // URL with meta/OG/JSON-LD, and joins the sitemap.
@@ -317,23 +317,6 @@ const CODES = loadGlobal('assets/js/codesets.data.js', 'CODESETS') || { SETS: []
 const CHG = loadGlobal('assets/js/changes.data.js', 'CHANGES') || { MILESTONES: [], MAP: [], VERSION_FACTS: [] };
 const DATAOBJ = loadGlobal('assets/js/data.js', 'DATA') || {};
 const GLOSS = Array.isArray(DATAOBJ.glossary) ? DATAOBJ.glossary : [];
-
-// sample XML per message (for anatomy + appears-in)
-const SAMPLES = {};
-const SAMPLE_DIR = path.join(ROOT, 'samples');
-if (fs.existsSync(SAMPLE_DIR)) {
-    for (const f of fs.readdirSync(SAMPLE_DIR).filter(x => x.endsWith('.json') && x !== 'manifest.json')) {
-        try { SAMPLES[f.replace(/\.json$/, '')] = JSON.parse(fs.readFileSync(path.join(SAMPLE_DIR, f), 'utf8')).xml || ''; } catch (e) {}
-    }
-}
-function sampleXml(code) { return SAMPLES[(DICT.SAMPLE_FOR && DICT.SAMPLE_FOR[code]) || code] || ''; }
-function elemsIn(xml) {
-    const out = [], seen = {}, re = /<([A-Za-z][A-Za-z0-9]*)/g; let m;
-    while ((m = re.exec(xml))) { if (!seen[m[1]]) { seen[m[1]] = 1; out.push(m[1]); } }
-    return out;
-}
-const APPEARS = {};
-Object.keys(DICT.MESSAGES).forEach(code => { elemsIn(sampleXml(code)).forEach(n => { (APPEARS[n] = APPEARS[n] || []).push(code); }); });
 
 fs.rmSync(path.join(ROOT, 'dictionary'), { recursive: true, force: true });
 fs.rmSync(path.join(ROOT, 'glossary'), { recursive: true, force: true });
@@ -400,21 +383,18 @@ ${o.body}
 let refCount = 0;
 // Dictionary landing
 writePage('dictionary', refPage({ rel: 'dictionary', type: 'WebPage', kicker: 'Reference', title: 'The ISO 20022 Dictionary', titleClass: 'txt',
-    standfirst: 'Every message and element — definitions, cardinality, valid codes, and a live example.',
-    desc: 'The ISO 20022 dictionary: message families, elements, and code sets (reason, purpose, status, settlement).', appUrl: `${SITE}/#/dictionary`,
-    body: `<p>Browse ${Object.keys(DICT.MESSAGES).length} messages, ${Object.keys(DICT.ELEMENTS).length} elements, and ${CODES.SETS.length} code sets — definitions, cardinality, valid codes, and examples.</p>` }));
+    standfirst: 'Every element and code set — definitions, cardinality, valid codes, and an example.',
+    desc: 'The ISO 20022 dictionary: message elements and code sets (reason, purpose, status, settlement).', appUrl: `${SITE}/#/dictionary`,
+    body: `<p>Browse ${Object.keys(DICT.ELEMENTS).length} elements and ${CODES.SETS.length} code sets — definitions, cardinality, valid codes, and examples. To work with a whole message, use the <a href="${SITE}/#/playground">Live Translator</a>.</p>` }));
 refCount++;
 
-// Messages
+// Retired message pages (2026-10). Whole messages now live in the Live
+// Translator, so each old /dictionary/<code>/ URL becomes a noindex redirect
+// stub instead of a 404. Not added to the sitemap.
 Object.keys(DICT.MESSAGES).forEach(code => {
-    const m = DICT.MESSAGES[code], xml = sampleXml(code);
-    const els = elemsIn(xml).filter(n => DICT.ELEMENTS[n]);
-    const elChips = els.length ? `<h2>Elements</h2><p class="chips">${els.map(n => `<a href="/dictionary/field/${n}/">${esc(n)}</a>`).join('')}</p>` : '';
-    const xmlBlock = xml ? `<h2>Sample</h2><pre><code>${esc(xml)}</code></pre>` : '';
-    writePage(`dictionary/${code}`, refPage({ rel: `dictionary/${code}`, type: 'TechArticle', kicker: `${m.family} · ISO 20022 message`, title: code,
-        standfirst: `${esc(m.name)} — ${esc(m.purpose)}`, desc: `${code} (${m.name}): ${m.purpose} Version ${m.version}; replaces ${m.mt}.`, appUrl: `${SITE}/#/dictionary/${code}`,
-        body: `<dl><dt>Full identifier</dt><dd><code>${esc(m.version)}</code></dd><dt>MT predecessor</dt><dd>${esc(m.mt)}</dd><dt>Direction</dt><dd>${esc(m.dir)}</dd></dl>${elChips}${xmlBlock}` }));
-    refCount++;
+    const dir = path.join(ROOT, 'dictionary', code);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'index.html'), `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${esc(code)} · ISO 20022 Academy</title><meta name="robots" content="noindex"><link rel="canonical" href="${SITE}/dictionary/"><meta http-equiv="refresh" content="0; url=/#/playground"></head><body><p>${esc(code)} now lives in the <a href="/#/playground">Live Translator</a>.</p></body></html>`);
 });
 
 // Elements
@@ -422,12 +402,10 @@ Object.keys(DICT.ELEMENTS).forEach(name => {
     const e = DICT.ELEMENTS[name];
     const codesBlock = (e.codes && e.codes.length) ? `<h2>Valid codes</h2><table><tbody>${e.codes.map(c => { const p = String(c).split(' — '); return `<tr><td><code>${esc(p[0])}</code></td><td>${esc(p.slice(1).join(' — '))}</td></tr>`; }).join('')}</tbody></table>` : '';
     const exBlock = e.ex ? `<h2>Example</h2><pre><code>${esc(e.ex)}</code></pre>` : '';
-    const app = (APPEARS[name] || []).slice().sort();
-    const appBlock = app.length ? `<h2>Appears in</h2><p class="chips">${app.map(c => `<a href="/dictionary/${c}/">${esc(c)}</a>`).join('')}</p>` : '';
     const noteBlock = e.note ? `<p><strong>Watch out.</strong> ${esc(e.note)}</p>` : '';
     writePage(`dictionary/field/${name}`, refPage({ rel: `dictionary/field/${name}`, type: 'DefinedTerm', kicker: 'ISO 20022 element', title: `<${name}>`, term: name,
         standfirst: esc(e.def), desc: `${name} — ${e.def}`, appUrl: `${SITE}/#/dictionary/_/${name}`,
-        body: `<dl><dt>Cardinality (typical)</dt><dd><code>${esc(e.c || '—')}</code></dd></dl>${noteBlock}${codesBlock}${exBlock}${appBlock}` }));
+        body: `<dl><dt>Cardinality (typical)</dt><dd><code>${esc(e.c || '—')}</code></dd></dl>${noteBlock}${codesBlock}${exBlock}` }));
     refCount++;
 });
 

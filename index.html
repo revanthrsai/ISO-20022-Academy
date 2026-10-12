@@ -52,9 +52,9 @@
                 <button class="nav-item" data-page="history" onclick="navigate('history', event)">History</button>
                 <!-- Learning Journey retired from global nav in 1.3; journey kept as non-nav route -->
                 <button class="nav-item active" data-page="library" onclick="navigate('library', event)">Library</button>
-                <!-- The Playground tab lands on the Dictionary (the reference most people
-                     arrive wanting); the Workbench is one click away on the mode switcher. -->
-                <button class="nav-item" data-page="playground" onclick="dictHome(event)">Playground</button>
+                <!-- The Playground tab lands on the Live Translator; the Dictionary is one
+                     click away on the mode switcher. -->
+                <button class="nav-item" data-page="playground" onclick="translatorHome(event)">Playground</button>
                 <!-- Glossary folded under Library (1.6); Dictionary folded into Playground (1.6).
                      Both remain live routes and highlight their parent tab via NAV_PARENT. -->
                 <button class="nav-item" data-page="workshop" onclick="navigate('workshop', event)">Workshop</button>
@@ -92,7 +92,7 @@
         <nav class="mobile-nav-list">
             <button class="mobile-nav-item" data-page="history" onclick="closeMobileNav(); navigate('history', event)">History</button>
             <button class="mobile-nav-item" data-page="library" onclick="closeMobileNav(); navigate('library', event)">Library</button>
-            <button class="mobile-nav-item" data-page="playground" onclick="closeMobileNav(); dictHome(event)">Playground</button>
+            <button class="mobile-nav-item" data-page="playground" onclick="closeMobileNav(); translatorHome(event)">Playground</button>
             <button class="mobile-nav-item" data-page="workshop" onclick="closeMobileNav(); navigate('workshop', event)">Workshop</button>
         </nav>
     </aside>
@@ -136,7 +136,7 @@
                     <span class="site-footer-nav-label">Explore</span>
                     <a href="#/history" onclick="navigate('history', event)">History</a>
                     <a href="#/library" onclick="navigate('library', event)">Library</a>
-                    <a href="#/playground" onclick="dictHome(event)">Playground</a>
+                    <a href="#/playground" onclick="translatorHome(event)">Playground</a>
                     <a href="#/workshop" onclick="navigate('workshop', event)">Workshop</a>
                     <a href="#/glossary" onclick="navigate('glossary', event)">Glossary</a>
                     <a href="#/dictionary" onclick="navigate('dictionary', event)">Dictionary</a>
@@ -175,9 +175,8 @@
     <script defer src="assets/js/flow-diagram.js"></script>
     <script defer src="assets/js/markdown.js"></script>
     <script defer src="assets/js/motion.js"></script>
-    <script defer src="assets/js/xml-viewer.js"></script>
     <script defer src="assets/js/transformer.js"></script>
-    <script defer src="assets/js/samples.js"></script>
+    <script defer src="assets/js/translator.js"></script>
     <script defer src="assets/js/dictionary.data.js"></script>
     <script defer src="assets/js/codesets.data.js"></script>
     <script defer src="assets/js/changes.data.js"></script>

@@ -106,6 +106,17 @@ setTimeout(()=>{
   console.log('\n── content wiring ───────────────────────────────────────');
   t('every workshop in LIST has a definition',
     g('WORKSHOPS').LIST.every(x => !!g('WORKSHOPS').DEFS[x.id]));
+
+  console.log('\n── playground ───────────────────────────────────────────');
+  w.navigate('playground');
+  t('Playground opens the Live Translator', !!d.getElementById('tr-root') && !!d.getElementById('tr-src'));
+  t('two modes: Dictionary | Translator', [...d.querySelectorAll('.pg-mode-name')].map(x => x.textContent.trim()).join('|') === 'Dictionary|Translator');
+  t('translations table lists both directions', d.querySelectorAll('.tr-sec').length === 2 && d.querySelectorAll('.tr-row').length >= 15);
+  t('translator refuses MT103 → pain.001', w.Translator.checkPair('MT103', 'pain.001').ok === false);
+  t('translator allows pacs.008 → MT103', w.Translator.checkPair('pacs.008', 'MT103').ok === true);
+  w.navigate('dictionary');
+  t('Dictionary lists elements, no message pages', !d.querySelector('.dict-msg') && d.querySelectorAll('.dict-elements .dict-chip').length > 50);
+  w.navigate('library');
   t('no runtime errors', errs.length === 0);
   if (errs.length) console.log('   ', errs.slice(0, 4));
 

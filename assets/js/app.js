@@ -147,38 +147,15 @@ const PAGES = {
     `,
     playground: `
         <div class="page">
-            ${pgHead('workbench', `
-                <p class="pg2-intro">
-                    <strong>The Workbench.</strong> Pick any message from the <strong>ISO&nbsp;20022 catalogue</strong>
-                    to read its XML &mdash; then <strong>Transform</strong> it through the live
-                    MT&nbsp;&#8644;&nbsp;MX engine. Or paste your own message into the viewer.
+            ${pgHead('translator', `
+                <div class="eyebrow">Playground</div>
+                <h2 class="section-title">Live Translator</h2>
+                <p class="section-description">
+                    Paste an ISO&nbsp;20022 or SWIFT&nbsp;MT message and translate it on the live
+                    Java&nbsp;+&nbsp;Prowide engine. The example loaded below is a real pacs.008.
+                    Try it, then paste your own.
                 </p>`)}
-
-            <div class="pg2">
-                <!-- LEFT · the catalogue as a compact collapsible tree -->
-                <aside class="pg2-nav" aria-label="ISO 20022 catalogue">
-                    <div class="pg2-nav-head">
-                        <span class="pg2-nav-title">ISO&nbsp;20022 Catalogue</span>
-                        <span class="pg2-nav-sub">pick a message</span>
-                    </div>
-                    <div class="smp" id="smp-root"></div>
-                </aside>
-
-                <!-- RIGHT · the XML viewer of the selected message -->
-                <section class="pg2-main">
-                    <div class="pg2-bar">
-                        <div class="pg2-msg" id="pg2-msg">
-                            <span class="pg2-msg-code">pacs.008</span>
-                            <span class="pg2-msg-sub">FI-to-FI Customer Credit Transfer</span>
-                        </div>
-                        <button class="pg2-xform" id="pg2-xform" onclick="openTransform(event)" disabled
-                                title="The live engine transforms pacs.008 &#8644; MT103">
-                            <span class="pg2-xform-i" aria-hidden="true">&#9889;</span> Transform
-                        </button>
-                    </div>
-                    <div class="xv" id="xv-root"></div>
-                </section>
-            </div>
+            <div id="tr-root"></div>
         </div>
     `,
     glossary: `
@@ -205,8 +182,8 @@ const PAGES = {
                 <div class="eyebrow">Reference</div>
                 <h2 class="section-title">The ISO&nbsp;20022 Dictionary</h2>
                 <p class="section-description">
-                    Every message, every element &mdash; definition, cardinality, valid codes,
-                    and a live example. Open any message to explore its real anatomy, field by field.
+                    Every element and code set &mdash; definition, cardinality, valid codes,
+                    and an example. Search a field like UETR or ChrgBr, or browse the code lists.
                 </p>`)}
             <div id="dict-root"></div>
         </div>
@@ -223,10 +200,8 @@ const PAGES = {
 // Page copy on the left, controls on the right — the same shape the Library uses
 // for its Glossary lookup, so the two tabs feel like one system.
 //
-// The right rail carries the mode switcher (Workbench | Dictionary) and, beneath
-// it, the paste-your-own-message entry point. Validation deliberately does NOT
-// sit beside Transform: Transform acts on the message the catalogue loaded,
-// while validation is something you bring your own message to.
+// The right rail carries the mode switcher (Dictionary | Translator). Pasting
+// your own message happens inside the Translator itself.
 //
 // Hoisted function declaration — PAGES interpolates it at load time.
 function pgHead(active, copyHtml) {
@@ -241,19 +216,12 @@ function pgHead(active, copyHtml) {
                         <span class="pg-mode-name">Dictionary</span>
                         <span class="pg-mode-sub">every element &amp; code</span>
                     </button>
-                    <button class="pg-mode${on('workbench')}" role="tab" aria-selected="${active === 'workbench'}"
-                            onclick="workbenchHome(event)">
-                        <span class="pg-mode-name">Workbench</span>
-                        <span class="pg-mode-sub">read &middot; transform</span>
+                    <button class="pg-mode${on('translator')}" role="tab" aria-selected="${active === 'translator'}"
+                            onclick="translatorHome(event)">
+                        <span class="pg-mode-name">Translator</span>
+                        <span class="pg-mode-sub">ISO 20022 &#8644; MT, live</span>
                     </button>
                 </div>
-                <button class="pg-paste" onclick="openValidator(event)">
-                    <span class="pg-paste-i" aria-hidden="true">&#10003;</span>
-                    <span class="pg-paste-t">
-                        <span class="pg-paste-title">Paste your own message</span>
-                        <span class="pg-paste-sub">Validate it against the ISO rules &rarr;</span>
-                    </span>
-                </button>
             </aside>
         </div>`;
 }
@@ -288,18 +256,15 @@ function pgEsc(s) {
 // Mount the workspace: the viewer first (so the tree can load into it), then the
 // catalogue tree (which selects the default message and syncs the top bar).
 function initPlayground() {
-    if (window.XmlViewer) XmlViewer.init('xv-root');
-    if (window.SampleLibrary) SampleLibrary.init('smp-root');
-    // The Workbench's Transform button hits the live engine — start waking it
-    // now (free hosting sleeps; the ping is once per session, fire-and-forget).
-    if (window.MsgTransformer && MsgTransformer.warmEngine) MsgTransformer.warmEngine();
+    if (window.Translator) Translator.init('tr-root');
 }
 
-// Deep links / glossary cross-links: any /playground/<slug> opens the workspace;
-// 'transformer' additionally pops the live-transform drawer once mounted.
+// Deep links / glossary cross-links: any /playground/<slug> opens the Translator
+// (the old workbench and transformer routes land here too); 'validator' also
+// opens the validator on whatever is in the Translator.
 function openPlaygroundTool(slug) {
-    if (!document.getElementById('xv-root')) navigate('playground');
-    if (slug === 'transformer') setTimeout(function () { openTransform(); }, 80);
+    if (!document.getElementById('tr-root')) navigate('playground');
+    dictHash('#/playground');
     if (slug === 'validator') setTimeout(function () { openValidator(); }, 80);
 }
 
@@ -322,20 +287,17 @@ function dictHome(evt) {
     window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
-// The Workbench half of the Playground tab. Its own route so a deep link can
-// land straight on the message workspace rather than the Dictionary.
-function workbenchHome(evt) {
+// The Translator half of the Playground tab, and where the tab lands.
+function translatorHome(evt) {
     if (evt) evt.preventDefault();
-    if (!document.getElementById('xv-root')) navigate('playground');
-    dictHash('#/playground/workbench');
+    if (!document.getElementById('tr-root')) navigate('playground');
+    dictHash('#/playground');
     window.scrollTo({ top: 0, behavior: 'auto' });
 }
-function dictMessage(code) {
-    ensureDict();
-    if (window.AcademyDictionary) AcademyDictionary.showMessage(code);
-    dictHash('#/dictionary/' + code);
-    window.scrollTo({ top: 0, behavior: 'auto' });
-}
+// Retired routes keep working: the Workbench became the Translator, and the
+// Dictionary no longer has message pages (2026-10), so both redirect.
+function workbenchHome(evt) { translatorHome(evt); }
+function dictMessage() { dictHome(); }
 function dictElement(code, name) {
     ensureDict();
     if (window.AcademyDictionary) AcademyDictionary.showElement(code, name);
@@ -361,93 +323,6 @@ function dictChanges(evt) {
     if (window.AcademyDictionary) AcademyDictionary.showChanges();
     dictHash('#/dictionary/changes');
     window.scrollTo({ top: 0, behavior: 'auto' });
-}
-
-// Which way to convert: the viewer holds XML (MX) → show its legacy MT; a bare
-// MT field block → show its ISO 20022.
-function pgTransformDir() {
-    const src = (window.XmlViewer ? XmlViewer.getXml() : '').trim();
-    return src.charAt(0) === '<' ? 'MX_TO_MT' : 'MT_TO_MX';
-}
-
-// The slide-over lives on <body>, NOT inside the page — a fixed element trapped
-// under an ancestor with a transform/filter (the page's entrance animation)
-// would size to that ancestor, not the viewport, and get clipped. Built once and
-// reused.
-function ensureTransformDrawer() {
-    let drawer = document.getElementById('pg2-drawer');
-    if (drawer) return drawer;
-
-    const scrim = document.createElement('div');
-    scrim.className = 'pg2-scrim';
-    scrim.id = 'pg2-scrim';
-    scrim.hidden = true;
-    scrim.addEventListener('click', closeTransform);
-
-    drawer = document.createElement('aside');
-    drawer.className = 'pg2-drawer';
-    drawer.id = 'pg2-drawer';
-    drawer.hidden = true;
-    drawer.setAttribute('aria-hidden', 'true');
-    drawer.setAttribute('aria-label', 'Live transform');
-    drawer.innerHTML =
-        '<div class="pg2-drawer-bar">'
-        + '<div class="pg2-drawer-t">'
-        + '<span class="pg2-drawer-title">Live transform</span>'
-        + '<span class="pg2-drawer-sub">Java&nbsp;+&nbsp;Prowide engine</span>'
-        + '</div>'
-        + '<span class="pg2-drawer-esc">Esc</span>'
-        + '<button class="pg2-drawer-x" type="button" aria-label="Close (Esc)">&times;</button>'
-        + '</div>'
-        + '<div class="pg2-drawer-body" id="pg2-drawer-body"></div>';
-
-    document.body.appendChild(scrim);
-    document.body.appendChild(drawer);
-
-    // Wire the close affordances directly (not via inline onclick) so they work
-    // regardless of scope, plus Escape while the drawer is open.
-    const x = drawer.querySelector('.pg2-drawer-x');
-    if (x) x.addEventListener('click', closeTransform);
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !drawer.hidden) closeTransform();
-    });
-    return drawer;
-}
-
-// Open the slide-over and run the viewer's current message through the live
-// engine. Live-only, with a warming state for Render cold starts and a graceful
-// error + Retry (so a sleeping server never leaves a dead panel).
-function openTransform(evt) {
-    if (evt) evt.preventDefault();
-    const src = (window.XmlViewer ? XmlViewer.getXml() : '').trim();
-    if (!src) return;
-
-    const drawer = ensureTransformDrawer();
-    const scrim = document.getElementById('pg2-scrim');
-    const body = document.getElementById('pg2-drawer-body');
-    if (!drawer || !body) return;
-
-    scrim.hidden = false;
-    drawer.hidden = false;
-    drawer.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(function () { drawer.classList.add('is-open'); scrim.classList.add('is-open'); });
-    document.body.classList.add('pg2-locked');
-
-    runTransformInto(body, src, pgTransformDir());
-}
-
-function closeTransform() {
-    const drawer = document.getElementById('pg2-drawer');
-    const scrim = document.getElementById('pg2-scrim');
-    if (!drawer) return;
-    drawer.classList.remove('is-open');
-    if (scrim) scrim.classList.remove('is-open');
-    document.body.classList.remove('pg2-locked');
-    setTimeout(function () {
-        drawer.hidden = true;
-        drawer.setAttribute('aria-hidden', 'true');
-        if (scrim) scrim.hidden = true;
-    }, 280);
 }
 
 // ── Validator popup ─────────────────────────────────────────────────────────
@@ -515,8 +390,8 @@ function openValidator(evt) {
     document.body.classList.add('pg2-locked');
 
     SchemaValidator.init('val-root');
-    const src = (window.XmlViewer ? XmlViewer.getXml() : '').trim();
-    if (src) SchemaValidator.loadXml(src);
+    const src = (window.Translator ? Translator.getSource() : '').trim();
+    if (src && src.charAt(0) === '<') SchemaValidator.loadXml(src);
     const ta = document.getElementById('val-src');
     if (ta) ta.focus();
 }
@@ -551,69 +426,6 @@ function workshopHome(evt) {
     if (window.Workshop) Workshop.showLanding();
     dictHash('#/workshop');
     window.scrollTo({ top: 0, behavior: 'auto' });
-}
-
-function runTransformInto(body, src, dir) {
-    renderTransformLoading(body);
-    if (!window.MsgTransformer || !MsgTransformer.callEngine) {
-        renderTransformError(body, 'The transform engine isn’t available right now.');
-        return;
-    }
-    MsgTransformer.callEngine(src, dir).then(function (r) {
-        if (r && r.ok && r.result) renderTransformResult(body, r);
-        else renderTransformError(body, (r && r.message) || 'The engine returned an error for this message.');
-    }).catch(function (err) {
-        renderTransformError(body, (err && err.timeout)
-            ? 'The engine is waking up and took too long — give it a few seconds and hit Retry.'
-            : 'Couldn’t reach the live engine (it may be asleep). Hit Retry in a moment.');
-    });
-}
-
-function retryTransform() {
-    const body = document.getElementById('pg2-drawer-body');
-    const src = (window.XmlViewer ? XmlViewer.getXml() : '').trim();
-    if (body && src) runTransformInto(body, src, pgTransformDir());
-}
-
-function renderTransformLoading(body) {
-    body.innerHTML =
-        '<div class="pg2-tx pg2-tx-loading">'
-        + '<div class="pg2-tx-spin" aria-hidden="true"></div>'
-        + '<div class="pg2-tx-status"><strong>Waking the engine…</strong><br>'
-        + 'The first run after a quiet spell can take ~30 seconds. After that it’s instant.</div>'
-        + '</div>';
-}
-
-function renderTransformResult(body, r) {
-    const flow = (pgEsc(r.sourceFormat || '') + ' &rarr; ' + pgEsc(r.targetFormat || '')).trim();
-    body.innerHTML =
-        '<div class="pg2-tx pg2-tx-ok">'
-        + '<div class="pg2-tx-head">'
-        + '<span class="pg2-tx-badge is-ok">Live engine &#10003;</span>'
-        + '<span class="pg2-tx-flow">' + flow + '</span>'
-        + '<button class="pg2-tx-copy" onclick="copyTransform(this)">Copy</button></div>'
-        + '<div class="pg2-tx-note">Transformed by the live Java&nbsp;+&nbsp;Prowide server — a real parse, not a browser approximation.</div>'
-        + '<pre class="pg2-tx-out" id="pg2-tx-out">' + pgEsc(r.result) + '</pre>'
-        + '</div>';
-}
-
-function renderTransformError(body, msg) {
-    body.innerHTML =
-        '<div class="pg2-tx pg2-tx-err">'
-        + '<div class="pg2-tx-head">'
-        + '<span class="pg2-tx-badge is-err">Live engine</span>'
-        + '<button class="pg2-tx-retry" onclick="retryTransform()">Retry</button></div>'
-        + '<div class="pg2-tx-status">' + pgEsc(msg) + '</div>'
-        + '</div>';
-}
-
-function copyTransform(btn) {
-    const pre = document.getElementById('pg2-tx-out');
-    if (!pre) return;
-    const txt = pre.textContent || '';
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt);
-    const o = btn.textContent; btn.textContent = 'Copied ✓';
-    setTimeout(function () { btn.textContent = o; }, 1500);
 }
 
 // Which section is currently active (falls back to the first).
@@ -693,7 +505,6 @@ function navigate(page, evt) {
     if (evt) evt.preventDefault();
 
     // Never carry a slide-over (and its scroll lock) into another page.
-    if (typeof closeTransform === 'function') closeTransform();
     if (typeof closeValidator === 'function') closeValidator();
     // Detach the Life-of-a-Payment scroll driver when leaving it.
     if (window.PaymentJourney) PaymentJourney.teardown();
@@ -1387,9 +1198,8 @@ window.addEventListener('hashchange', function(){
     if (/^#\/workshop(\/|\?|$)/.test(h)) { if (!document.getElementById('ws-root')) navigate('workshop'); return; }
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
-    // Bare #/playground lands on the Dictionary, matching the tab. The Workbench
-    // keeps its own route at #/playground/workbench.
-    if (/^#\/playground(\?|$)/.test(h)) { dictHome(); return; }
+    // Bare #/playground lands on the Translator, matching the tab.
+    if (/^#\/playground(\?|$)/.test(h)) { translatorHome(); return; }
     if (/^#\/dictionary\/changes$/.test(h)) { dictChanges(); return; }
     if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
     const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);
@@ -1422,7 +1232,7 @@ function routeOnLoad(){
     if (/^#\/workshop(\/|\?|$)/.test(h)) { navigate('workshop'); return; }
     const mp = h.match(/^#\/playground\/([a-z0-9-]+)$/);
     if (mp) { openPlaygroundTool(mp[1]); return; }
-    if (/^#\/playground(\?|$)/.test(h)) { dictHome(); return; }
+    if (/^#\/playground(\?|$)/.test(h)) { translatorHome(); return; }
     if (/^#\/dictionary\/changes$/.test(h)) { dictChanges(); return; }
     if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
     const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);

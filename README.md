@@ -16,7 +16,7 @@ It is deliberately not the largest financial knowledge base. It is meant to be t
 
 - **A live MT ⇄ MX transformation engine.** Pick any of nine payment & cash-management messages and a real backend converts it to its SWIFT MT equivalent — `pacs.008 → MT103`, `pain.001 → MT101`, `camt.053 → MT940`, and more — parsed with **Prowide Core** on a **Spring Boot** service, deployed and monitored. Not a client-side toy; an actual API.
 - **44 long-form lessons** that always open with a human problem and only reach XML at the very end — from "what is money" to `camt.110/111`, the new investigations model, and the November 2026 structured-address deadline.
-- **An interactive Playground** — browse the ISO 20022 catalogue as cards, open any message in a collapsible reader, and transform it two ways (instant in-browser, or through the live engine).
+- **A Live Translator** — paste any ISO 20022 or SWIFT MT message; it detects the type, picks the matching format, translates it on the live engine, and explains why when a pair (say MT103 → pain.001) has no faithful equivalent.
 - **A live compliance calendar** counting down to the real 2026/2027 migration deadlines, and a **chronometer** timeline that sweeps across 5,000 years of payments history as you scroll.
 - **Quizzes, an 87-term glossary, ⌘K command-palette search**, and **per-lesson SEO pages** so every topic is individually discoverable on Google.
 - **Zero-dependency frontend** (vanilla HTML/CSS/JS, no framework) on free static hosting, plus a **containerised Java backend** — the whole stack runs on free tiers.
@@ -88,7 +88,7 @@ Returns a full, well-formed `pacs.008` with a freshly generated UETR. In the Pla
 |---|---|
 | **History** | A five-chapter documentary of how money became information, with a live compliance-deadline calendar and a scroll-driven chronometer. |
 | **Library** | 44 long-form lessons across six levels — fundamentals → architecture → message deep-dives → exceptions → case studies → field guides. |
-| **Playground** | The ISO 20022 catalogue as cards → open any of 18 sample messages in the XML viewer → hit Transform to run it through the live engine in a slide-over (nine MT ⇄ MX message types). |
+| **Playground** | Two modes. **Translator**: paste a message (or load the pacs.008 example) and translate it ISO 20022 ⇄ SWIFT MT on the live engine, with a table of available translations. **Dictionary**: every element and code set. |
 | **Glossary** | 87 cross-linked terms, from IBAN to settlement, filterable and searchable. |
 | **Extras** | ⌘K search, per-level quizzes, per-lesson SEO pages, email capture, and a live status page. |
 

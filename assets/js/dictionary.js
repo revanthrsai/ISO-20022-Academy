@@ -1,15 +1,13 @@
 // =============================================================================
 // THE ISO 20022 DICTIONARY — module
 // -----------------------------------------------------------------------------
-// A browsable, deep-linkable reference. Three views, all rendered into one mount:
-//   • Landing  — search + families → messages.
-//   • Message  — metadata + the INTERACTIVE ANATOMY: the real sample XML rendered
-//                as a tree, every element linking to its dictionary entry.
-//   • Element  — a deep-linkable card: definition, cardinality, codes, example,
-//                and every message it appears in.
+// A browsable, deep-linkable reference. Views, all rendered into one mount:
+//   • Landing  — search, what's changing, code sets, and every element A–Z.
+//   • Element  — a deep-linkable card: definition, cardinality, codes, example.
+//   • Code sets — reason, purpose, status and settlement code lists.
 //
-// Anatomy structure comes live from /samples/<code>.json (accurate by
-// construction); meaning comes from DICTIONARY.ELEMENTS keyed by localName.
+// Message pages were retired in 2026-10: whole messages now live in the
+// Playground's Live Translator. Meaning comes from DICTIONARY.ELEMENTS.
 // Self-contained: one global `AcademyDictionary` + injected styles.
 // =============================================================================
 
@@ -18,8 +16,6 @@ const AcademyDictionary = (function () {
     const C = (typeof CODESETS !== 'undefined') ? CODESETS : { SETS: [] };
     const CH = (typeof CHANGES !== 'undefined') ? CHANGES : { MILESTONES: [], MAP: [], VERSION_FACTS: [] };
     let mountId = 'dict-root';
-    const xmlCache = {};        // code → parsed sample xml string
-    let appearsIn = null;       // localName → [codes] (built lazily from samples)
 
     function esc(s) {
         return String(s == null ? '' : s)
@@ -27,42 +23,13 @@ const AcademyDictionary = (function () {
     }
     function root() { return document.getElementById(mountId); }
 
-    function sampleCode(code) { return (D.SAMPLE_FOR && D.SAMPLE_FOR[code]) || code; }
-
-    function loadXml(code) {
-        const key = sampleCode(code);
-        if (xmlCache[key] != null) return Promise.resolve(xmlCache[key]);
-        return fetch('/samples/' + encodeURIComponent(key) + '.json', { cache: 'no-cache' })
-            .then(function (r) { if (!r.ok) throw new Error('no sample'); return r.json(); })
-            .then(function (j) { xmlCache[key] = j.xml || ''; return xmlCache[key]; })
-            .catch(function () { xmlCache[key] = ''; return ''; });
-    }
-
-    // ── LANDING ─────────────────────────────────────────────────────────────
     function showLanding() {
         const el = root();
         if (!el) return;
-        const byFam = {};
-        Object.keys(D.MESSAGES).forEach(function (code) {
-            const m = D.MESSAGES[code];
-            (byFam[m.family] = byFam[m.family] || []).push(code);
-        });
-        const fams = D.FAMILIES.filter(function (f) { return byFam[f.id] && byFam[f.id].length; });
-
-        const cards = fams.map(function (f) {
-            const msgs = byFam[f.id].sort().map(function (code) {
-                const m = D.MESSAGES[code];
-                return '<button class="dict-msg" onclick="dictMessage(\'' + esc(code) + '\')">'
-                    + '<span class="dict-msg-code">' + esc(code) + '</span>'
-                    + '<span class="dict-msg-name">' + esc(m.name) + '</span>'
-                    + '</button>';
-            }).join('');
-            return '<section class="dict-fam">'
-                + '<div class="dict-fam-head"><span class="dict-fam-id">' + esc(f.id) + '</span>'
-                + '<span class="dict-fam-name">' + esc(f.name) + '</span></div>'
-                + '<p class="dict-fam-blurb">' + esc(f.blurb) + '</p>'
-                + '<div class="dict-msg-grid">' + msgs + '</div>'
-                + '</section>';
+        const names = Object.keys(D.ELEMENTS).sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1; });
+        const chips = names.map(function (n) {
+            const def = (D.ELEMENTS[n].def || '').split('.')[0];
+            return '<button class="dict-chip" title="' + esc(def) + '" onclick="dictElement(\'\',\'' + esc(n) + '\')">' + esc(n) + '</button>';
         }).join('');
 
         // The eyebrow/title/standfirst live in the page head (app.js → pgHead) so
@@ -70,12 +37,13 @@ const AcademyDictionary = (function () {
         // here, because it is re-rendered whenever the landing is redrawn.
         el.innerHTML =
             '<div class="dict-hero">'
-            + '<input type="text" class="dict-search" id="dict-search" placeholder="Search elements and messages — try ChrgBr, UETR, pacs.008…" oninput="AcademyDictionary.filter(this.value)" autocomplete="off">'
+            + '<input type="text" class="dict-search" id="dict-search" placeholder="Search elements and codes — try ChrgBr, UETR, AC01…" oninput="AcademyDictionary.filter(this.value)" autocomplete="off">'
             + '<div class="dict-results" id="dict-results" hidden></div>'
             + '</div>'
             + changesCardHtml()
             + codeSetsSectionHtml()
-            + '<div class="dict-families"><div class="dict-sec-label">Messages</div>' + cards + '</div>';
+            + '<div class="dict-families dict-elements"><div class="dict-sec-label">Elements &middot; ' + names.length + '</div>'
+            + '<div class="dict-appears-list">' + chips + '</div></div>';
     }
 
     // ── WHAT'S CHANGING ─────────────────────────────────────────────────────
@@ -169,12 +137,6 @@ const AcademyDictionary = (function () {
         q = (q || '').trim().toLowerCase();
         if (!q) { box.hidden = true; box.innerHTML = ''; if (fams) fams.style.display = ''; return; }
         const hits = [];
-        Object.keys(D.MESSAGES).forEach(function (code) {
-            const m = D.MESSAGES[code];
-            if (code.toLowerCase().indexOf(q) >= 0 || (m.name && m.name.toLowerCase().indexOf(q) >= 0)) {
-                hits.push({ t: 'msg', code: code, label: code, sub: m.name });
-            }
-        });
         Object.keys(D.ELEMENTS).forEach(function (name) {
             const e = D.ELEMENTS[name];
             if (name.toLowerCase().indexOf(q) >= 0 || (e.def && e.def.toLowerCase().indexOf(q) >= 0)) {
@@ -191,11 +153,6 @@ const AcademyDictionary = (function () {
         });
         hits.sort(function (a, b) { return a.label.length - b.label.length; });
         box.innerHTML = hits.slice(0, 40).map(function (h) {
-            if (h.t === 'msg') {
-                return '<button class="dict-hit" onclick="dictMessage(\'' + esc(h.code) + '\')">'
-                    + '<span class="dict-hit-kind">message</span><span class="dict-hit-code">' + esc(h.label) + '</span>'
-                    + '<span class="dict-hit-sub">' + esc(h.sub) + '</span></button>';
-            }
             if (h.t === 'cset') {
                 return '<button class="dict-hit" onclick="dictCodeSet(\'' + esc(h.id) + '\')">'
                     + '<span class="dict-hit-kind">code set</span><span class="dict-hit-code">' + esc(h.label) + '</span>'
@@ -214,112 +171,16 @@ const AcademyDictionary = (function () {
         if (fams) fams.style.display = 'none';
     }
 
-    // ── MESSAGE (interactive anatomy) ───────────────────────────────────────
-    function showMessage(code) {
-        const el = root();
-        const m = D.MESSAGES[code];
-        if (!el) return;
-        if (!m) { showLanding(); return; }
-        el.innerHTML =
-            '<button class="dict-back" onclick="dictHome()">&larr; The Dictionary</button>'
-            + '<div class="dict-msg-hero">'
-            + '<div class="dict-msg-hero-top"><span class="dict-msg-hero-code">' + esc(code) + '</span>'
-            + '<span class="dict-msg-hero-ver">' + esc(m.version) + '</span></div>'
-            + '<h2 class="dict-msg-hero-name">' + esc(m.name) + '</h2>'
-            + '<p class="dict-msg-hero-purpose">' + esc(m.purpose) + '</p>'
-            + '<div class="dict-msg-meta">'
-            + '<span class="dict-meta"><b>Direction</b> ' + esc(m.dir) + '</span>'
-            + '<span class="dict-meta"><b>MT predecessor</b> ' + esc(m.mt) + '</span>'
-            + '<span class="dict-meta"><b>Family</b> ' + esc(m.family) + '</span>'
-            + '</div></div>'
-            + '<div class="dict-anatomy-head"><h3>Anatomy</h3><span class="dict-anatomy-hint">hover a field for its meaning · click to open its entry</span></div>'
-            + '<div class="dict-anatomy" id="dict-anatomy"><div class="dict-loading">Loading the message&hellip;</div></div>';
-
-        loadXml(code).then(function (xml) {
-            const wrap = document.getElementById('dict-anatomy');
-            if (!wrap) return;
-            const tree = buildTree(xml, code);
-            wrap.innerHTML = tree || '<div class="dict-loading">No sample available for this message yet.</div>';
-        });
-    }
-
-    function buildTree(xml, code) {
-        if (!xml) return '';
-        let doc;
-        try { doc = new DOMParser().parseFromString(xml, 'application/xml'); }
-        catch (e) { return ''; }
-        if (!doc || doc.querySelector('parsererror') || !doc.documentElement) return '';
-        return '<div class="dict-tree">' + renderNode(doc.documentElement, 0, code) + '</div>';
-    }
-
-    function renderNode(node, depth, code) {
-        const kids = [];
-        for (let i = 0; i < node.childNodes.length; i++) {
-            if (node.childNodes[i].nodeType === 1) kids.push(node.childNodes[i]);
-        }
-        const name = node.localName || node.nodeName;
-        const entry = D.ELEMENTS[name];
-        const def = entry ? entry.def : '';
-        const known = entry ? ' is-known' : '';
-        const title = def ? ' title="' + esc(def) + '"' : '';
-        const nameHtml = '<span class="dict-el' + known + '"' + title
-            + ' onclick="dictElement(\'' + esc(code) + '\',\'' + esc(name) + '\')">' + esc(name) + '</span>';
-
-        // leaf?
-        if (kids.length === 0) {
-            const val = (node.textContent || '').trim();
-            const attrs = attrHtml(node);
-            const valHtml = val ? '<span class="dict-val">' + esc(val) + '</span>' : '';
-            return '<div class="dict-row" style="--d:' + depth + '">' + nameHtml + attrs
-                + (val || attrs ? '<span class="dict-colon">:</span>' : '') + valHtml + '</div>';
-        }
-        const inner = kids.map(function (k) { return renderNode(k, depth + 1, code); }).join('');
-        return '<div class="dict-branch" style="--d:' + depth + '">' + nameHtml + attrHtml(node)
-            + '<span class="dict-count">' + kids.length + '</span></div>' + inner;
-    }
-
-    function attrHtml(node) {
-        const out = [];
-        for (let i = 0; i < (node.attributes ? node.attributes.length : 0); i++) {
-            const a = node.attributes[i];
-            if (a.name === 'xmlns' || a.name.indexOf('xmlns:') === 0) continue;
-            out.push('<span class="dict-attr">' + esc(a.name) + '="' + esc(a.value) + '"</span>');
-        }
-        return out.length ? '<span class="dict-attrs">' + out.join(' ') + '</span>' : '';
-    }
-
     // ── ELEMENT (deep-linkable card) ────────────────────────────────────────
-    function buildAppearsIn() {
-        if (appearsIn) return Promise.resolve(appearsIn);
-        appearsIn = {};
-        const codes = Object.keys(D.MESSAGES);
-        return Promise.all(codes.map(function (code) {
-            return loadXml(code).then(function (xml) {
-                if (!xml) return;
-                let doc; try { doc = new DOMParser().parseFromString(xml, 'application/xml'); } catch (e) { return; }
-                if (!doc || !doc.documentElement || doc.querySelector('parsererror')) return;
-                const seen = {};
-                const all = doc.getElementsByTagName('*');
-                for (let i = 0; i < all.length; i++) {
-                    const n = all[i].localName || all[i].nodeName;
-                    if (!seen[n]) { seen[n] = 1; (appearsIn[n] = appearsIn[n] || []).push(code); }
-                }
-            });
-        })).then(function () { return appearsIn; });
-    }
-
     function showElement(code, name) {
         const el = root();
         if (!el) return;
         const entry = D.ELEMENTS[name];
-        const back = code && D.MESSAGES[code]
-            ? '<button class="dict-back" onclick="dictMessage(\'' + esc(code) + '\')">&larr; ' + esc(code) + '</button>'
-            : '<button class="dict-back" onclick="dictHome()">&larr; The Dictionary</button>';
+        const back = '<button class="dict-back" onclick="dictHome()">&larr; The Dictionary</button>';
 
         if (!entry) {
             el.innerHTML = back + '<div class="dict-el-hero"><h2 class="dict-el-name">&lt;' + esc(name) + '&gt;</h2>'
-                + '<p class="dict-el-def">This element isn’t in the dictionary yet. Its structure is still visible in any message that carries it.</p></div>'
-                + '<div class="dict-appears" id="dict-appears"></div>';
+                + '<p class="dict-el-def">This element isn’t in the dictionary yet.</p></div>';
         } else {
             const codesHtml = entry.codes && entry.codes.length
                 ? '<div class="dict-card"><div class="dict-card-h">Valid codes</div><ul class="dict-codes">'
@@ -334,19 +195,9 @@ const AcademyDictionary = (function () {
                 + '<div class="dict-el-meta"><span class="dict-meta"><b>Cardinality</b> <code>' + esc(entry.c || '—') + '</code></span></div>'
                 + noteHtml
                 + '</div>'
-                + '<div class="dict-cards">' + codesHtml + exHtml + '</div>'
-                + '<div class="dict-appears" id="dict-appears"><div class="dict-loading">Finding where it appears&hellip;</div></div>';
+                + '<div class="dict-cards">' + codesHtml + exHtml + '</div>';
         }
 
-        buildAppearsIn().then(function (map) {
-            const box = document.getElementById('dict-appears');
-            if (!box) return;
-            const list = (map[name] || []).sort();
-            if (!list.length) { box.innerHTML = ''; return; }
-            box.innerHTML = '<div class="dict-card-h">Appears in</div><div class="dict-appears-list">'
-                + list.map(function (c) { return '<button class="dict-chip" onclick="dictMessage(\'' + esc(c) + '\')">' + esc(c) + '</button>'; }).join('')
-                + '</div>';
-        });
     }
 
     // ── CODE SETS ───────────────────────────────────────────────────────────
@@ -533,6 +384,6 @@ const AcademyDictionary = (function () {
         showLanding();
     }
 
-    return { init: init, showLanding: showLanding, showMessage: showMessage, showElement: showElement, filter: filter, showCodeSets: showCodeSets, showCodeSet: showCodeSet, filterCodes: filterCodes, showChanges: showChanges };
+    return { init: init, showLanding: showLanding, showMessage: showLanding, showElement: showElement, filter: filter, showCodeSets: showCodeSets, showCodeSet: showCodeSet, filterCodes: filterCodes, showChanges: showChanges };
 })();
 window.AcademyDictionary = AcademyDictionary;

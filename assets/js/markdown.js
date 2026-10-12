@@ -100,8 +100,8 @@ const Articles = (function () {
         const arg = parts[1];
         if (kind === 'playground') {
             return { onclick: "navigate('playground')", kicker: 'Interactive',
-                     title: 'Open the live Playground',
-                     sub: 'Edit an MT103 and watch the pacs.008 rebuild — with live validation.' };
+                     title: 'Open the Live Translator',
+                     sub: 'Paste an ISO 20022 or MT message and translate it on the live engine.' };
         }
         if (kind === 'explorer' && arg) {
             return { onclick: `openDetailPanel('${esc(arg)}')`, kicker: 'Message Explorer',
@@ -379,7 +379,7 @@ const Articles = (function () {
                         </p>
                         <div class="learn-hero-ctas" data-reveal="up">
                             <button class="learn-hero-cta learn-hero-cta-primary" onclick="openArticle('101-what-is-money')">Start with Chapter&nbsp;101 &rarr;</button>
-                            <button class="learn-hero-cta" onclick="dictHome(event)">Open the Playground</button>
+                            <button class="learn-hero-cta" onclick="translatorHome(event)">Try the Live Translator</button>
                         </div>
                         <div class="learn-hero-proof" data-reveal="up" aria-label="What's inside">
                             <span>${lessonCount} lessons</span><span class="learn-hero-proof-dot" aria-hidden="true">&middot;</span>

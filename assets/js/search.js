@@ -58,14 +58,12 @@ const Search = (function () {
                 });
             });
         }
-        // Dictionary (messages + elements) — the reference tab
+        // The Live Translator (Playground)
+        items.push({ type: 'Tool', label: 'Live Translator', sub: 'Translate ISO 20022 ⇄ SWIFT MT on the live engine',
+            kw: 'translator translate convert transform mt mx mt103 pacs.008 pain.001 mt101 camt.053 mt940 swift', badge: '↵',
+            run: () => { if (typeof translatorHome === 'function') translatorHome(); } });
+        // Dictionary (elements) — the reference tab
         if (typeof DICTIONARY !== 'undefined') {
-            Object.keys(DICTIONARY.MESSAGES || {}).forEach(code => {
-                const m = DICTIONARY.MESSAGES[code];
-                items.push({ type: 'Dictionary', label: code, sub: m.name || '',
-                    kw: (code + ' ' + (m.name || '') + ' ' + (m.mt || '')).toLowerCase(), badge: 'msg',
-                    run: () => { if (typeof dictMessage === 'function') dictMessage(code); } });
-            });
             Object.keys(DICTIONARY.ELEMENTS || {}).forEach(name => {
                 const e = DICTIONARY.ELEMENTS[name];
                 items.push({ type: 'Dictionary', label: name, sub: (e.def || '').split('. ')[0],
