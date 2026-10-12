@@ -2,7 +2,7 @@
 // THE ISO 20022 DICTIONARY — module
 // -----------------------------------------------------------------------------
 // A browsable, deep-linkable reference. Views, all rendered into one mount:
-//   • Landing  — search, what's changing, code sets, and every element A–Z.
+//   • Landing  — search (elements and codes), what's changing, and code sets.
 //   • Element  — a deep-linkable card: definition, cardinality, codes, example.
 //   • Code sets — reason, purpose, status and settlement code lists.
 //
@@ -26,12 +26,6 @@ const AcademyDictionary = (function () {
     function showLanding() {
         const el = root();
         if (!el) return;
-        const names = Object.keys(D.ELEMENTS).sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1; });
-        const chips = names.map(function (n) {
-            const def = (D.ELEMENTS[n].def || '').split('.')[0];
-            return '<button class="dict-chip" title="' + esc(def) + '" onclick="dictElement(\'\',\'' + esc(n) + '\')">' + esc(n) + '</button>';
-        }).join('');
-
         // The eyebrow/title/standfirst live in the page head (app.js → pgHead) so
         // they sit on the same line as the mode switcher. Only the search belongs
         // here, because it is re-rendered whenever the landing is redrawn.
@@ -41,9 +35,7 @@ const AcademyDictionary = (function () {
             + '<div class="dict-results" id="dict-results" hidden></div>'
             + '</div>'
             + changesCardHtml()
-            + codeSetsSectionHtml()
-            + '<div class="dict-families dict-elements"><div class="dict-sec-label">Elements &middot; ' + names.length + '</div>'
-            + '<div class="dict-appears-list">' + chips + '</div></div>';
+            + codeSetsSectionHtml();
     }
 
     // ── WHAT'S CHANGING ─────────────────────────────────────────────────────

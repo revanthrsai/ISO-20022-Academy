@@ -123,14 +123,14 @@ const Translator = (function () {
     }
 
     // ── Rendering ───────────────────────────────────────────────────────────
-    function targetOptions() {
+    function formatOptions(first) {
         const group = function (label, list) {
             return '<optgroup label="' + label + '">' + list.map(function (c) {
                 return '<option value="' + esc(c) + '">' + esc(c) + '</option>';
             }).join('') + '</optgroup>';
         };
-        return '<option value="">Choose a format…</option>'
-            + group('SWIFT MT', ORDER_MT) + group('ISO 20022', ORDER_MX);
+        return '<option value="">' + first + '</option>'
+            + group('ISO 20022', ORDER_MX) + group('SWIFT MT', ORDER_MT);
     }
 
     function rowsHtml(list) {
@@ -164,28 +164,34 @@ const Translator = (function () {
         if (!el) return;
         el.innerHTML =
             '<div class="tr">'
+            + '<div class="tr-toolbar">'
+            +   '<div class="tr-tools-left">'
+            +     '<label class="tr-field"><span class="tr-label">Source</span>'
+            +       '<select id="tr-source" class="tr-select" onchange="Translator.onTarget()">' + formatOptions('Detect automatically') + '</select></label>'
+            +     '<span class="tr-arrow" aria-hidden="true">&rarr;</span>'
+            +     '<label class="tr-field"><span class="tr-label">Destination</span>'
+            +       '<select id="tr-target" class="tr-select" onchange="Translator.onTarget()">' + formatOptions('Choose a format\u2026') + '</select></label>'
+            +     '<button type="button" class="tr-go" id="tr-go" onclick="Translator.translate()">Translate <span aria-hidden="true">&rarr;</span></button>'
+            +   '</div>'
+            +   '<div class="tr-tools-right">'
+            +     '<button type="button" class="tr-copy" id="tr-copy" onclick="Translator.copy(this)" disabled>Copy</button>'
+            +   '</div>'
+            + '</div>'
+            + '<div class="tr-notice" id="tr-notice" hidden></div>'
             + '<div class="tr-grid">'
             +   '<section class="tr-pane" aria-label="Your message">'
             +     '<div class="tr-bar">'
             +       '<span class="tr-bar-title">Your message</span>'
-            +       '<span class="tr-detected" id="tr-detected"></span>'
             +       '<span class="tr-bar-tools">'
             +         '<button type="button" class="tr-mini" onclick="Translator.pasteOwn()">Paste your own</button>'
             +         '<button type="button" class="tr-mini" onclick="Translator.loadExample()">Example</button>'
             +       '</span>'
             +     '</div>'
             +     '<textarea id="tr-src" class="tr-src" spellcheck="false" autocomplete="off" aria-label="Message to translate"'
-            +       ' placeholder="Paste a pacs.008, pain.001, camt.053, MT103… message here" oninput="Translator.onInput()"></textarea>'
-            +     '<div class="tr-controls">'
-            +       '<label class="tr-label" for="tr-target">Translate to</label>'
-            +       '<select id="tr-target" class="tr-select" onchange="Translator.onTarget()">' + targetOptions() + '</select>'
-            +       '<button type="button" class="tr-go" id="tr-go" onclick="Translator.translate()">Translate <span aria-hidden="true">&rarr;</span></button>'
-            +     '</div>'
-            +     '<div class="tr-notice" id="tr-notice" hidden></div>'
+            +       ' placeholder="Paste a pacs.008, pain.001, camt.053, MT103\u2026 message here" oninput="Translator.onInput()"></textarea>'
             +   '</section>'
             +   '<section class="tr-pane tr-pane-out" aria-label="Translation" aria-live="polite">'
-            +     '<div class="tr-bar"><span class="tr-bar-title">Translation</span><span class="tr-badge" id="tr-badge"></span>'
-            +       '<span class="tr-bar-tools"><button type="button" class="tr-mini" id="tr-copy" onclick="Translator.copy(this)" hidden>Copy</button></span></div>'
+            +     '<div class="tr-bar"><span class="tr-bar-title">Translation</span><span class="tr-badge" id="tr-badge"></span></div>'
             +     '<div class="tr-out" id="tr-out">' + emptyOutHtml() + '</div>'
             +   '</section>'
             + '</div>'
@@ -206,7 +212,6 @@ const Translator = (function () {
     function onInput() {
         const src = $('tr-src');
         detected = detect(src ? src.value : '');
-        const badge = $('tr-detected');
         const sel = $('tr-target');
         hideNotice();
         // While nothing has been translated yet, keep the right pane's hint true
@@ -214,20 +219,14 @@ const Translator = (function () {
         const out = $('tr-out');
         if (out && out.querySelector('.tr-empty')) {
             const own = src && src.value.trim() && !(exampleXml && src.value.trim() === exampleXml.trim());
-            if (own) out.innerHTML = '<div class="tr-empty"><p><strong>Ready when you are.</strong></p><p>Check the detected type and the format on the left, then press <b>Translate</b>.</p></div>';
+            if (own) out.innerHTML = '<div class="tr-empty"><p><strong>Ready when you are.</strong></p><p>Check <b>Source</b> and <b>Destination</b> above, then press <b>Translate</b>.</p></div>';
         }
-        if (!badge) return;
-        if (!detected) { badge.className = 'tr-detected'; badge.textContent = ''; return; }
-        if (!detected.code) {
-            badge.className = 'tr-detected is-unknown';
-            badge.textContent = detected.std === 'MX' ? 'XML, type not recognised' : 'MT, type not recognised';
-            return;
-        }
+        const srcSel = $('tr-source');
+        if (!srcSel || !sel) return;
+        if (!detected || !detected.code || !FORMATS[detected.code]) { srcSel.value = ''; return; }
+        srcSel.value = detected.code;
         const f = FORMATS[detected.code];
-        badge.className = 'tr-detected' + (f ? '' : ' is-unknown');
-        badge.textContent = 'Detected ' + detected.code + (f ? ' · ' + f.name : '');
-        if (sel && f && f.pair && FORMATS[f.pair]) sel.value = f.pair;
-        else if (sel && f && detected.code === 'camt.054') sel.value = 'MT900 / MT910';
+        if (f.pair && FORMATS[f.pair]) sel.value = f.pair;
     }
     function onTarget() { hideNotice(); }
 
@@ -258,7 +257,7 @@ const Translator = (function () {
         const out = $('tr-out'), badge = $('tr-badge'), copyBtn = $('tr-copy');
         if (out) out.innerHTML = html;
         if (badge) badge.innerHTML = badgeHtml || '';
-        if (copyBtn) copyBtn.hidden = !copyable;
+        if (copyBtn) copyBtn.disabled = !copyable;
     }
 
     function translate() {
@@ -277,9 +276,15 @@ const Translator = (function () {
                 : 'Include the MT block 2 header (for example {2:I103…}) or the message’s mandatory fields.', null);
             return;
         }
+        const srcSel = $('tr-source');
+        const srcCode = (srcSel && srcSel.value) || detected.code;
+        if (FORMATS[srcCode] && FORMATS[srcCode].std !== detected.std) {
+            showNotice('err', 'The message doesn\u2019t match the Source you chose.', 'What you pasted is ' + (detected.std === 'MX' ? 'ISO 20022 XML' : 'a SWIFT MT message') + ', but Source is set to ' + srcCode + '. Set Source to \u201cDetect automatically\u201d or pick the right format.');
+            return;
+        }
         const tgt = sel ? sel.value : '';
-        if (!tgt) { showNotice('warn', 'Choose a format to translate into.', pairSentence(detected.code) || '', detected.std); return; }
-        const verdict = checkPair(detected.code, tgt);
+        if (!tgt) { showNotice('warn', 'Choose a destination format.', FORMATS[srcCode] ? pairSentence(srcCode) : '', detected.std); return; }
+        const verdict = checkPair(srcCode, tgt);
         if (!verdict.ok) { showNotice('err', verdict.title, verdict.body, verdict.focus); return; }
 
         // Catch broken XML here, with the validator's own wording, before a round trip.
@@ -291,7 +296,7 @@ const Translator = (function () {
         const go = $('tr-go');
         if (go) go.disabled = true;
         setOut('<div class="tr-loading"><span class="tr-spin" aria-hidden="true"></span><div><strong>Translating on the live engine…</strong><br>The first run after a quiet spell can take about 30 seconds while the engine wakes up.</div></div>',
-            '<span class="tr-badge-pill">' + esc(detected.code) + ' &rarr; ' + esc(tgt) + '</span>', false);
+            '<span class="tr-badge-pill">' + esc(srcCode) + ' &rarr; ' + esc(tgt) + '</span>', false);
 
         if (!window.MsgTransformer || !MsgTransformer.callEngine) {
             if (go) go.disabled = false;
@@ -301,7 +306,7 @@ const Translator = (function () {
         MsgTransformer.callEngine(text, detected.std === 'MX' ? 'MX_TO_MT' : 'MT_TO_MX').then(function (r) {
             if (go) go.disabled = false;
             if (r && r.ok && r.result) {
-                const flow = esc(r.sourceFormat || detected.code) + ' &rarr; ' + esc(r.targetFormat || tgt);
+                const flow = esc(r.sourceFormat || srcCode) + ' &rarr; ' + esc(r.targetFormat || tgt);
                 const isExample = exampleXml && text === exampleXml.trim();
                 setOut('<pre class="tr-result" id="tr-result">' + esc(r.result) + '</pre>'
                     + '<div class="tr-foot">Translated by the live Java&nbsp;+&nbsp;Prowide engine. '
@@ -354,7 +359,8 @@ const Translator = (function () {
         src.value = '';
         onInput();
         const sel = $('tr-target'); if (sel) sel.value = '';
-        setOut('<div class="tr-empty"><p><strong>Paste your message on the left.</strong></p><p>ISO 20022 XML or SWIFT MT. The type is detected as you paste, and the matching format is picked for you.</p></div>', '', false);
+        const ss = $('tr-source'); if (ss) ss.value = '';
+        setOut('<div class="tr-empty"><p><strong>Paste your message on the left.</strong></p><p>ISO 20022 XML or SWIFT MT. Source is detected as you paste, and the matching Destination is picked for you.</p></div>', '', false);
         src.focus();
     }
 

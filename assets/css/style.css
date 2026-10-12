@@ -5327,3 +5327,25 @@ a.cs-lesson-row:focus-visible { box-shadow: var(--ring-strong); }
   .tr-go { flex: 1; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) { .tr-notice { animation: none; } .tr-spin { animation: none; } }
+
+/* Translator toolbar (2026-10): Source → Destination, Translate | Copy, above the panes */
+.tr-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: end; }
+.tr-tools-left { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; min-width: 0; }
+.tr-tools-right { display: flex; justify-content: flex-end; align-items: flex-end; }
+.tr-field { display: flex; flex-direction: column; gap: 6px; flex: 1 1 170px; min-width: 0; max-width: 240px; }
+.tr-field .tr-select { flex: none; width: 100%; min-width: 0; }
+.tr-arrow { align-self: flex-end; padding-bottom: 9px; color: var(--text-faint); font-size: 18px; }
+.tr-toolbar .tr-go { align-self: flex-end; }
+.tr-copy { appearance: none; display: inline-flex; align-items: center; gap: 6px; font: inherit; font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--text); background: var(--surface); border: 1px solid var(--border-hi); border-radius: var(--radius-pill); padding: 10px 20px; cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.tr-copy:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.tr-copy:disabled { opacity: .45; cursor: not-allowed; }
+.tr > .tr-notice { margin: 0; }
+@media (max-width: 900px) {
+  .tr-toolbar { grid-template-columns: minmax(0, 1fr); }
+  .tr-tools-right { justify-content: flex-start; }
+}
+@media (max-width: 620px) {
+  .tr-field { flex-basis: 40%; max-width: none; }
+  .tr-arrow { display: none; }
+  .tr-toolbar .tr-go { flex: 1 1 100%; justify-content: center; }
+}

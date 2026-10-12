@@ -115,7 +115,8 @@ setTimeout(()=>{
   t('translator refuses MT103 → pain.001', w.Translator.checkPair('MT103', 'pain.001').ok === false);
   t('translator allows pacs.008 → MT103', w.Translator.checkPair('pacs.008', 'MT103').ok === true);
   w.navigate('dictionary');
-  t('Dictionary lists elements, no message pages', !d.querySelector('.dict-msg') && d.querySelectorAll('.dict-elements .dict-chip').length > 50);
+  t('Dictionary has search and code sets, no message or element lists', !!d.getElementById('dict-search') && !d.querySelector('.dict-msg') && !d.querySelector('.dict-elements') && d.querySelectorAll('.dict-cset').length > 0);
+  t('Translator toolbar: Source, Destination, Translate, Copy', (w.navigate('playground'), !!d.getElementById('tr-source') && !!d.getElementById('tr-target') && !!d.getElementById('tr-go') && !!d.getElementById('tr-copy')));
   w.navigate('library');
   t('no runtime errors', errs.length === 0);
   if (errs.length) console.log('   ', errs.slice(0, 4));
