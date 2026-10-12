@@ -5244,3 +5244,9 @@ a.cs-lesson-row:focus-visible { box-shadow: var(--ring-strong); }
 .article-back-fab:focus-visible { box-shadow: var(--ring-strong), var(--shadow-md); }
 @keyframes backFabIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .article-back-fab { animation: none; } }
+
+/* The way back sits under "On this page" when that outline is showing. */
+.article-toc-back { display: inline-flex; align-items: center; gap: 8px; margin-top: 22px; padding: 10px 16px 10px 13px; font: inherit; font-family: var(--font-display); font-weight: 700; font-size: 13.5px; color: var(--text); background: var(--surface); border: 1px solid var(--border-hi); border-radius: var(--radius-pill); box-shadow: var(--shadow-sm); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.article-toc-back:hover { border-color: var(--primary); color: var(--primary); transform: translateX(-2px); }
+.article-toc-back:focus-visible { box-shadow: var(--ring-strong); }
+@media (min-width: 1101px) { body.article-has-toc .article-back-fab { display: none; } }

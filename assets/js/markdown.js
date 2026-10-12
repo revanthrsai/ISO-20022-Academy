@@ -467,6 +467,10 @@ const Articles = (function () {
                 <nav class="article-toc-list">
                     ${toc.items.map(i => `<a class="article-toc-link" href="javascript:void(0)" data-target="${i.id}" onclick="articleTocGo('${i.id}')">${esc(i.text)}</a>`).join('')}
                 </nav>
+                <button type="button" class="article-toc-back" onclick="navigate('library')">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+                    The Library
+                </button>
             </aside>` : '';
 
         return `
@@ -547,7 +551,9 @@ function renderArticleIndex() {
 }
 
 // ---- Floating "back to the Library" button ---------------------------------
-// Lessons have no side rail; one button, pinned bottom-right, is the way back.
+// Lessons have no side rail. On wide screens the way back sits under the
+// "On this page" outline; where that outline is hidden (narrow screens, or a
+// lesson too short to have one) a button pinned bottom-right takes its place.
 // It lives on <body> (the page wrapper animates with a transform, which would
 // trap position:fixed) and removes itself as soon as the article is gone,
 // whichever route replaced it.
@@ -573,6 +579,7 @@ function showArticleBack(content) {
 }
 function hideArticleBack() {
     if (__backFabObserver) { __backFabObserver.disconnect(); __backFabObserver = null; }
+    document.body.classList.remove('article-has-toc');
     const btn = document.getElementById('article-back-fab');
     if (btn) btn.remove();
 }
@@ -598,6 +605,7 @@ async function openArticle(id) {
     try {
         const loaded = await Articles.load(id);
         content.innerHTML = Articles.articleHtml(loaded);
+        document.body.classList.toggle('article-has-toc', !!content.querySelector('.article-toc'));
         showArticleBack(content);
         if (window.Motion) Motion.scan(content);
         initArticleToc();
