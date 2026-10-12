@@ -52,12 +52,12 @@
                 <button class="nav-item" data-page="history" onclick="navigate('history', event)">History</button>
                 <!-- Learning Journey retired from global nav in 1.3; journey kept as non-nav route -->
                 <button class="nav-item active" data-page="library" onclick="navigate('library', event)">Library</button>
-                <!-- The Playground tab lands on the Live Translator; the Dictionary is one
-                     click away on the mode switcher. -->
+                <!-- The Playground is the Live Translator. -->
                 <button class="nav-item" data-page="playground" onclick="translatorHome(event)">Playground</button>
-                <!-- Glossary folded under Library (1.6); Dictionary folded into Playground (1.6).
-                     Both remain live routes and highlight their parent tab via NAV_PARENT. -->
                 <button class="nav-item" data-page="workshop" onclick="navigate('workshop', event)">Workshop</button>
+                <!-- Reference holds the Glossary and the Dictionary behind one mode switch;
+                     both keep their own routes and light this tab via NAV_PARENT. -->
+                <button class="nav-item" data-page="reference" onclick="navigate('glossary', event)">Reference</button>
                 <span class="nav-indicator" id="nav-indicator" aria-hidden="true"></span>
             </nav>
         </div>
@@ -94,6 +94,7 @@
             <button class="mobile-nav-item" data-page="library" onclick="closeMobileNav(); navigate('library', event)">Library</button>
             <button class="mobile-nav-item" data-page="playground" onclick="closeMobileNav(); translatorHome(event)">Playground</button>
             <button class="mobile-nav-item" data-page="workshop" onclick="closeMobileNav(); navigate('workshop', event)">Workshop</button>
+            <button class="mobile-nav-item" data-page="reference" onclick="closeMobileNav(); navigate('glossary', event)">Reference</button>
         </nav>
     </aside>
 

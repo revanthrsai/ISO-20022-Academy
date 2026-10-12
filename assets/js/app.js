@@ -147,7 +147,7 @@ const PAGES = {
     `,
     playground: `
         <div class="page">
-            ${pgHead('translator', `
+            ${pgHead(null, `
                 <div class="eyebrow">Playground</div>
                 <h2 class="section-title">Live Translator</h2>
                 <p class="section-description">
@@ -160,14 +160,13 @@ const PAGES = {
     `,
     glossary: `
         <div class="page">
-            <button class="page-back" onclick="navigate('library', event)">
-                <span class="page-back-i" aria-hidden="true">&larr;</span> Back to the Library
-            </button>
-            <div class="eyebrow" data-reveal="fade">Reference</div>
-            <h2 class="section-title" data-reveal="up">The language, defined.</h2>
-            <p class="section-description" data-reveal="up">
-                Every term you'll meet across the journey &mdash; from IBAN to settlement &mdash; in one searchable encyclopedia.
-            </p>
+            ${refHead('glossary', `
+                <div class="eyebrow">Reference</div>
+                <h2 class="section-title">The Glossary</h2>
+                <p class="section-description">
+                    Every term you'll meet across the course &mdash; from IBAN to settlement &mdash;
+                    defined in a sentence or two, no spec required.
+                </p>`)}
             <div class="glossary-toolbar" data-reveal="up">
                 <input type="text" class="search-box" id="glossary-search" placeholder="Search terms and definitions…" oninput="filterGlossary(this.value)">
                 <span class="glossary-count" id="glossary-count"></span>
@@ -178,7 +177,7 @@ const PAGES = {
     `,
     dictionary: `
         <div class="page">
-            ${pgHead('dictionary', `
+            ${refHead('dictionary', `
                 <div class="eyebrow">Reference</div>
                 <h2 class="section-title">The ISO&nbsp;20022 Dictionary</h2>
                 <p class="section-description">
@@ -200,26 +199,33 @@ const PAGES = {
 // Page copy on the left, controls on the right — the same shape the Library uses
 // for its Glossary lookup, so the two tabs feel like one system.
 //
-// The right rail carries the mode switcher (Dictionary | Translator). Pasting
-// your own message happens inside the Translator itself.
+// pgHead: the Playground is one tool (the Live Translator), so its head is
+// just the page copy. refHead: the Reference tab carries the mode switcher
+// (Glossary | Dictionary) on the right, the same shape the Playground used.
 //
-// Hoisted function declaration — PAGES interpolates it at load time.
+// Hoisted function declarations — PAGES interpolates them at load time.
 function pgHead(active, copyHtml) {
+    return `
+        <div class="pg-head">
+            <div class="pg-head-copy">${copyHtml || ''}</div>
+        </div>`;
+}
+function refHead(active, copyHtml) {
     const on = (k) => k === active ? ' is-on' : '';
     return `
         <div class="pg-head">
             <div class="pg-head-copy">${copyHtml || ''}</div>
             <aside class="pg-head-tools">
-                <div class="pg-modes" role="tablist" aria-label="Playground mode">
+                <div class="pg-modes" role="tablist" aria-label="Reference">
+                    <button class="pg-mode${on('glossary')}" role="tab" aria-selected="${active === 'glossary'}"
+                            onclick="navigate('glossary', event)">
+                        <span class="pg-mode-name">Glossary</span>
+                        <span class="pg-mode-sub">every payments term</span>
+                    </button>
                     <button class="pg-mode${on('dictionary')}" role="tab" aria-selected="${active === 'dictionary'}"
                             onclick="dictHome(event)">
                         <span class="pg-mode-name">Dictionary</span>
                         <span class="pg-mode-sub">every element &amp; code</span>
-                    </button>
-                    <button class="pg-mode${on('translator')}" role="tab" aria-selected="${active === 'translator'}"
-                            onclick="translatorHome(event)">
-                        <span class="pg-mode-name">Translator</span>
-                        <span class="pg-mode-sub">ISO 20022 &#8644; MT, live</span>
                     </button>
                 </div>
             </aside>
@@ -230,15 +236,16 @@ function pgHead(active, copyHtml) {
 // Four tabs since 1.6: learn the story → read the lessons → handle real messages
 // → prove you can. Glossary and Dictionary kept every route they ever had; they
 // simply stopped owning a tab and now render beneath a parent one.
-const NAV_ORDER = ['history', 'library', 'playground', 'workshop'];
+const NAV_ORDER = ['history', 'library', 'playground', 'workshop', 'reference'];
 
 // Sections that render without a tab of their own. They light up their parent's
 // tab instead, so the header never looks "nowhere" on a child route. Every old
 // URL (#/glossary, #/dictionary/...) still resolves — nav changed, routes did not.
+// Since 2026-10 the Glossary and Dictionary live under the Reference tab.
 const NAV_PARENT = {
-    glossary: 'library',
+    glossary: 'reference',
+    dictionary: 'reference',
     journey: 'library',
-    dictionary: 'playground',
     'whats-new': 'library'
 };
 function navTabFor(page) { return NAV_PARENT[page] || page; }
@@ -494,6 +501,7 @@ function updateNavArrows() {
 }
 
 function navigate(page, evt) {
+    if (page === 'reference') page = 'glossary'; // the Reference tab opens on the Glossary
     const content = document.getElementById('content');
     const navItems = document.querySelectorAll('.nav-item');
     // A child route (glossary, dictionary, journey) has no tab of its own — light
@@ -1226,6 +1234,7 @@ function routeOnLoad(){
     const ch = mh && getHistoryChapter(mh[1]);
     if (ch && ch.status === 'ready') { renderHistoryChapter(mh[1]); return; }
     if (/^#\/glossary(\/|\?|$)/.test(h)) { navigate('glossary'); return; }
+    if (/^#\/reference(\/|\?|$)/.test(h)) { navigate('glossary'); return; }
     if (/^#\/library\/glossary(\/|\?|$)/.test(h)) { navigate('glossary'); return; }
     const mw = h.match(/^#\/workshop\/([a-z0-9-]+)$/);
     if (mw) { openWorkshop(mw[1]); return; }

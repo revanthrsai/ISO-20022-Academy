@@ -99,7 +99,7 @@ const Search = (function () {
             });
         }
         // Pages
-        [['History', 'history'], ['Library', 'library'], ['Playground', 'playground'], ['Workshop', 'workshop'], ['Glossary', 'glossary'], ['Dictionary', 'dictionary']].forEach(([label, page]) => {
+        [['History', 'history'], ['Library', 'library'], ['Playground', 'playground'], ['Workshop', 'workshop'], ['Reference', 'reference'], ['Glossary', 'glossary'], ['Dictionary', 'dictionary']].forEach(([label, page]) => {
             items.push({ type: 'Page', label, sub: 'Go to the ' + label + ' section', kw: page, badge: '↵',
                 run: () => { if (typeof navigate === 'function') navigate(page); } });
         });
