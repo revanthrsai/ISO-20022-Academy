@@ -5150,3 +5150,75 @@ body.pg2-locked { overflow: hidden; }
     .pgv-modal { width: 96vw; max-height: 92vh; }
     .pgv-body { padding: 14px; }
 }
+
+/* ===========================================================================
+   LIBRARY · COURSE OUTLINE (2026-10)
+   The Library front door is a course: numbered sections (100, 200, …) that
+   open on click to their numbered chapters. Rows, not cards — the outline is
+   scanned top to bottom, so it reads like a syllabus.
+   =========================================================================== */
+.course { display: flex; flex-direction: column; gap: 20px; }
+.course-head { margin-bottom: 0; }
+.course-head .learn-head-copy { max-width: 760px; }
+.course-head .section-description { margin-bottom: 22px; }
+.course .learn-progress { margin: 0; max-width: none; }
+
+.course-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.course-bar-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-faint); }
+.course-toggle { appearance: none; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font: inherit; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: var(--radius-pill); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.course-toggle:hover { border-color: var(--primary); color: var(--primary); }
+
+.course-outline { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+.cs-item + .cs-item { border-top: 1px solid var(--border); }
+
+.course-sec > summary { list-style: none; }
+.course-sec > summary::-webkit-details-marker { display: none; }
+.cs-head { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto auto 28px; align-items: center; gap: 20px; padding: clamp(18px, 2.4vw, 26px) clamp(16px, 2.6vw, 30px); cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out); }
+.cs-head:hover { background: var(--surface-alt); }
+.cs-head:focus-visible { box-shadow: inset 0 0 0 2px var(--primary-bright); border-radius: 0; }
+.course-sec[open] > .cs-head { background: var(--surface-alt); border-bottom: 1px solid var(--border); }
+
+.cs-code { font-family: var(--font-mono); font-size: clamp(22px, 2.4vw, 30px); font-weight: 600; line-height: 1; color: var(--primary); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.cs-head-text { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.cs-name { font-family: var(--font-display); font-weight: 700; font-size: clamp(19px, 2vw, 24px); letter-spacing: -.015em; color: var(--text); line-height: 1.2; }
+.cs-blurb { font-size: 14px; line-height: 1.5; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.course-sec[open] .cs-blurb { -webkit-line-clamp: unset; display: block; }
+.cs-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cs-progress { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--primary-deep); white-space: nowrap; }
+.cs-progress-track { width: 56px; height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; }
+.cs-progress-fill { display: block; height: 100%; background: var(--primary); border-radius: inherit; }
+.cs-progress.is-complete { font-weight: 700; }
+.cs-chev { display: flex; color: var(--text-faint); transition: transform var(--dur) var(--ease-out), color var(--dur-fast) var(--ease-out); }
+.cs-head:hover .cs-chev { color: var(--primary); }
+.course-sec[open] .cs-chev { transform: rotate(180deg); color: var(--primary); }
+
+.cs-body { padding: 8px clamp(8px, 1.6vw, 18px) 18px; animation: csOpen .28s var(--ease-out); }
+@keyframes csOpen { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.cs-lessons { list-style: none; margin: 0; padding: 0; }
+.cs-lesson-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: baseline; gap: 20px; padding: 13px clamp(8px, 1.4vw, 12px); border-radius: var(--radius-sm); color: var(--text); text-decoration: none; transition: background-color var(--dur-fast) var(--ease-out); }
+a.cs-lesson-row:hover { background: var(--glass-tint-strong); }
+a.cs-lesson-row:focus-visible { box-shadow: var(--ring-strong); }
+.cs-num { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--primary); font-variant-numeric: tabular-nums; padding-left: clamp(8px, 1.4vw, 18px); }
+.cs-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
+.cs-title-main { font-weight: 600; font-size: 16px; line-height: 1.4; }
+.cs-title-tail { font-size: 14px; color: var(--text-muted); line-height: 1.4; }
+.cs-state { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+.cs-state.is-done { color: var(--primary); font-weight: 600; }
+.cs-state.is-soon { color: var(--warning); }
+.cs-lesson.is-draft .cs-lesson-row { opacity: .6; cursor: default; }
+.cs-lesson.is-learned .cs-title-main { color: var(--text-muted); }
+.cs-body .kc-card, .cs-body > :not(.cs-lessons) { margin: 14px clamp(8px, 1.4vw, 12px) 0; }
+
+@media (max-width: 720px) {
+  .cs-head { grid-template-columns: 52px minmax(0, 1fr) 22px; gap: 4px 14px; }
+  .cs-meta, .cs-progress { grid-column: 2; grid-row: 2; }
+  .cs-progress { grid-row: 3; }
+  .cs-chev { grid-column: 3; grid-row: 1; }
+  .cs-blurb { display: none; }
+  .course-sec[open] .cs-blurb { display: block; }
+  .cs-lesson-row { grid-template-columns: 44px minmax(0, 1fr); gap: 4px 12px; }
+  .cs-num { padding-left: 0; }
+  .cs-state { grid-column: 2; }
+  .cs-title-tail { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .cs-body { animation: none; } .cs-chev { transition: none; } }
