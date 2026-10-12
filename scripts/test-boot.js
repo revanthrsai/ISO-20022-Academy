@@ -92,14 +92,16 @@ setTimeout(()=>{
   t(`proof strip matches data (${terms} terms)`,       proof.includes(terms + ' glossary terms'));
 
   console.log('\n── spine + navigation ───────────────────────────────────');
-  t(`spine mounted with all ${lessons} lessons`,
-    d.body.classList.contains('has-spine') && d.querySelectorAll('.spine-item').length === lessons);
+  t(`outline lists all ${lessons} lessons`, d.querySelectorAll('.cs-lesson').length === lessons);
+  t('outline sections start collapsed', [...d.querySelectorAll('.course-sec')].every(s => !s.open));
+  t('chapters link to crawlable /library/ pages', d.querySelectorAll('a.cs-lesson-row[href^="/library/"]').length === lessons);
+  t('no spine beside the outline', !d.body.classList.contains('has-spine'));
   w.navigate('workshop');
   t('nav to Workshop works', !!d.getElementById('ws-root'));
-  t('spine unmounts off the reading surfaces', !d.body.classList.contains('has-spine'));
+  t('no spine on the Workshop', !d.body.classList.contains('has-spine'));
   w.navigate('library');
   t('nav back to Library works', !!d.getElementById('learn-root'));
-  t('spine remounts', d.body.classList.contains('has-spine'));
+  t('outline re-renders', d.querySelectorAll('.course-sec').length > 0);
 
   console.log('\n── content wiring ───────────────────────────────────────');
   t('every workshop in LIST has a definition',

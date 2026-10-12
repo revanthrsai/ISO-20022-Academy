@@ -752,8 +752,10 @@ function navigate(page, evt) {
         if (location.hash !== secTarget) history.replaceState(null, '', secTarget);
     }
 
-    // The curriculum spine lives on the reading surfaces only.
-    if (window.Spine) { if (page === 'library') Spine.mount(); else Spine.unmount(); }
+    // The curriculum spine sits beside an open lesson (markdown.js mounts it).
+    // The Library index is itself the full course outline, so the rail would
+    // only repeat it there.
+    if (window.Spine) Spine.unmount();
 
     // Hand the freshly-rendered subtree to the shared motion engine.
     if (window.Motion) Motion.scan(content);

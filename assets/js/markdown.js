@@ -289,38 +289,71 @@ const Articles = (function () {
     }
 
     // ---- The Learn index (grouped by level) ------------------------------
+    // ---- The Library index: a course outline --------------------------------
+    // Sections (100 Fundamentals, 200 Architecture, …) are collapsed rows; a
+    // click opens one to its numbered chapters. Open sections are remembered on
+    // this device. Each chapter is a real <a href> to its static /library/ page
+    // so crawlers can follow it; a normal click opens it in the app instead.
+    const OUTLINE_KEY = 'academy.library.open';
+    function openSections() {
+        try { return JSON.parse(localStorage.getItem(OUTLINE_KEY) || '[]').map(Number); }
+        catch (e) { return []; }
+    }
+
+    function lessonRowHtml(a) {
+        const draft = a.status === 'draft';
+        const learned = !draft && (typeof Progress !== 'undefined') && Progress.isLearned(a.id);
+        const t = splitTitle(a.title);
+        const state = draft ? '<span class="cs-state is-soon">Coming soon</span>'
+            : learned ? '<span class="cs-state is-done"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Learned</span>'
+            : `<span class="cs-state">${a.minutes} min</span>`;
+        const inner = `
+                        <span class="cs-num">${a.num}</span>
+                        <span class="cs-title"><span class="cs-title-main">${esc(t.main)}</span>${t.tail ? `<span class="cs-title-tail">${esc(t.tail)}</span>` : ''}</span>
+                        ${state}`;
+        return draft
+            ? `<li class="cs-lesson is-draft"><span class="cs-lesson-row">${inner}</span></li>`
+            : `<li class="cs-lesson${learned ? ' is-learned' : ''}"><a class="cs-lesson-row" href="/library/${a.id}/"
+                    onclick="if(!event.metaKey&&!event.ctrlKey&&!event.shiftKey){event.preventDefault();openArticle('${a.id}')}">${inner}</a></li>`;
+    }
+
     function indexHtml() {
         const levels = Object.keys(ACADEMY_LEVELS).map(Number).sort((a, b) => a - b);
+        const opened = openSections();
+        let totalMinutes = 0;
         const sections = levels.map(lvl => {
             const meta = ACADEMY_LEVELS[lvl];
             const items = getArticlesByLevel(lvl);
             if (!items.length) return '';
-            const cards = items.map(cardHtml).join('');
             const published = items.filter(a => a.status !== 'draft');
+            const minutes = published.reduce((s, a) => s + (Number(a.minutes) || 0), 0);
+            totalMinutes += minutes;
             const done = (typeof Progress !== 'undefined')
                 ? published.filter(a => Progress.isLearned(a.id)).length : 0;
             const pct = published.length ? Math.round(done / published.length * 100) : 0;
             const complete = published.length > 0 && done === published.length;
-            const countHtml = complete
-                ? `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Shelf complete`
-                : `${done}/${published.length} learned`;
-            const shelfProgress = published.length ? `
-                        <div class="shelf-progress${done ? '' : ' is-empty'}${complete ? ' is-complete' : ''}" aria-label="${complete ? 'Shelf complete' : done + ' of ' + published.length + ' lessons learned'}">
-                            <span class="shelf-progress-count">${countHtml}</span>
-                            <span class="shelf-progress-track"><span class="shelf-progress-fill" style="width:${pct}%"></span></span>
-                        </div>` : '';
+            const progress = done
+                ? `<span class="cs-progress${complete ? ' is-complete' : ''}" aria-label="${done} of ${published.length} learned"><span class="cs-progress-track"><span class="cs-progress-fill" style="width:${pct}%"></span></span>${complete ? 'Complete' : done + '/' + published.length}</span>`
+                : '';
             return `
-                <section class="learn-level" data-reveal="up">
-                    <div class="learn-level-head">
-                        <span class="learn-level-num">${lvl}</span>
-                        <div>
-                            <h3 class="learn-level-name">${esc(meta.name)}</h3>
-                            <p class="learn-level-blurb">${esc(meta.blurb)}</p>
-                        </div>${shelfProgress}
-                    </div>
-                    <div class="learn-grid">${cards}</div>
-                    ${(typeof Quiz !== 'undefined' && Quiz.ctaHtml) ? Quiz.ctaHtml(lvl) : ''}
-                </section>`;
+                <li class="cs-item">
+                    <details class="course-sec" data-level="${lvl}"${opened.includes(lvl) ? ' open' : ''} ontoggle="Articles.rememberSection(this)">
+                        <summary class="cs-head">
+                            <span class="cs-code">${lvl}</span>
+                            <span class="cs-head-text">
+                                <span class="cs-name">${esc(meta.name)}</span>
+                                <span class="cs-blurb">${esc(meta.blurb)}</span>
+                            </span>
+                            <span class="cs-meta">${items.length} chapters &middot; ${minutes} min</span>
+                            ${progress}
+                            <span class="cs-chev" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+                        </summary>
+                        <div class="cs-body">
+                            <ol class="cs-lessons">${items.map(lessonRowHtml).join('')}</ol>
+                            ${(typeof Quiz !== 'undefined' && Quiz.ctaHtml) ? Quiz.ctaHtml(lvl).replace(' data-reveal="up"', '') : ''}
+                        </div>
+                    </details>
+                </li>`;
         }).join('');
 
         const termCount = (typeof DATA !== 'undefined' && DATA.glossary) ? DATA.glossary.length : 0;
@@ -329,79 +362,58 @@ const Articles = (function () {
             ? ACADEMY_TOC.filter(a => a.status !== 'draft').length : 0;
         const workshopCount = (typeof WORKSHOPS !== 'undefined' && Array.isArray(WORKSHOPS.LIST))
             ? WORKSHOPS.LIST.length : 0;
+        const hours = Math.round(totalMinutes / 6) / 10;
 
-        // The Library is the site's front door (2026-08): it opens with the H1,
-        // the value proposition, and the two things a new visitor actually wants
-        // to do — start lesson one, or open the tools.
+        // The Library is the site's front door: a short course header, then the
+        // full course outline filling the page. The Glossary is reached from the
+        // footer and ⌘K, so it no longer competes here.
         return `
-            <div class="learn-head learn-head-split" data-reveal-group>
-                <div class="learn-head-copy">
-                    <div class="eyebrow" data-reveal="fade">Free &middot; no signup &middot; built by one payments engineer</div>
-                    <h1 class="section-title" data-reveal="up">Learn ISO&nbsp;20022 the way you wish someone had taught you.</h1>
-                    <p class="section-description" data-reveal="up">
-                        Interactive lessons, a live MT&nbsp;&#8644;&nbsp;MX playground, and hands-on workshops
-                        for the standard behind modern payments &mdash; from &ldquo;what is money&rdquo; to reading a real pacs.008.
-                    </p>
-                    <div class="learn-hero-ctas" data-reveal="up">
-                        <button class="learn-hero-cta learn-hero-cta-primary" onclick="openArticle('101-what-is-money')">Start with Lesson&nbsp;1 &rarr;</button>
-                        <button class="learn-hero-cta" onclick="dictHome(event)">Open the Playground</button>
+            <div class="course">
+                <div class="learn-head course-head" data-reveal-group>
+                    <div class="learn-head-copy">
+                        <div class="eyebrow" data-reveal="fade">The course &middot; free &middot; no signup</div>
+                        <h1 class="section-title" data-reveal="up">Learn ISO&nbsp;20022 the way you wish someone had taught you.</h1>
+                        <p class="section-description" data-reveal="up">
+                            ${levels.length} sections, from &ldquo;what is money&rdquo; to reading a real pacs.008.
+                            Open a section to see its chapters, or start at the beginning.
+                        </p>
+                        <div class="learn-hero-ctas" data-reveal="up">
+                            <button class="learn-hero-cta learn-hero-cta-primary" onclick="openArticle('101-what-is-money')">Start with Chapter&nbsp;101 &rarr;</button>
+                            <button class="learn-hero-cta" onclick="dictHome(event)">Open the Playground</button>
+                        </div>
+                        <div class="learn-hero-proof" data-reveal="up" aria-label="What's inside">
+                            <span>${lessonCount} lessons</span><span class="learn-hero-proof-dot" aria-hidden="true">&middot;</span>
+                            <span>about ${hours} hours</span><span class="learn-hero-proof-dot" aria-hidden="true">&middot;</span>
+                            <span>${workshopCount} workshops</span><span class="learn-hero-proof-dot" aria-hidden="true">&middot;</span>
+                            <span>${termCount} glossary terms</span>
+                        </div>
                     </div>
-                    <div class="learn-hero-proof" data-reveal="up" aria-label="What's inside">
-                        <span>${lessonCount} lessons</span><span class="learn-hero-proof-dot" aria-hidden="true">&middot;</span>
-                        <span>${workshopCount} workshops</span><span class="learn-hero-proof-dot" aria-hidden="true">&middot;</span>
-                        <span>${termCount} glossary terms</span><span class="learn-hero-proof-dot" aria-hidden="true">&middot;</span>
-                        <span>a live MT&nbsp;&#8644;&nbsp;MX engine</span>
-                    </div>
-                    <p class="section-description learn-hero-cine" data-reveal="up">
-                        New here? <a class="learn-cine-link" href="#/journey" onclick="navigate('journey', event)">&#9654;&nbsp;Watch <strong>The Life of a Payment</strong></a> &mdash; one payment, Dubai to Bangalore, in a single cinematic scroll.
-                    </p>
                 </div>
-
-                <!-- The Glossary lives under the Library since 1.6. This is its doorway.
-                     Deliberately a link, not a search box: inline results grew the panel
-                     downward and shoved the shelves off the screen. Sending people to the
-                     Glossary proper — which already has search and category filters —
-                     keeps this head a fixed height. ⌘K still searches from anywhere. -->
-                <aside class="learn-gloss" data-reveal="up" aria-label="Glossary">
-                    <div class="learn-gloss-label">Don't know a word?</div>
-                    <p class="learn-gloss-sub">
-                        ${termCount} payments terms &mdash; settlement, IBAN, clearing, charge bearer &mdash;
-                        each defined in a sentence or two, no spec required.
-                    </p>
-                    <a class="learn-gloss-cta" href="#/glossary" onclick="navigate('glossary', event)">
-                        Explore the Glossary &rarr;
-                    </a>
-                    <div class="learn-gloss-hint">or press <kbd>&#8984;K</kbd> to search everything</div>
-                </aside>
-            </div>
-            ${progressNote()}
-            ${sections}`;
+                ${(typeof Progress !== 'undefined' && Progress.learnedCount()) ? progressNote() : ''}
+                <div class="course-bar">
+                    <span class="course-bar-label">Course outline</span>
+                    <button type="button" class="course-toggle" onclick="Articles.toggleAllSections(this)">Expand all</button>
+                </div>
+                <ol class="course-outline">${sections}</ol>
+            </div>`;
     }
 
-    function cardHtml(a) {
-        const draft = a.status === 'draft';
-        const learned = (typeof Progress !== 'undefined') && Progress.isLearned(a.id);
-        const tags = (a.tags || []).slice(0, 3)
-            .map(t => `<span class="learn-tag">${esc(t)}</span>`).join('');
-        return `
-            <article class="learn-card${draft ? ' is-draft' : ''}${learned ? ' is-learned' : ''}" role="button" tabindex="0"
-                onclick="openArticle('${a.id}')"
-                onkeydown="if(event.key==='Enter'){openArticle('${a.id}')}">
-                <div class="learn-card-top">
-                    <span class="learn-card-num">${a.num}</span>
-                    ${draft ? '<span class="learn-card-status">Draft</span>'
-                            : learned ? '<span class="learn-card-done"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Learned</span>'
-                            : '<span class="learn-card-min">' + a.minutes + ' min read</span>'}
-                </div>
-                <h4 class="learn-card-title">${titleHtml(a.title, 'title-tail title-tail-sm')}</h4>
-                <p class="learn-card-summary">${esc(a.summary)}</p>
-                <div class="learn-card-foot">
-                    <div class="learn-tags">${tags}</div>
-                    <span class="learn-card-go" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                    </span>
-                </div>
-            </article>`;
+    function rememberSection(el) {
+        try {
+            const set = new Set(openSections());
+            const lvl = Number(el.dataset.level);
+            if (el.open) set.add(lvl); else set.delete(lvl);
+            localStorage.setItem(OUTLINE_KEY, JSON.stringify([...set]));
+        } catch (e) { /* storage blocked — the outline still works, it just forgets */ }
+        const btn = document.querySelector('.course-toggle');
+        if (btn) btn.textContent = document.querySelector('.course-sec:not([open])') ? 'Expand all' : 'Collapse all';
+    }
+
+    function toggleAllSections(btn) {
+        const all = [...document.querySelectorAll('.course-sec')];
+        const open = all.some(d => !d.open);
+        all.forEach(d => { d.open = open; });
+        if (btn) btn.textContent = open ? 'Collapse all' : 'Expand all';
     }
 
     // ---- On-this-page TOC: give every h2 an id, collect the outline -------
@@ -522,6 +534,8 @@ const Articles = (function () {
     return {
         load,
         indexHtml,
+        rememberSection,
+        toggleAllSections,
         articleHtml,
         // expose for debugging
         _splitFrontmatter: splitFrontmatter
