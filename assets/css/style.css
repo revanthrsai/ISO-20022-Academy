@@ -5222,3 +5222,25 @@ a.cs-lesson-row:focus-visible { box-shadow: var(--ring-strong); }
   .cs-title-tail { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .cs-body { animation: none; } .cs-chev { transition: none; } }
+
+/* ---- Lesson pages: no side rail, one floating way back (2026-10) ---------- */
+.article-topbar { justify-content: flex-end; }
+.article-back-fab {
+  position: fixed; z-index: 900;
+  right: max(20px, env(safe-area-inset-right, 0px));
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 18px 11px 15px;
+  font: inherit; font-family: var(--font-display); font-weight: 700; font-size: 14px;
+  color: var(--text); background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--border-hi); border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md); cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  animation: backFabIn .35s var(--ease-out) both;
+}
+.article-back-fab:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); }
+.article-back-fab:active { transform: scale(.97); }
+.article-back-fab:focus-visible { box-shadow: var(--ring-strong), var(--shadow-md); }
+@keyframes backFabIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .article-back-fab { animation: none; } }

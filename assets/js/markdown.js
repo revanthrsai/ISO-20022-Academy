@@ -473,10 +473,6 @@ const Articles = (function () {
             <div class="article-layout${tocHtml ? ' has-toc' : ''}">
             <article class="article-page">
                 <div class="article-topbar">
-                    <button class="article-back" onclick="navigate('library')">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
-                        The Library
-                    </button>
                     <button class="article-share" onclick="shareArticle('${entry.id}', this)" aria-label="Share this lesson" title="Copy a link to this lesson">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
                         <span class="article-share-label">Share</span>
@@ -550,6 +546,37 @@ function renderArticleIndex() {
     if (window.Motion) Motion.scan(root);
 }
 
+// ---- Floating "back to the Library" button ---------------------------------
+// Lessons have no side rail; one button, pinned bottom-right, is the way back.
+// It lives on <body> (the page wrapper animates with a transform, which would
+// trap position:fixed) and removes itself as soon as the article is gone,
+// whichever route replaced it.
+let __backFabObserver = null;
+function showArticleBack(content) {
+    let btn = document.getElementById('article-back-fab');
+    if (!btn) {
+        btn = document.createElement('button');
+        btn.id = 'article-back-fab';
+        btn.type = 'button';
+        btn.className = 'article-back-fab';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span>The Library</span>';
+        btn.addEventListener('click', () => navigate('library'));
+        document.body.appendChild(btn);
+    }
+    if (__backFabObserver) __backFabObserver.disconnect();
+    if (typeof MutationObserver !== 'undefined' && content) {
+        __backFabObserver = new MutationObserver(() => {
+            if (!content.querySelector('.article-page')) hideArticleBack();
+        });
+        __backFabObserver.observe(content, { childList: true });
+    }
+}
+function hideArticleBack() {
+    if (__backFabObserver) { __backFabObserver.disconnect(); __backFabObserver = null; }
+    const btn = document.getElementById('article-back-fab');
+    if (btn) btn.remove();
+}
+
 async function openArticle(id) {
     const content = document.getElementById('content');
     if (!content) return;
@@ -571,7 +598,7 @@ async function openArticle(id) {
     try {
         const loaded = await Articles.load(id);
         content.innerHTML = Articles.articleHtml(loaded);
-        if (window.Spine) Spine.mount(id); // keep the curriculum map beside the text
+        showArticleBack(content);
         if (window.Motion) Motion.scan(content);
         initArticleToc();
     } catch (e) {
