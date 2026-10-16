@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
+  <FIToFICstmrCdtTrf>
+    <GrpHdr>
+      <MsgId>EBILAEAD-20260627-000400</MsgId>
+      <CreDtTm>2026-06-27T09:30:00+04:00</CreDtTm>
+      <NbOfTxs>1</NbOfTxs>
+      <SttlmInf><SttlmMtd>INDA</SttlmMtd></SttlmInf>
+      <InstgAgt><FinInstnId><BICFI>EBILAEAD</BICFI></FinInstnId></InstgAgt>
+      <InstdAgt><FinInstnId><BICFI>HDFCINBB</BICFI></FinInstnId></InstdAgt>
+    </GrpHdr>
+    <CdtTrfTxInf>
+      <PmtId>
+        <InstrId>EBILAEAD-INSTR-0400</InstrId>
+        <EndToEndId>BOB-INV0042</EndToEndId>
+        <UETR>eb6305c9-1f7c-4a9b-9b1e-2c2f4e7a91d4</UETR>
+      </PmtId>
+      <IntrBkSttlmAmt Ccy="USD">400.00</IntrBkSttlmAmt>
+      <IntrBkSttlmDt>2026-06-27</IntrBkSttlmDt>
+      <ChrgBr>SHAR</ChrgBr>
+      <Dbtr><Nm>Bob Marsh</Nm></Dbtr>
+      <DbtrAgt><FinInstnId><BICFI>EBILAEAD</BICFI></FinInstnId></DbtrAgt>
+      <CdtrAgt><FinInstnId><BICFI>HDFCINBB</BICFI></FinInstnId></CdtrAgt>
+      <Cdtr><Nm>Sweety Rao</Nm></Cdtr>
+      <RmtInf><Ustrd>Invoice 0042 - June freelance</Ustrd></RmtInf>
+    </CdtTrfTxInf>
+  </FIToFICstmrCdtTrf>
+</Document>

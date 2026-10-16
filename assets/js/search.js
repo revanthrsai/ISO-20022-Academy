@@ -59,8 +59,8 @@ const Search = (function () {
             });
         }
         // The Live Translator (Playground)
-        items.push({ type: 'Tool', label: 'Live Translator', sub: 'Translate ISO 20022 ⇄ SWIFT MT on the live engine',
-            kw: 'translator translate convert transform mt mx mt103 pacs.008 pain.001 mt101 camt.053 mt940 swift', badge: '↵',
+        items.push({ type: 'Tool', label: 'Live Translator', sub: 'AI Translate and AI Repair for ISO 20022 and SWIFT MT messages',
+            kw: 'translator translate convert transform ai repair fix mt mx mt103 pacs.008 pain.001 mt101 camt.053 mt940 swift', badge: '↵',
             run: () => { if (typeof translatorHome === 'function') translatorHome(); } });
         // Dictionary (elements) — the reference tab
         if (typeof DICTIONARY !== 'undefined') {

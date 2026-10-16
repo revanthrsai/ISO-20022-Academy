@@ -151,9 +151,9 @@ const PAGES = {
                 <div class="eyebrow">Playground</div>
                 <h2 class="section-title">Live Translator</h2>
                 <p class="section-description">
-                    Paste an ISO&nbsp;20022 or SWIFT&nbsp;MT message and translate it on the live
-                    Java&nbsp;+&nbsp;Prowide engine. The example loaded below is a real pacs.008.
-                    Try it, then paste your own.
+                    Paste an ISO&nbsp;20022 or SWIFT&nbsp;MT message. <strong>AI Translate</strong> turns it into
+                    any other format; <strong>AI Repair</strong> finds what&rsquo;s wrong and fixes it. Every result
+                    is checked against your original before you see it.
                 </p>`)}
             <div id="tr-root"></div>
         </div>

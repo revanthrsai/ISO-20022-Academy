@@ -16,7 +16,7 @@ It is deliberately not the largest financial knowledge base. It is meant to be t
 
 - **A live MT ⇄ MX transformation engine.** Pick any of nine payment & cash-management messages and a real backend converts it to its SWIFT MT equivalent — `pacs.008 → MT103`, `pain.001 → MT101`, `camt.053 → MT940`, and more — parsed with **Prowide Core** on a **Spring Boot** service, deployed and monitored. Not a client-side toy; an actual API.
 - **44 long-form lessons** that always open with a human problem and only reach XML at the very end — from "what is money" to `camt.110/111`, the new investigations model, and the November 2026 structured-address deadline.
-- **A Live Translator** — paste any ISO 20022 or SWIFT MT message; it detects the type, picks the matching format, translates it on the live engine, and explains why when a pair (say MT103 → pain.001) has no faithful equivalent.
+- **AI Translate and AI Repair** — paste any ISO 20022 or SWIFT MT message; Google ADK agents on Gemini translate it into any other format or find and fix what's wrong, and every result is re-checked (format validation, and every amount, BIC, account, date and reference compared with the original) before it's shown.
 - **A live compliance calendar** counting down to the real 2026/2027 migration deadlines, and a **chronometer** timeline that sweeps across 5,000 years of payments history as you scroll.
 - **Quizzes, an 87-term glossary, ⌘K command-palette search**, and **per-lesson SEO pages** so every topic is individually discoverable on Google.
 - **Zero-dependency frontend** (vanilla HTML/CSS/JS, no framework) on free static hosting, plus a **containerised Java backend** — the whole stack runs on free tiers.
@@ -108,6 +108,7 @@ Each folder has one job. The web-facing folders **must** stay at the repo root �
 | `admin/` | Decap CMS panel at `/admin` for authoring lessons | ✅ |
 | `scripts/` | Zero-dependency Node build scripts (run in CI) — see below | build-time |
 | `transform-api/` | The **Spring Boot + Prowide** backend (deployed separately to Render) | separate |
+| `ai-api/` | The **Google ADK + Gemini** service behind AI Translate and AI Repair (deployed separately to Render) — see [`ai-api/README.md`](./ai-api/README.md) | separate |
 | `docs/` | Project documentation — start with [`HANDBOOK.md`](./docs/HANDBOOK.md) | — |
 | `.github/workflows/` | The GitHub Pages deploy pipeline | CI |
 

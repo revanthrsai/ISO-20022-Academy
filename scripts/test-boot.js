@@ -112,15 +112,15 @@ setTimeout(()=>{
   t('Playground opens the Live Translator', !!d.getElementById('tr-root') && !!d.getElementById('tr-src'));
   t('Playground has no mode switch', d.querySelectorAll('.pg-mode').length === 0);
   t('translations table lists both directions', d.querySelectorAll('.tr-sec').length === 2 && d.querySelectorAll('.tr-row').length >= 15);
-  t('translator refuses MT103 → pain.001', w.Translator.checkPair('MT103', 'pain.001').ok === false);
-  t('translator allows pacs.008 → MT103', w.Translator.checkPair('pacs.008', 'MT103').ok === true);
+  t('MT103 → pain.001 runs as a rebuild', w.Translator.checkPair('MT103', 'pain.001').ok === true && w.Translator.checkPair('MT103', 'pain.001').direct === false);
+  t('pacs.008 → MT103 is a direct translation', w.Translator.checkPair('pacs.008', 'MT103').direct === true);
   w.navigate('reference');
   t('Reference tab opens the Glossary', !!d.getElementById('glossary-grid') && d.querySelector('.nav-item.active').dataset.page === 'reference');
   t('Reference modes: Glossary | Dictionary', [...d.querySelectorAll('.pg-mode-name')].map(x => x.textContent.trim()).join('|') === 'Glossary|Dictionary');
   w.navigate('dictionary');
   t('Dictionary lights the Reference tab', d.querySelector('.nav-item.active').dataset.page === 'reference');
   t('Dictionary has search and code sets, no message or element lists', !!d.getElementById('dict-search') && !d.querySelector('.dict-msg') && !d.querySelector('.dict-elements') && d.querySelectorAll('.dict-cset').length > 0);
-  t('Translator toolbar: Source, Destination, Translate, Copy', (w.navigate('playground'), !!d.getElementById('tr-source') && !!d.getElementById('tr-target') && !!d.getElementById('tr-go') && !!d.getElementById('tr-copy')));
+  t('Translator toolbar: Source, Destination, AI Translate, AI Repair, Copy', (w.navigate('playground'), !!d.getElementById('tr-source') && !!d.getElementById('tr-target') && !!d.getElementById('tr-go') && !!d.getElementById('tr-repair') && !!d.getElementById('tr-copy')));
   w.navigate('library');
   t('no runtime errors', errs.length === 0);
   if (errs.length) console.log('   ', errs.slice(0, 4));
