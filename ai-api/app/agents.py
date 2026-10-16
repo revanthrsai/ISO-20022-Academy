@@ -25,7 +25,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
-from . import checks, formats
+from . import checks, formats, mappings
 from .models import RepairOutput, TranslateOutput
 
 MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
@@ -224,17 +224,22 @@ async def _attempts(kind: str, base_prompt: str, check) -> object:
 async def translate(source: str, source_type: str | None, target: str) -> TranslateOutput:
     spec = json.dumps(formats.spec(target), indent=1)
     base = (f"Translate this {source_type or 'payment'} message into {target}.\n"
-            f"Target format spec:\n{spec}\n"
+            f"Target format spec:\n{spec}\n\n"
+            f"Follow these rules exactly:\n{mappings.rules_for(source_type, target)}\n\n"
             f"<message>\n{source}\n</message>")
 
     def check(out):
-        return _problems(checks.validate(out.message), checks.compare_values(source, out.message, declared=[f.value for f in out.filled]))
+        v = checks.validate(out.message)
+        v["findings"] = v["findings"] + mappings.pair_findings(source_type, target, source, out.message)
+        return _problems(v, checks.compare_values(source, out.message, declared=[f.value for f in out.filled]))
 
     return await _attempts("translate", base, check)
 
 
 async def repair(source: str, source_type: str | None, reject_reason: str | None) -> RepairOutput:
     found = checks.validate(source)
+    if found.get("std") == "MT":
+        found["findings"] = found["findings"] + mappings.header_findings(source)
     listed = "\n".join(f"- {f['rule']}: {f['message']}" for f in found["findings"]) or "- (no errors found by the validator)"
     hint = f"\nIt was rejected with: {reject_reason}" if reject_reason else ""
     base = (f"Repair this {source_type or 'payment'} message.{hint}\n"
@@ -243,6 +248,9 @@ async def repair(source: str, source_type: str | None, reject_reason: str | None
 
     def check(out):
         declared = [c.after for c in out.changes] + [c.before for c in out.changes]
-        return _problems(checks.validate(out.message), checks.compare_values(source, out.message, declared=declared))
+        v = checks.validate(out.message)
+        if found.get("std") == "MT":
+            v["findings"] = v["findings"] + mappings.header_findings(out.message)
+        return _problems(v, checks.compare_values(source, out.message, declared=declared))
 
     return await _attempts("repair", base, check)

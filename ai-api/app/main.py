@@ -21,7 +21,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from . import checks, formats
+from . import checks, formats, mappings
 from .models import RepairRequest, TranslateRequest
 
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
@@ -114,6 +114,10 @@ async def translate(body: TranslateRequest, req: Request):
         raise _ai_error(e)
 
     validation = checks.validate(out.message)
+    rule_findings = mappings.pair_findings(det["code"], body.target, body.source, out.message)
+    if rule_findings:
+        validation["findings"] = validation["findings"] + rule_findings
+        validation["valid"] = False
     detected_out = checks.detect(out.message)
     fidelity = checks.compare_values(body.source, out.message, declared=[f.value for f in out.filled])
     return {
@@ -150,6 +154,11 @@ async def repair(body: RepairRequest, req: Request):
         raise _ai_error(e)
 
     after = checks.validate(out.message)
+    if after.get("std") == "MT":
+        hdr = mappings.header_findings(out.message)
+        if hdr:
+            after["findings"] = after["findings"] + hdr
+            after["valid"] = False
     declared = [c.after for c in out.changes] + [c.before for c in out.changes]
     fidelity = checks.compare_values(body.source, out.message, declared=declared)
     # A repair must stay in the same format.

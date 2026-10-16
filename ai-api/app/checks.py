@@ -326,6 +326,11 @@ def _validate_mt(text, det):
 
 
 # ── value extraction & fidelity ─────────────────────────────────────────────
+def bic11(bic: str) -> str:
+    """BICs compared at full length: an 8-character BIC means branch XXX."""
+    b = (bic or "").strip().upper()
+    return b + "XXX" if len(b) == 8 else b
+
 GENERATED_MX = {"CreDtTm", "MsgId", "UETR", "BizMsgIdr", "CreDt"}
 
 
@@ -347,7 +352,7 @@ def extract_values(text: str) -> dict:
                 v["amounts"].add(f"{norm_amount(val)} {el.get('Ccy')}")
                 v["currencies"].add(el.get("Ccy"))
             elif name in ("BICFI", "AnyBIC", "BIC") and len(val) >= 8:
-                v["bics"].add(val[:8].upper())
+                v["bics"].add(bic11(val))
             elif name == "IBAN" or (name == "Id" and el.getparent() is not None and local(el.getparent().tag) == "Othr"
                                     and el.getparent().getparent() is not None and local(el.getparent().getparent().tag) == "Id"):
                 v["accounts"].add(re.sub(r"\s+", "", val).upper())
@@ -365,8 +370,9 @@ def extract_values(text: str) -> dict:
         b3 = re.search(r"\{121:([0-9a-fA-F-]{36})\}", text or "")
         if b3:
             v["refs"].add(b3.group(1).lower())
-        for hdr in re.findall(r"\{[12]:[FIO]\d{0,3}([A-Z]{4}[A-Z]{2}[A-Z0-9]{2})", text or ""):
-            v["bics"].add(hdr)
+        # Block 1/2 LT addresses: BIC8 + terminal letter + branch → the 11-character BIC.
+        for b8, br in re.findall(r"\{[12]:(?:F01|[IO]\d{3})([A-Z]{6}[A-Z0-9]{2})[A-Z]([A-Z0-9]{3})", text or ""):
+            v["bics"].add(b8 + br)
         for tag, val in mt_fields(text):
             first = val.split("\n")[0].strip()
             if tag == "32A":
@@ -403,7 +409,7 @@ def extract_values(text: str) -> dict:
                     if ln.startswith("/"):
                         v["accounts"].add(re.sub(r"\s+", "", ln.lstrip("/")).upper())
                     elif BIC_RE.fullmatch(ln):
-                        v["bics"].add(ln[:8])
+                        v["bics"].add(bic11(ln))
             for iban in IBAN_RE.findall(val.replace(" ", "")):
                 if iban[:2] in IBAN_LENGTHS and iban_ok(iban)[0]:
                     v["accounts"].add(iban)

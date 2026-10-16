@@ -16,7 +16,8 @@ Browser ──▶ POST /api/translate ─┐
 
 ## How a result is kept honest
 
-1. The target format's spec goes into the prompt and the agent answers once. Our checks run on
+1. The target format's spec **and the field rules for that pair** (`app/mappings.py`: which source
+   field goes where, header blocks, /ROC/, charge codes…) go into the prompt, and the agent answers once. Our checks run on
    that answer; only if they find problems does the agent get a second attempt with the exact
    findings. At most two model calls per request, so results come back in seconds.
 2. Its answer is forced into a typed shape (ADK `output_schema`): the message, a field mapping
@@ -26,7 +27,11 @@ Browser ──▶ POST /api/translate ─┐
      currency precision, NbOfTxs, CtrlSum (and the official XSD when it's in `schemas/`).
    - `fidelity`: every amount, currency, BIC, account, date and reference in the output must
      exist in the source. Anything else is listed under `invented` and shown in red.
+     BICs are compared at full length, so an invented branch code (even in block 1/2) is caught.
      For a repair, a value may only change if the agent declared that change.
+   - rule checks (`mappings.pair_findings`): e.g. pacs.008 → MT103 `:20:` must be the InstrId,
+     the EndToEndId must ride in `:70:` as `/ROC/`, `:52A:` is the debtor agent, the UETR is kept,
+     and block 1/2 addresses are well formed. A broken rule triggers the retry with that exact rule.
 
 ## Endpoints
 

@@ -69,7 +69,7 @@ def test_invented_values_are_caught():
     r = checks.compare_values(PACS008, MT103.replace("400,00", "4000,00").replace(":57A:HDFCINBB", ":57A:CITIUS33"))
     kinds = {(x["kind"], x["value"]) for x in r["invented"]}
     assert ("amount", "4000 USD") in kinds
-    assert ("BIC", "CITIUS33") in kinds
+    assert ("BIC", "CITIUS33XXX") in kinds
     assert not r["ok"]
 
 
@@ -77,3 +77,9 @@ def test_declared_changes_are_not_flagged():
     fixed = PACS008.replace("<IntrBkSttlmDt>2026-06-27", "<IntrBkSttlmDt>2026-06-28")
     assert not checks.compare_values(PACS008, fixed)["ok"]
     assert checks.compare_values(PACS008, fixed, declared=["2026-06-28"])["ok"]
+
+
+def test_invented_branch_in_header_is_caught():
+    bad = MT103.replace("{1:F01EBILAEADAXXX", "{1:F01EBILAEADAAAA")
+    r = checks.compare_values(PACS008, bad)
+    assert {"kind": "BIC", "value": "EBILAEADAAA"} in r["invented"]

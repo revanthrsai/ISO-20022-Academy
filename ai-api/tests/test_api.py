@@ -4,7 +4,8 @@ from fastapi.testclient import TestClient
 
 from app import main
 from app.models import Change, Filled, FieldMap, RepairOutput, TranslateOutput
-from tests.test_checks import MT103, PACS008
+from tests.test_checks import MT103 as MT103_OLD_RULES, PACS008
+from tests.test_mappings import GOOD as MT103  # follows the pacs.008 → MT103 field rules
 
 
 @pytest.fixture(autouse=True)
@@ -107,3 +108,10 @@ def test_agents_build():
     assert agents.translator_agent.output_schema is TranslateOutput
     assert not agents.translator_agent.tools  # the check-and-retry loop runs in code
     assert agents.repair_agent.output_schema is RepairOutput
+
+
+def test_rule_breaks_make_the_result_invalid(client, monkeypatch):
+    stub(monkeypatch, translate=TranslateOutput(message=MT103_OLD_RULES))  # :20: and :70: break the rules
+    j = client.post("/api/translate", json={"source": PACS008, "target": "MT103"}).json()
+    assert j["validation"]["valid"] is False
+    assert {"Field 20", "Field 70"} <= {f["rule"] for f in j["validation"]["findings"]}
