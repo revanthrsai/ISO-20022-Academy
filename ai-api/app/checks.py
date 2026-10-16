@@ -360,8 +360,11 @@ def extract_values(text: str) -> dict:
                 v["generated"].add(val)
                 if name == "UETR":
                     v["refs"].add(val.lower())
-            elif name in ("InstrId", "EndToEndId", "TxId", "PmtInfId", "OrgnlMsgId", "OrgnlEndToEndId", "OrgnlInstrId", "OrgnlTxId", "OrgnlUETR", "AcctSvcrRef", "RtrId"):
+            elif name in ("InstrId", "EndToEndId", "TxId", "PmtInfId", "OrgnlMsgId", "OrgnlEndToEndId", "OrgnlInstrId", "OrgnlTxId",
+                          "OrgnlUETR", "AcctSvcrRef", "RtrId", "CxlId", "MndtId", "OrgnlPmtInfId", "NtryRef"):
                 v["refs"].add(val if name != "OrgnlUETR" else val.lower())
+            elif name == "Id" and el.getparent() is not None and local(el.getparent().tag) in ("Stmt", "Ntfctn", "Rpt", "Assgnmt", "Case"):
+                v["refs"].add(val)
             elif (name.endswith("Dt") or name.endswith("DtTm")) and name not in GENERATED_MX:
                 d = val[:10]
                 if real_date(d):
@@ -397,11 +400,18 @@ def extract_values(text: str) -> dict:
                     if norm_amount(m[4]):
                         v["amounts"].add(f"{norm_amount(m[4])} {m[3]}")
             elif tag in ("30", "31C", "11S"):
-                for tok in re.findall(r"\d{6}", first)[:1]:
+                for tok in re.findall(r"\d{6}", val if tag == "11S" else first)[:1]:
                     if yymmdd_to_iso(tok):
                         v["dates"].add(yymmdd_to_iso(tok))
-            elif tag in ("20", "21", "21R", "21F"):
+            elif tag in ("20", "21", "21R", "21F", "21C"):
                 v["refs"].add(first)
+            elif tag == "61":
+                m = re.match(r"\d{6}(?:\d{4})?R?[CD][A-Z]?\d[\d,]*[SNF][A-Z0-9]{3}([^/\n]*)(?://([^\n]+))?", first)
+                if m:
+                    v["refs"].update(x.strip() for x in m.groups() if x and x.strip() and x.strip() != "NONREF")
+            if tag in ("70", "72", "79"):
+                for m in re.finditer(r"/(?:ROC|MREF)/([^\s/]+)", val):
+                    v["refs"].add(m.group(1))
             elif tag == "25":
                 v["accounts"].add(re.sub(r"\s+", "", first.lstrip("/")).upper())
             if tag[:2] in ("50", "52", "53", "54", "56", "57", "58", "59"):
@@ -443,10 +453,11 @@ def compare_values(source: str, output: str, declared: list[str] | None = None) 
                 continue
             invented.append({"kind": KIND_LABEL[kind], "value": val})
     truncated = []
-    for val in sorted(o["refs"] - s["refs"]):
+    known_refs = s["refs"] | s["generated"]
+    for val in sorted(o["refs"] - known_refs):
         if val in o["generated"] or val.lower() in {g.lower() for g in o["generated"]}:
             new_refs.append(val)
-        elif len(val) >= 6 and any(src.startswith(val) for src in s["refs"]):
+        elif len(val) >= 6 and any(src.startswith(val) for src in known_refs):
             # MT references are 16x: a cut-down copy of a longer source reference.
             truncated.append(val)
         elif not declared_has(val):
@@ -459,6 +470,7 @@ def compare_values(source: str, output: str, declared: list[str] | None = None) 
                 continue
             dropped.append({"kind": KIND_LABEL[kind], "value": val})
     carried = [{"kind": KIND_LABEL.get(k, "reference"), "value": val}
-               for k in ("amounts", "bics", "accounts", "dates", "refs") for val in sorted(s[k] & o[k])]
+               for k in ("amounts", "bics", "accounts", "dates", "refs")
+               for val in sorted((known_refs if k == "refs" else s[k]) & o[k])]
     return {"ok": not invented, "invented": invented, "dropped": dropped, "new_references": new_refs, "truncated": truncated,
             "carried": carried}

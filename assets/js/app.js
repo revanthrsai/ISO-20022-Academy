@@ -151,9 +151,10 @@ const PAGES = {
                 <div class="eyebrow">Playground</div>
                 <h2 class="section-title">Live Translator</h2>
                 <p class="section-description">
-                    Pick a Source format to see a valid sample, or paste your own message. <strong>AI Translate</strong>
-                    turns it into its direct equivalent, following the field rules for that pair, and checks every
-                    value against your original. If your message has errors, the AI can fix them first.
+                    Pick a Source format to see a valid sample, or paste your own message. <strong>Translate</strong>
+                    turns it into its direct equivalent: a rules engine applies the field rules for that pair instantly,
+                    and AI steps in only for messages the rules don't cover. Every value is checked against your original,
+                    and if your message has errors they can be fixed first.
                 </p>`)}
             <div id="tr-root"></div>
         </div>

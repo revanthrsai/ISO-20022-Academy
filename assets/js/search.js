@@ -59,8 +59,8 @@ const Search = (function () {
             });
         }
         // The Live Translator (Playground)
-        items.push({ type: 'Tool', label: 'Live Translator', sub: 'AI translation between ISO 20022 and SWIFT MT, with a fix-it step',
-            kw: 'translator translate convert transform ai repair fix mt mx mt103 pacs.008 pain.001 mt101 camt.053 mt940 swift', badge: '↵',
+        items.push({ type: 'Tool', label: 'Live Translator', sub: 'Rules-engine translation between ISO 20022 and SWIFT MT, with AI as the fallback',
+            kw: 'translator translate convert transform rules engine ai repair fix mt mx mt103 pacs.008 pain.001 mt101 camt.053 mt940 swift', badge: '↵',
             run: () => { if (typeof translatorHome === 'function') translatorHome(); } });
         // Dictionary (elements) — the reference tab
         if (typeof DICTIONARY !== 'undefined') {

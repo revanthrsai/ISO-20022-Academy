@@ -2,11 +2,14 @@
 ISO 20022 Academy · AI API
 
   GET  /api/health      liveness (also used to wake the free instance)
-  POST /api/translate   AI Translate
-  POST /api/repair      AI Repair
+  POST /api/check       validate only (no AI)
+  POST /api/translate   rules engine first; the AI only when the engine can't
+  POST /api/repair      rule-based fixes first; the AI only for what rules can't untangle
 
-Every AI answer is re-checked here with the same deterministic checks the agent
-was given (validation + value comparison) before it goes back to the browser.
+Hybrid: the rules engine (app/engine) handles every message it has rules for,
+instantly and for free. The AI (Google ADK + Gemini) is the fallback. Every
+result, whoever wrote it, gets the same checks (validation, the pair's field
+rules, value comparison) before it goes back to the browser.
 Message contents are never logged or stored.
 """
 from __future__ import annotations
@@ -22,7 +25,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from . import checks, formats, mappings
+from . import checks, engine, formats, mappings
 from .models import RepairRequest, TranslateRequest
 
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
@@ -111,18 +114,29 @@ def _ai_error(e: Exception) -> HTTPException:
 
 
 _check_hits: dict[str, deque] = defaultdict(deque)
+_engine_hits: dict[str, deque] = defaultdict(deque)
+ENGINE_PER_MINUTE = int(os.environ.get("ENGINE_PER_MINUTE", "30"))
+
+
+def _cheap_admit(req: Request, store: dict, limit: int, what: str) -> None:
+    """Rules-engine calls cost nothing, so they get a generous per-minute limit and no daily cap."""
+    ip, now = _client_ip(req), time.monotonic()
+    q = store[ip]
+    while q and now - q[0] > 60:
+        q.popleft()
+    if len(q) >= limit:
+        raise HTTPException(429, f"Too many {what} in a minute. Wait a moment and try again.")
+    q.append(now)
+
+
+def _has_key() -> bool:
+    return bool(os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"))
 
 
 @app.post("/api/check")
 async def check(body: RepairRequest, req: Request):
     """Validate a message without the AI: instant, and doesn't count towards the AI limits."""
-    ip, now = _client_ip(req), time.monotonic()
-    q = _check_hits[ip]
-    while q and now - q[0] > 60:
-        q.popleft()
-    if len(q) >= 30:
-        raise HTTPException(429, "Too many checks in a minute. Wait a moment and try again.")
-    q.append(now)
+    _cheap_admit(req, _check_hits, 30, "checks")
     det = checks.detect(body.source)
     v = checks.validate(body.source)
     if det["std"] == "MT":
@@ -135,9 +149,28 @@ async def check(body: RepairRequest, req: Request):
             "equivalent": formats.FORMATS.get(code or "", {}).get("equivalent"), "validation": v}
 
 
+def _review(source: str, src: str, target: str, message: str, declared: list[str], original: str | None = None) -> tuple[dict, dict]:
+    """The same checks for every result, whoever wrote it: validation, the pair's rules, value comparison.
+
+    `source` is what was translated (the fixed message, when fixing); values are compared with the
+    visitor's `original`, with the declared fixes allowed.
+    """
+    validation = checks.validate(message)
+    rule_findings = mappings.pair_findings(src, target, source, message)
+    if rule_findings:
+        validation["findings"] = validation["findings"] + rule_findings
+        validation["valid"] = False
+    return validation, checks.compare_values(original or source, message, declared=declared)
+
+
+def _new_errors(validation: dict, source: str) -> list[dict]:
+    """Errors in a result that the source didn't already have (a bad IBAN copied faithfully isn't the engine's fault)."""
+    src_vals = {(f["rule"], f.get("value")) for f in checks.validate(source)["findings"] if f["severity"] == "error"}
+    return [f for f in validation["findings"] if f["severity"] == "error" and (f["rule"], f.get("value")) not in src_vals]
+
+
 @app.post("/api/translate")
 async def translate(body: TranslateRequest, req: Request):
-    _require_key()
     det = _source_type(body.source, body.sourceType)
     src = det["code"]
     if src not in formats.FORMATS:
@@ -147,78 +180,103 @@ async def translate(body: TranslateRequest, req: Request):
         raise HTTPException(422, f"{src} is free text and has no structured equivalent to translate into.")
     if body.target != equivalent:
         raise HTTPException(422, f"{src} translates to {equivalent}, its direct equivalent.")
-    await _admit(req)
-
-    from . import agents  # imported lazily so /api/health works without ADK credentials
+    _cheap_admit(req, _engine_hits, ENGINE_PER_MINUTE, "translations")
     t0 = time.monotonic()
-    try:
-        out = await agents.translate(body.source, det["code"], body.target, fix=body.fix)
-    except Exception as e:  # noqa: BLE001 — every failure becomes a plain message
-        raise _ai_error(e)
 
-    validation = checks.validate(out.message)
-    rule_findings = mappings.pair_findings(det["code"], body.target, body.source, out.message)
-    if rule_findings:
-        validation["findings"] = validation["findings"] + rule_findings
-        validation["valid"] = False
-    detected_out = checks.detect(out.message)
-    fidelity = checks.compare_values(body.source, out.message, declared=[f.value for f in out.filled] + [c.after for c in out.fixed])
-    return {
-        "ok": True,
-        "kind": "translate",
-        "sourceType": det["code"],
-        "targetType": body.target,
-        "outputType": detected_out["code"],
-        "direct": formats.is_direct(det["code"] or "", body.target),
-        "message": out.message,
-        "carried": fidelity.get("carried", []),  # worked out by our value comparison, not written by the model
-        "fixed": [c.model_dump() for c in out.fixed],
-        "filled": [f.model_dump() for f in out.filled],
-        "dropped": [d.model_dump() for d in out.dropped],
-        "notes": out.notes,
-        "validation": validation,
-        "fidelity": fidelity,
-        "model": agents.MODEL,
-        "ms": int((time.monotonic() - t0) * 1000),
-    }
+    # 1. Fix first, by rule, when asked.
+    source, fixed, unresolved, ai_fix = body.source, [], [], False
+    if body.fix:
+        r = engine.repair(body.source)
+        source, fixed, unresolved, ai_fix = r["message"], r["changes"], r["unresolved"], r["needs_ai"]
+
+    def payload(by: str, message: str, filled, dropped, notes: str, extra_fixed=(), reason: str = "", model: str = ""):
+        all_fixed = list(fixed) + list(extra_fixed)
+        declared = [f["value"] for f in filled] + [c["after"] for c in all_fixed]
+        validation, fidelity = _review(source, src, body.target, message, declared, original=body.source)
+        return {
+            "ok": True, "kind": "translate", "engine": by, "fallbackReason": reason or None,
+            "sourceType": src, "targetType": body.target, "outputType": checks.detect(message)["code"],
+            "direct": formats.is_direct(src or "", body.target),
+            "message": message, "filled": list(filled), "dropped": list(dropped), "notes": notes,
+            "fixed": all_fixed, "unresolved": unresolved if not extra_fixed else [],
+            "repairedSource": source if (fixed and source != body.source) else None,
+            "carried": fidelity.get("carried", []), "validation": validation, "fidelity": fidelity,
+            "model": model or None, "ms": int((time.monotonic() - t0) * 1000),
+        }
+
+    # 2. The rules engine.
+    rules_result, reason = None, ""
+    if ai_fix:
+        reason = "Part of the message needs more than a rule-based fix (" + "; ".join(u["issue"].split(":")[0] for u in unresolved[:3]) + ")."
+    else:
+        try:
+            o = engine.translate(source, src, body.target)
+            rules_result = payload("rules", o.message, o.filled, o.dropped, " ".join(o.notes))
+            new_errs = _new_errors(rules_result["validation"], source)
+            if not new_errs and rules_result["fidelity"]["ok"]:
+                return rules_result
+            reason = "The rules engine's result broke a rule: " + (new_errs[0]["message"] if new_errs else "a value didn't match the source.")
+        except engine.Decline as e:
+            reason = str(e)
+    log.info("rules engine passed %s -> %s to the AI: %s", src, body.target, reason[:200])
+
+    # 3. The AI, only now.
+    def keep_rules(note: str):
+        rules_result["notes"] = (rules_result["notes"] + " " + note).strip()
+        return rules_result
+
+    if not _has_key():
+        if rules_result:
+            return keep_rules("The AI isn't configured, so this is the rules engine's result with its flags.")
+        raise HTTPException(422, f"The rules engine can't translate this one: {reason}")
+    try:
+        await _admit(req)
+    except HTTPException:
+        if rules_result:
+            return keep_rules("The AI's limit is reached, so this is the rules engine's result with its flags.")
+        raise
+    from . import agents  # imported lazily so the engine works without ADK credentials
+    try:
+        out = await agents.translate(source, src, body.target, fix=ai_fix)
+    except Exception as e:  # noqa: BLE001 — every failure becomes a plain message
+        err = _ai_error(e)
+        if rules_result:
+            return keep_rules(f"The AI couldn't be reached ({err.detail}) This is the rules engine's result with its flags.")
+        raise err
+    return payload("ai", out.message, [f.model_dump() for f in out.filled], [d.model_dump() for d in out.dropped], out.notes,
+                   extra_fixed=[c.model_dump() for c in out.fixed], reason=reason, model=agents.MODEL)
 
 
 @app.post("/api/repair")
 async def repair(body: RepairRequest, req: Request):
-    _require_key()
     det = _source_type(body.source, body.sourceType)
-    await _admit(req)
-
-    from . import agents
+    _cheap_admit(req, _engine_hits, ENGINE_PER_MINUTE, "repairs")
     before = checks.validate(body.source)
     t0 = time.monotonic()
-    try:
-        out = await agents.repair(body.source, det["code"], body.rejectReason)
-    except Exception as e:  # noqa: BLE001
-        raise _ai_error(e)
-
-    after = checks.validate(out.message)
+    r = engine.repair(body.source)
+    result = {"message": r["message"], "changes": r["changes"], "unresolved": r["unresolved"], "summary": "", "engine": "rules"}
+    if r["needs_ai"] and _has_key():
+        try:
+            await _admit(req)
+            from . import agents
+            out = await agents.repair(r["message"], det["code"], body.rejectReason)
+            result = {"message": out.message, "changes": r["changes"] + [c.model_dump() for c in out.changes],
+                      "unresolved": [u.model_dump() for u in out.unresolved], "summary": out.summary, "engine": "ai"}
+        except Exception as e:  # noqa: BLE001 — keep the rule-based fixes
+            log.warning("AI repair unavailable: %s", type(e).__name__)
+    after = checks.validate(result["message"])
     if after.get("std") == "MT":
-        hdr = mappings.header_findings(out.message)
+        hdr = mappings.header_findings(result["message"])
         if hdr:
             after["findings"] = after["findings"] + hdr
             after["valid"] = False
-    declared = [c.after for c in out.changes] + [c.before for c in out.changes]
-    fidelity = checks.compare_values(body.source, out.message, declared=declared)
-    # A repair must stay in the same format.
-    same_type = checks.detect(out.message)["code"] in (None, det["code"])
+    declared = [c["after"] for c in result["changes"]] + [c["before"] for c in result["changes"]]
+    fidelity = checks.compare_values(body.source, result["message"], declared=declared)
     return {
-        "ok": True,
-        "kind": "repair",
-        "sourceType": det["code"],
-        "message": out.message,
-        "changes": [c.model_dump() for c in out.changes],
-        "unresolved": [u.model_dump() for u in out.unresolved],
-        "summary": out.summary,
-        "sameType": same_type,
-        "validationBefore": before,
-        "validation": after,
-        "fidelity": fidelity,
-        "model": agents.MODEL,
+        "ok": True, "kind": "repair", "engine": result["engine"], "sourceType": det["code"],
+        "message": result["message"], "changes": result["changes"], "unresolved": result["unresolved"],
+        "summary": result["summary"] or (f"{len(result['changes'])} fix{'es' if len(result['changes']) != 1 else ''} by rule." if result["changes"] else "Nothing could be fixed by rule."),
+        "sameType": checks.detect(result["message"])["code"] in (None, det["code"]),
+        "validationBefore": before, "validation": after, "fidelity": fidelity,
         "ms": int((time.monotonic() - t0) * 1000),
     }

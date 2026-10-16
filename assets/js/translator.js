@@ -1,14 +1,16 @@
 // =============================================================================
-// PLAYGROUND · LIVE TRANSLATOR (AI)
+// PLAYGROUND · LIVE TRANSLATOR (rules engine + AI)
 // -----------------------------------------------------------------------------
 // Pick a Source format (or just paste: the Source is detected). The Destination
 // is always the Source's direct equivalent, so every result is a faithful
 // translation. Each Source loads a valid sample of that format.
 //
-// AI Translate first checks the message (POST /api/check, no AI). If it has
-// errors, the visitor chooses: Fix with AI, then translate, or Translate anyway.
-// The work is done by the AI API (/ai-api: Google ADK agents on Gemini); every
-// answer comes back with the server's checks, shown plainly here.
+// Translate first checks the message (POST /api/check). If it has errors, the
+// visitor chooses: Fix, then translate, or Translate anyway.
+// Hybrid: the server's rules engine translates and fixes every message it has
+// rules for, instantly; the AI (Google ADK on Gemini) takes over only when the
+// engine can't. Every result comes back with the same checks, shown here,
+// along with which of the two did the work.
 //
 // Self-contained: one global `Translator`. Styles live in style.css (".tr-").
 // =============================================================================
@@ -153,7 +155,7 @@ const Translator = (function () {
             +     '<div class="tr-field"><span class="tr-label">Destination</span>'
             +       '<div id="tr-target" class="tr-dest" aria-live="polite" title="Always the Source’s direct equivalent"></div></div>'
             +     '<div class="tr-actions">'
-            +       '<button type="button" class="tr-go" id="tr-go" onclick="Translator.translate()">' + SPARK + ' AI Translate</button>'
+            +       '<button type="button" class="tr-go" id="tr-go" onclick="Translator.translate()">' + SPARK + ' Translate</button>'
             +     '</div>'
             +   '</div>'
             +   '<div class="tr-tools-right">'
@@ -188,7 +190,7 @@ const Translator = (function () {
     function emptyOutHtml() {
         const f = FORMATS[current];
         return '<div class="tr-empty"><p><strong>Your translation appears here.</strong></p>'
-            + '<p>The message on the left is a valid ' + esc(current) + ' sample' + (f && f.pair ? '. Press <b>AI Translate</b> to turn it into ' + esc(destinationLabel(current, getSource()).label) + '.' : '.')
+            + '<p>The message on the left is a valid ' + esc(current) + ' sample' + (f && f.pair ? '. Press <b>Translate</b> to turn it into ' + esc(destinationLabel(current, getSource()).label) + '.' : '.')
             + ' Pick another Source to see its sample, or paste your own message.</p></div>';
     }
 
@@ -217,7 +219,7 @@ const Translator = (function () {
         }
         const out = $('tr-out');
         if (out && out.querySelector('.tr-empty') && text.trim() && text !== sampleText) {
-            out.innerHTML = '<div class="tr-empty"><p><strong>Ready when you are.</strong></p><p>Check the Source above, then press <b>AI Translate</b>. Your message is checked first, and if it has errors you can let the AI fix them.</p></div>';
+            out.innerHTML = '<div class="tr-empty"><p><strong>Ready when you are.</strong></p><p>Check the Source above, then press <b>Translate</b>. Your message is checked first, and if it has errors you can have them fixed.</p></div>';
         }
         if (detected && detected.code && !FORMATS[detected.code]) {
             showNotice('warn', detected.code + ' isn’t supported yet.', 'The Translator covers the formats listed below.', true);
@@ -302,8 +304,8 @@ const Translator = (function () {
 
     function loading(what, flow) {
         setOut('<div class="tr-loading"><span class="tr-spin" aria-hidden="true"></span><div><strong>' + what + '</strong><br>'
-            + 'The AI follows the field rules for this pair, then our checks validate the result and compare every value with your original. '
-            + 'This usually takes 10 to 30 seconds, longer if the service has been asleep.</div></div>',
+            + 'The rules engine applies the field rules for this pair and our checks compare every value with your original. '
+            + 'Usually instant; the AI steps in only for a message the rules don’t cover. The first request can take a while if the service has been asleep.</div></div>',
             '<span class="tr-badge-pill">' + flow + '</span>', false, 'Translation');
     }
 
@@ -325,14 +327,14 @@ const Translator = (function () {
     function runTranslate(src, fix) {
         setBusy(true);
         const text = src.text, dest = destinationLabel(src.srcCode, text).label;
-        loading((fix ? 'AI is fixing and translating ' : 'AI is translating ') + esc(src.srcCode) + ' into ' + esc(dest) + '…', esc(src.srcCode) + ' &rarr; ' + esc(dest));
+        loading((fix ? 'Fixing and translating ' : 'Translating ') + esc(src.srcCode) + ' into ' + esc(dest) + '…', esc(src.srcCode) + ' &rarr; ' + esc(dest));
         call('/api/translate', { source: text, target: src.target, sourceType: src.srcCode, fix: !!fix })
             .then(function (r) { renderTranslate(r, text, fix); })
             .catch(function (e) { renderError(e); })
             .then(function () { setBusy(false); });
     }
 
-    // One AI call: the errors go with the translation request, and the corrections come back with it.
+    // One request: the server fixes what rules can prove, then translates; the AI only for what rules can't.
     function fixThenTranslate() {
         const src = readSource();
         if (src && !busy) runTranslate(src, true);
@@ -353,7 +355,7 @@ const Translator = (function () {
             clearTimeout(timer);
             return res.json().catch(function () { return {}; }).then(function (j) {
                 if (!res.ok || !j || j.ok === false) {
-                    const e = new Error((j && j.message) || 'The AI service returned an error.');
+                    const e = new Error((j && j.message) || 'The Translator service returned an error.');
                     e.status = res.status;
                     throw e;
                 }
@@ -362,8 +364,8 @@ const Translator = (function () {
         }, function (err) {
             clearTimeout(timer);
             const e = new Error(err && err.name === 'AbortError'
-                ? 'The AI took too long. It may have been asleep; try again in a moment.'
-                : 'Couldn’t reach the AI service. It may be waking up; try again in a few seconds.');
+                ? 'The Translator took too long. It may have been asleep; try again in a moment.'
+                : 'Couldn’t reach the Translator service. It may be waking up; try again in a few seconds.');
             e.network = true;
             throw e;
         });
@@ -376,7 +378,7 @@ const Translator = (function () {
             + '<p>Translating keeps every value exactly as it is, so these errors would be carried into the ' + esc(src.target) + '.</p>'
             + '<ul class="tr-flags">' + errs.map(function (f) { return '<li class="is-bad"><b>' + esc(f.rule) + '</b> ' + esc(f.message) + (f.where ? ' <span class="tr-where">' + esc(f.where) + '</span>' : '') + '</li>'; }).join('') + '</ul>'
             + '<div class="tr-inerr-actions">'
-            +   '<button type="button" class="tr-go" onclick="Translator.fixThenTranslate()">' + SPARK + ' Fix with AI, then translate</button>'
+            +   '<button type="button" class="tr-go" onclick="Translator.fixThenTranslate()">' + SPARK + ' Fix, then translate</button>'
             +   '<button type="button" class="tr-copy" onclick="Translator.translateAnyway()">Translate anyway</button>'
             + '</div></div>',
             '<span class="tr-badge-pill is-err">' + plural(errs.length, 'error') + ' in your message</span>', false, 'Translation');
@@ -398,7 +400,7 @@ const Translator = (function () {
             + '</div>';
         if (inv.length || errs.length || wrongType) {
             html += '<ul class="tr-flags">'
-                + (wrongType ? '<li class="is-bad"><b>Wrong format</b> The AI returned a ' + esc(r.outputType) + ' instead of a ' + esc(r.targetType) + '. Don’t use this result; press AI Translate again.</li>' : '')
+                + (wrongType ? '<li class="is-bad"><b>Wrong format</b> The result is a ' + esc(r.outputType) + ' instead of a ' + esc(r.targetType) + '. Don’t use it; press Translate again.</li>' : '')
                 + inv.map(function (x) { return '<li class="is-bad"><b>' + esc(x.kind) + ' ' + esc(x.value) + '</b> is in the result but not in your message. Check it before using this.</li>'; }).join('')
                 + errs.map(function (f) { return '<li class="is-bad"><b>' + esc(f.rule) + '</b> ' + esc(f.message) + (f.where ? ' <span class="tr-where">' + esc(f.where) + '</span>' : '') + '</li>'; }).join('')
                 + '</ul>';
@@ -417,31 +419,42 @@ const Translator = (function () {
     function renderTranslate(r, text, fix) {
         const bad = (r.fidelity && r.fidelity.invented && r.fidelity.invented.length) || (r.validation && !r.validation.valid)
             || (r.outputType && r.targetType && r.outputType !== r.targetType);
+        const byAI = r.engine === 'ai';
         const isSample = sampleText && text.trim() === sampleText.trim();
         let fixed = '';
         if (fix) {
-            const ch = r.fixed || [];
-            fixed = '<div class="tr-fixed"><div class="tr-fixed-title">' + (ch.length ? 'Fixed while translating: ' + plural(ch.length, 'change') : 'Nothing in your message could be fixed safely') + '</div>'
-                + '<p>Your original message on the left is unchanged.</p></div>'
-                + table('Corrections', ['Field', 'Before', 'After', 'Why'], ch.map(function (c) { return [c.field, c.before, c.after, c.reason]; }), true);
+            const ch = r.fixed || [], un = r.unresolved || [];
+            const moved = !!r.repairedSource;
+            if (moved) {   // the fixed message replaces the broken one, so what's on the left is what was translated
+                const box = $('tr-src');
+                if (box) { box.value = r.repairedSource; detected = detect(r.repairedSource); syncDestination(); }
+            }
+            fixed = '<div class="tr-fixed"><div class="tr-fixed-title">' + (ch.length ? 'Fixed first: ' + plural(ch.length, 'change') : 'Nothing could be fixed safely') + '</div>'
+                + '<p>' + (moved ? 'The fixed message is now on the left.' : 'Your message on the left is unchanged.') + '</p>'
+                + (un.length ? '<ul class="tr-unres">' + un.map(function (u) { return '<li><b>' + esc(u.issue) + '</b> ' + esc(u.reason) + '</li>'; }).join('') + '</ul>' : '')
+                + '</div>'
+                + table('Changes', ['Field', 'Before', 'After', 'Why'], ch.map(function (c) { return [c.field, c.before, c.after, c.reason]; }), true);
         }
-        setOut(fixed + checksHtml(r)
+        const who = byAI
+            ? '<div class="tr-who is-ai"><b>Translated by the AI.</b> ' + esc(r.fallbackReason || 'The rules engine couldn’t do this one.') + '</div>'
+            : '<div class="tr-who"><b>Translated by the rules engine</b> in ' + (r.ms != null ? esc(String(r.ms)) + ' ms' : 'an instant') + ', following the published ' + esc(r.sourceType || '') + ' → ' + esc(r.targetType || '') + ' field rules.</div>';
+        setOut(fixed + who + checksHtml(r)
             + (r.notes ? '<div class="tr-note">' + esc(r.notes) + '</div>' : '')
             + '<pre class="tr-result" id="tr-result">' + esc(r.message) + '</pre>'
             + '<div class="tr-dets">'
             + table('Carried over, checked by code', ['Kind', 'Value'], (r.carried || []).map(function (m) { return [m.kind, m.value]; }), false)
-            + table('Filled in by the AI', ['Field', 'Value', 'Why'], (r.filled || []).map(function (m) { return [m.field, m.value, m.reason]; }), true)
+            + table(byAI ? 'Filled in by the AI' : 'Filled in', ['Field', 'Value', 'Why'], (r.filled || []).map(function (m) { return [m.field, m.value, m.reason]; }), true)
             + table('Not carried over', ['Field', 'Value', 'Why'], (r.dropped || []).map(function (m) { return [m.field, m.value, m.reason]; }), true)
             + '</div>'
-            + '<div class="tr-foot">Written by AI, checked against the ' + esc(r.sourceType || '') + ' → ' + esc(r.targetType || '') + ' rules. Verify every field before using it anywhere real. '
+            + '<div class="tr-foot">' + (byAI ? 'Written by AI' : 'Written by the rules engine') + ', checked against the ' + esc(r.sourceType || '') + ' → ' + esc(r.targetType || '') + ' rules. Verify every field before using it anywhere real. '
             + (isSample ? '<b>That was the sample.</b> Now <button type="button" class="tr-inline" onclick="Translator.pasteOwn()">paste your own message</button>.' : '') + '</div>',
-            '<span class="tr-badge-pill ' + (bad ? 'is-err' : 'is-ok') + '">' + (bad ? 'Check the flags' : 'AI &middot; checked &#10003;') + '</span>'
+            '<span class="tr-badge-pill ' + (bad ? 'is-err' : 'is-ok') + '">' + (bad ? 'Check the flags' : (byAI ? 'AI' : 'Rules engine') + ' &middot; checked &#10003;') + '</span>'
             + '<span class="tr-flow">' + esc(r.sourceType || '') + ' &rarr; ' + esc(r.outputType || r.targetType || '') + '</span>', true, 'Translation');
     }
 
     function renderError(e) {
         setOut('<div class="tr-error"><strong>' + esc(e && e.message || 'Something went wrong.') + '</strong>'
-            + (e && (e.network || e.status === 502 || e.status === 504) ? '<p>Press AI Translate again in a moment. Nothing was lost: your message is still on the left.</p>' : '')
+            + (e && (e.network || e.status === 502 || e.status === 504) ? '<p>Press Translate again in a moment. Nothing was lost: your message is still on the left.</p>' : '')
             + '</div>', '<span class="tr-badge-pill is-err">No result</span>', false, 'Translation');
     }
 

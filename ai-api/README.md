@@ -1,18 +1,26 @@
-# ISO 20022 Academy · AI API
+# ISO 20022 Academy · Translator API (hybrid: rules engine + AI)
 
-The service behind the Translator's **AI Translate** and **AI Repair** buttons.
-Python, [Google ADK](https://google.github.io/adk-docs/) and Gemini. Deployed separately from the
-static site, the same way `/transform-api` is.
+**Rules engine first, AI as the fallback.** Every request goes to the rules engine (`app/engine/`), which
+translates and repairs by the published field rules: instant, free, the same answer every time. The AI
+(Google ADK agents on Gemini, `app/agents.py`) is called only when the engine declines (a structure it doesn't
+cover, a message it can't read) or its result breaks a rule the source didn't already break. If the AI is
+unavailable (no key, limit reached, outage), the engine's result is returned with its flags instead.
 
-```
-Browser ──▶ POST /api/translate ─┐
-        ──▶ POST /api/repair   ──┤   FastAPI
-                                 ▼
-                     ADK agent (translator | repairer), spec in the prompt
-                       checks → one retry with the findings if needed
-                                 ▼
-                     re-check: validate() + compare_values()  ──▶ JSON to the browser
-```
+Every result, from either side, gets the same checks: validation, the pair's field rules
+(`mappings.pair_findings`) and the value comparison (`checks.compare_values`). The response says which side
+did the work (`engine: "rules" | "ai"`) and, for the AI, why (`fallbackReason`).
+
+## The rules engine
+
+| Piece | What it does |
+|---|---|
+| `engine/io.py` | XML and MT readers that remember what they used (anything unused is listed as dropped, never lost silently), writers, party/address handling, amount and date formats |
+| `engine/mx_to_mt.py` | pacs.008→MT103, pacs.004→MT103 RETN, pain.001→MT101, pain.008→MT104, camt.053→MT940, camt.054→MT900/910, camt.056→MT192, pacs.002/pain.002→MT199 |
+| `engine/mt_to_mx.py` | MT103→pacs.008, MT103 RETN→pacs.004, MT101→pain.001, MT104→pain.008, MT940→camt.053, MT900/910→camt.054, MT192→camt.056 |
+| `engine/repair.py` | Provable fixes only (counts, control sums, unambiguous dates, decimals, MT amount commas, header addresses, missing :23B:). What only the sender knows is reported as unresolved; `needs_ai` marks damage an AI could untangle (broken XML, garbled fields) |
+
+The engine declines rather than guesses: several transactions where the MT takes one, mixed currencies in an
+MT104, a missing mandatory value. A decline goes to the AI.
 
 ## How a result is kept honest
 
@@ -38,15 +46,16 @@ Browser ──▶ POST /api/translate ─┐
 | Method | Path | Body | Returns |
 |---|---|---|---|
 | GET | `/api/health` | | `{ ok, configured }` |
-| POST | `/api/translate` | `{ source, target, sourceType?, fix? }` | message, fixed, filled, dropped, notes, `carried` (computed), `direct`, validation, fidelity |
-| POST | `/api/repair` | `{ source, sourceType?, rejectReason? }` | message, changes, unresolved, summary, validationBefore, validation, fidelity |
+| POST | `/api/check` | `{ source }` | detected type, version, equivalent, validation (no AI) |
+| POST | `/api/translate` | `{ source, target, sourceType?, fix? }` | `engine`, `fallbackReason`, message, fixed, unresolved, `repairedSource`, filled, dropped, notes, `carried`, validation, fidelity |
+| POST | `/api/repair` | `{ source, sourceType?, rejectReason? }` | `engine`, message, changes, unresolved, summary, validationBefore, validation, fidelity |
 
-`direct` is false when source and target aren't real equivalents (for example MT103 → pain.001).
-The agent still produces the closest rebuild and explains what changed in meaning.
+Only the direct equivalent is accepted as a target (MT103 → pacs.008, never MT103 → pain.001).
 
 ## Limits and privacy
 
-- Per visitor: `RATE_PER_MINUTE` (6) and `RATE_PER_DAY` (40). Site-wide: `DAILY_REQUEST_CAP` (500).
+- Rules engine: `ENGINE_PER_MINUTE` (30) per visitor, no daily cap (it costs nothing).
+- AI calls only: per visitor `RATE_PER_MINUTE` (6) and `RATE_PER_DAY` (40); site-wide `DAILY_REQUEST_CAP` (500).
 - Messages up to 20,000 characters. XML is parsed with entities, DTDs and network access disabled.
 - Message contents are never logged or stored; each request's agent session is deleted after it answers.
 - Messages are sent to Google's Gemini API. On the **free tier, Google may use prompts to improve its

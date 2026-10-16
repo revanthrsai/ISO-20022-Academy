@@ -5421,3 +5421,8 @@ a.cs-lesson-row:focus-visible { box-shadow: var(--ring-strong); }
 .tr-unres { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; line-height: 1.55; color: var(--text-muted); }
 .tr-unres b { color: var(--warning); }
 .tr-pane-out > .tr-out > .tr-det { margin-top: 10px; }
+
+/* Translator · hybrid (2026-10): who did the work */
+.tr-who { margin: 14px 16px 0; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 14px; line-height: 1.55; color: var(--text); background: var(--glass-tint-strong); border-left: 3px solid var(--primary); }
+.tr-who.is-ai { border-left-color: var(--warning); }
+.tr-who b { font-weight: 600; }

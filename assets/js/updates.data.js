@@ -27,6 +27,13 @@ const ACADEMY_UPDATES = [
     {
         date: '2026-10-16',
         kind: 'tool',
+        title: 'The Translator now runs on a rules engine, with AI as the backup',
+        body: 'Every pair the Translator offers is now translated by a rules engine that applies the published field rules: instant, the same answer every time, and nothing invented. It also fixes the errors that can be proven (a wrong count or control sum, a swapped date, a dot instead of a comma) and tells you which ones only the sender can fix. The AI steps in only for a message the rules don’t cover, and the result tells you which of the two did the work.',
+        links: [{ label: 'Open the Translator', route: '#/playground' }],
+    },
+    {
+        date: '2026-10-16',
+        kind: 'tool',
         title: 'AI Translate and AI Repair',
         body: 'The Translator now runs on AI. Pick a Source format to see a valid sample, or paste your own ISO 20022 or SWIFT MT message, and AI Translate turns it into its direct equivalent following the field rules for that pair. If your message has errors, the AI can fix them first. Every result is checked before you see it: the format is validated, and every amount, BIC, account, date and reference is compared with your original, so anything the AI made up is flagged in red.',
         links: [{ label: 'Try it', route: '#/playground' }]
