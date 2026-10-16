@@ -18,7 +18,7 @@ const Translator = (function () {
 
     // The AI API. Swap to 'http://localhost:8000' to test against a local server.
     const AI_API = 'https://iso20022academy-ai-api.onrender.com';
-    const TIMEOUT_MS = 90000;
+    const TIMEOUT_MS = 120000;
 
     // Every format the Translator offers. `pair` is the direct equivalent in the
     // other standard: same information, same meaning. Any other pair is a

@@ -4,10 +4,13 @@ The two Google ADK agents behind the Translator's buttons.
   translator_agent  AI Translate: any supported message into any other format.
   repair_agent      AI Repair: find what's wrong with a message and fix it.
 
-Both work the same way: look up the target format, write the message, then
-call the validation and value-check tools and fix what they report before
-answering. The final answer is forced into a typed JSON shape (output_schema).
-The API re-runs the same checks afterwards and never trusts the agent's word.
+Speed matters on a public page, so the loop is driven by code, not by the
+model: the target format's spec goes straight into the prompt, the agent
+answers once in a typed JSON shape (output_schema), our checks run on that
+answer, and only if they find problems does the agent get one more attempt
+with the exact findings. That is at most two model calls per request, instead
+of an open-ended tool loop. The API reports the checks with the result and
+never trusts the agent's word.
 """
 from __future__ import annotations
 
@@ -27,8 +30,11 @@ from .models import RepairOutput, TranslateOutput
 
 MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
 APP_NAME = "iso20022academy"
-MAX_LLM_CALLS = int(os.environ.get("MAX_LLM_CALLS", "8"))
-AGENT_TIMEOUT_S = float(os.environ.get("AGENT_TIMEOUT_S", "60"))
+MAX_LLM_CALLS = int(os.environ.get("MAX_LLM_CALLS", "3"))
+ATTEMPT_TIMEOUT_S = float(os.environ.get("ATTEMPT_TIMEOUT_S", "45"))
+MAX_ATTEMPTS = int(os.environ.get("MAX_ATTEMPTS", "2"))
+# LOW keeps answers fast; set THINKING_LEVEL=OFF for models without thinking levels.
+THINKING_LEVEL = os.environ.get("THINKING_LEVEL", "LOW").upper()
 
 
 # ── tools (plain functions: ADK reads the signature and docstring) ──────────
@@ -95,15 +101,11 @@ TRANSLATE_INSTRUCTION = f"""
 You are a senior payments engineer translating payment messages between ISO 20022 (MX)
 and SWIFT MT, and between ISO 20022 messages.
 
-Steps:
-1. Call get_format_spec for the target type, and for the source type if it helps.
-2. Write the complete target message. For MX use the version and namespace from the spec;
-   for MT use blocks 1, 2, 3 (with {{121:UETR}} when a UETR exists) and 4.
-3. Call validate_message on your output and compare_values(source, output). Fix every
-   error and every invented value, then check again. Stop after the checks pass or after
-   two fix attempts, and say what still fails in "notes".
-4. Answer with the structured result: the message, a mapping row for every value you
-   carried over, and the filled and dropped lists.
+The target format's spec is given with the request. Write the complete target message.
+For MX use the version and namespace from the spec; for MT use blocks 1, 2, 3 (with
+{{121:UETR}} when a UETR exists) and 4. Answer with the structured result: the message,
+a mapping row for every value you carried over, and the filled and dropped lists.
+If the request lists problems found in an earlier attempt, fix every one of them.
 
 When source and target are not real equivalents (for example MT103 is bank-to-bank and
 pain.001 is customer-to-bank), still produce the closest faithful rebuild and say plainly
@@ -115,36 +117,39 @@ REPAIR_INSTRUCTION = f"""
 You are a senior payments operations analyst repairing a payment message that was
 rejected or fails validation. Keep the same message type and version.
 
-Steps:
-1. Call validate_message on the message to see what is wrong. If a reject reason code is
-   given, use it as a strong hint about where to look.
-2. Fix only what is provably wrong, with the smallest change. Typical safe fixes:
+The request includes what our validator found in the message. If a reject reason code
+is given, use it as a strong hint about where to look.
+Fix only what is provably wrong, with the smallest change. Typical safe fixes:
    - a control sum or NbOfTxs that doesn't match the transactions (recalculate it)
    - a date written in the wrong order or format, when the intended date is unambiguous
    - a zero fraction on a currency without minor units (150000.00 JPY becomes 150000)
    - a BIC missing its branch code (8 characters, add XXX) or with obvious format noise
    - an MT amount written with a dot instead of a comma
-3. Do NOT guess anything that only the sender knows: a different IBAN or account, a
+Do NOT guess anything that only the sender knows: a different IBAN or account, a
    beneficiary name, an amount, a BIC that isn't derivable from the message itself.
    Put those under "unresolved" with what the operator should do instead.
-4. Call validate_message on the repaired message and compare_values(original, repaired).
-   Every value that differs must appear in "changes" with before, after and reason.
-5. Answer with the structured result. If nothing can be fixed safely, return the
-   original message unchanged with the problems under "unresolved".
+Every value that differs from the original must appear in "changes" with before, after
+and reason. If nothing can be fixed safely, return the original message unchanged with
+the problems under "unresolved". If the request lists problems found in an earlier
+attempt, fix every one of them.
 {_SAFETY}
 """
 
-_GEN = types.GenerateContentConfig(temperature=0.1)
+def _gen_config() -> types.GenerateContentConfig:
+    if THINKING_LEVEL in ("", "OFF", "NONE"):
+        return types.GenerateContentConfig(temperature=0.1)
+    return types.GenerateContentConfig(temperature=0.1, thinking_config=types.ThinkingConfig(thinking_level=THINKING_LEVEL))
+
+
+_GEN = _gen_config()
 
 translator_agent = Agent(
     name="translator", model=MODEL, description="Translates payment messages between formats.",
-    instruction=TRANSLATE_INSTRUCTION, tools=[get_format_spec, validate_message, compare_values],
-    output_schema=TranslateOutput, generate_content_config=_GEN,
+    instruction=TRANSLATE_INSTRUCTION, output_schema=TranslateOutput, generate_content_config=_GEN,
 )
 repair_agent = Agent(
     name="repairer", model=MODEL, description="Repairs invalid or rejected payment messages.",
-    instruction=REPAIR_INSTRUCTION, tools=[get_format_spec, validate_message, compare_values],
-    output_schema=RepairOutput, generate_content_config=_GEN,
+    instruction=REPAIR_INSTRUCTION, output_schema=RepairOutput, generate_content_config=_GEN,
 )
 
 _sessions = InMemorySessionService()
@@ -184,16 +189,60 @@ def _strip_fences(s: str) -> str:
     return s.strip()
 
 
+def _problems(validation: dict, fidelity: dict) -> list[str]:
+    out = [f"{f['rule']}: {f['message']}" + (f" ({f['where']})" if f.get("where") else "")
+           for f in validation.get("findings", []) if f.get("severity") == "error"]
+    out += [f"The {x['kind']} {x['value']} is not in the original message. Use the original value." for x in fidelity.get("invented", [])]
+    return out
+
+
+def _score(validation: dict, fidelity: dict) -> int:
+    return len(_problems(validation, fidelity))
+
+
+async def _attempts(kind: str, base_prompt: str, check) -> object:
+    """Run the agent; if our checks find problems, give it one more go with them."""
+    best, best_score, prompt = None, None, base_prompt
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            raw = await asyncio.wait_for(_run(kind, prompt), timeout=ATTEMPT_TIMEOUT_S)
+        except Exception:
+            if best is not None:  # keep the earlier answer; its flags are shown to the user
+                return best
+            raise
+        out = (TranslateOutput if kind == "translate" else RepairOutput).model_validate(raw)
+        problems = check(out)
+        if best is None or len(problems) < best_score:
+            best, best_score = out, len(problems)
+        if not problems:
+            break
+        prompt = (base_prompt + "\n\nYour previous answer had these problems. Fix every one and answer again:\n- "
+                  + "\n- ".join(problems[:12]) + f"\n\nPrevious answer:\n<previous>\n{out.message}\n</previous>")
+    return best
+
+
 async def translate(source: str, source_type: str | None, target: str) -> TranslateOutput:
-    prompt = (f"Translate this {source_type or 'payment'} message into {target}.\n"
-              f"<message>\n{source}\n</message>")
-    raw = await asyncio.wait_for(_run("translate", prompt), timeout=AGENT_TIMEOUT_S)
-    return TranslateOutput.model_validate(raw)
+    spec = json.dumps(formats.spec(target), indent=1)
+    base = (f"Translate this {source_type or 'payment'} message into {target}.\n"
+            f"Target format spec:\n{spec}\n"
+            f"<message>\n{source}\n</message>")
+
+    def check(out):
+        return _problems(checks.validate(out.message), checks.compare_values(source, out.message, declared=[f.value for f in out.filled]))
+
+    return await _attempts("translate", base, check)
 
 
 async def repair(source: str, source_type: str | None, reject_reason: str | None) -> RepairOutput:
+    found = checks.validate(source)
+    listed = "\n".join(f"- {f['rule']}: {f['message']}" for f in found["findings"]) or "- (no errors found by the validator)"
     hint = f"\nIt was rejected with: {reject_reason}" if reject_reason else ""
-    prompt = (f"Repair this {source_type or 'payment'} message.{hint}\n"
-              f"<message>\n{source}\n</message>")
-    raw = await asyncio.wait_for(_run("repair", prompt), timeout=AGENT_TIMEOUT_S)
-    return RepairOutput.model_validate(raw)
+    base = (f"Repair this {source_type or 'payment'} message.{hint}\n"
+            f"Our validator found:\n{listed}\n"
+            f"<message>\n{source}\n</message>")
+
+    def check(out):
+        declared = [c.after for c in out.changes] + [c.before for c in out.changes]
+        return _problems(checks.validate(out.message), checks.compare_values(source, out.message, declared=declared))
+
+    return await _attempts("repair", base, check)

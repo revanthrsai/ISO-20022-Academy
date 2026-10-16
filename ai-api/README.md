@@ -8,16 +8,17 @@ static site, the same way `/transform-api` is.
 Browser ──▶ POST /api/translate ─┐
         ──▶ POST /api/repair   ──┤   FastAPI
                                  ▼
-                     ADK agent (translator | repairer)
-                       tools: get_format_spec · validate_message · compare_values
+                     ADK agent (translator | repairer), spec in the prompt
+                       checks → one retry with the findings if needed
                                  ▼
                      re-check: validate() + compare_values()  ──▶ JSON to the browser
 ```
 
 ## How a result is kept honest
 
-1. The agent looks up the target format, writes the message, then calls the validation and
-   value-check tools and fixes what they report.
+1. The target format's spec goes into the prompt and the agent answers once. Our checks run on
+   that answer; only if they find problems does the agent get a second attempt with the exact
+   findings. At most two model calls per request, so results come back in seconds.
 2. Its answer is forced into a typed shape (ADK `output_schema`): the message, a field mapping
    (or list of changes for a repair), and the fields it had to fill in or drop.
 3. **The API re-runs the same checks on the final message** and returns them with the result:

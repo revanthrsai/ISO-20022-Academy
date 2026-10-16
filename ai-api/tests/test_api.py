@@ -105,4 +105,5 @@ def test_ai_failure_is_a_plain_message(client, monkeypatch):
 def test_agents_build():
     from app import agents
     assert agents.translator_agent.output_schema is TranslateOutput
-    assert {t.__name__ for t in agents.translator_agent.tools} == {"get_format_spec", "validate_message", "compare_values"}
+    assert not agents.translator_agent.tools  # the check-and-retry loop runs in code
+    assert agents.repair_agent.output_schema is RepairOutput
