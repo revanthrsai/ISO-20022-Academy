@@ -15,6 +15,7 @@ never trusts the agent's word.
 from __future__ import annotations
 
 import asyncio
+import logging
 import json
 import os
 import uuid
@@ -28,6 +29,7 @@ from google.genai import types
 from . import checks, formats, mappings
 from .models import RepairOutput, TranslateOutput
 
+log = logging.getLogger("ai-api")
 MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
 APP_NAME = "iso20022academy"
 MAX_LLM_CALLS = int(os.environ.get("MAX_LLM_CALLS", "3"))
@@ -168,7 +170,8 @@ async def _run(kind: str, prompt: str) -> dict:
         async for event in runner.run_async(user_id="web", session_id=session_id, new_message=msg,
                                             run_config=RunConfig(max_llm_calls=MAX_LLM_CALLS)):
             if event.is_final_response() and event.content and event.content.parts:
-                text = "".join(p.text or "" for p in event.content.parts if getattr(p, "text", None))
+                text = "".join(p.text or "" for p in event.content.parts
+                               if getattr(p, "text", None) and not getattr(p, "thought", False))
                 if text.strip():
                     final = text
     finally:
@@ -202,22 +205,37 @@ def _score(validation: dict, fidelity: dict) -> int:
 
 async def _attempts(kind: str, base_prompt: str, check) -> object:
     """Run the agent; if our checks find problems, give it one more go with them."""
-    best, best_score, prompt = None, None, base_prompt
+    best, best_score, prompt, last_err = None, None, base_prompt, None
+    model = TranslateOutput if kind == "translate" else RepairOutput
     for attempt in range(MAX_ATTEMPTS):
         try:
             raw = await asyncio.wait_for(_run(kind, prompt), timeout=ATTEMPT_TIMEOUT_S)
-        except Exception:
+            out = model.model_validate(raw)
+        except (json.JSONDecodeError, ValueError, RuntimeError) as e:  # unreadable answer: try once more
+            log.warning("%s attempt %d: unusable answer (%s: %s)", kind, attempt + 1, type(e).__name__, str(e)[:200])
+            last_err = e
+            if best is not None:
+                return best
+            prompt = base_prompt + "\n\nYour previous answer was not valid JSON for the required schema. Answer with the JSON object only."
+            continue
+        except Exception as e:  # API errors, timeouts: no point retrying straight away
+            log.warning("%s attempt %d failed: %s: %s", kind, attempt + 1, type(e).__name__, str(e)[:300])
             if best is not None:  # keep the earlier answer; its flags are shown to the user
                 return best
             raise
-        out = (TranslateOutput if kind == "translate" else RepairOutput).model_validate(raw)
-        problems = check(out)
+        try:
+            problems = check(out)
+        except Exception as e:  # a checker bug must not throw away a good answer
+            log.warning("%s check failed: %s: %s", kind, type(e).__name__, str(e)[:200])
+            problems = []
         if best is None or len(problems) < best_score:
             best, best_score = out, len(problems)
         if not problems:
             break
         prompt = (base_prompt + "\n\nYour previous answer had these problems. Fix every one and answer again:\n- "
                   + "\n- ".join(problems[:12]) + f"\n\nPrevious answer:\n<previous>\n{out.message}\n</previous>")
+    if best is None:
+        raise last_err or RuntimeError("The AI returned no answer.")
     return best
 
 

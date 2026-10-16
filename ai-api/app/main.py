@@ -12,6 +12,7 @@ Message contents are never logged or stored.
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import time
 from collections import defaultdict, deque
@@ -90,9 +91,22 @@ def _source_type(text: str, given: str | None) -> dict:
     return {**det, "code": given if given in formats.FORMATS else det["code"]}
 
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+log = logging.getLogger("ai-api")
+
+
 def _ai_error(e: Exception) -> HTTPException:
+    # Only the error type and the API's own text are logged, never the message being translated.
+    code = getattr(e, "code", None) or getattr(e, "status_code", None)
+    log.error("AI call failed: %s (code=%s): %s", type(e).__name__, code, str(e)[:400])
     if isinstance(e, asyncio.TimeoutError):
         return HTTPException(504, "The AI took too long. Try again in a moment.")
+    if code == 429 or "RESOURCE_EXHAUSTED" in str(e):
+        return HTTPException(503, "The AI has hit its usage limit with Google for now. Try again in a little while.")
+    if code in (401, 403) or "API_KEY" in str(e) or "PERMISSION_DENIED" in str(e):
+        return HTTPException(503, "The AI key on the server was rejected by Google. It needs to be checked.")
+    if code == 404 or "NOT_FOUND" in str(e):
+        return HTTPException(503, "The AI model configured on the server isn't available. It needs to be checked.")
     return HTTPException(502, "The AI couldn't produce a usable answer for this message. Try again, or check the message is complete.")
 
 

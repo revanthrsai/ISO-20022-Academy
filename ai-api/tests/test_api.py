@@ -125,3 +125,35 @@ def test_rule_breaks_make_the_result_invalid(client, monkeypatch):
     j = client.post("/api/translate", json={"source": PACS008, "target": "MT103"}).json()
     assert j["validation"]["valid"] is False
     assert {"Field 20", "Field 70"} <= {f["rule"] for f in j["validation"]["findings"]}
+
+
+def test_quota_and_key_errors_say_what_happened(client, monkeypatch):
+    from app import agents
+
+    class ApiErr(Exception):
+        def __init__(self, code, msg):
+            super().__init__(msg)
+            self.code = code
+
+    for code, text, word in [(429, "RESOURCE_EXHAUSTED", "usage limit"), (400, "API_KEY_INVALID", "key"), (404, "NOT_FOUND", "model")]:
+        async def boom(*a, _c=code, _t=text):
+            raise ApiErr(_c, _t)
+        monkeypatch.setattr(agents, "translate", boom)
+        r = client.post("/api/translate", json={"source": PACS008, "target": "MT103"})
+        assert r.status_code == 503 and word in r.json()["message"]
+
+
+def test_unreadable_first_answer_gets_a_second_try(monkeypatch):
+    import asyncio
+    from app import agents
+    calls = []
+
+    async def fake_run(kind, prompt):
+        calls.append(prompt)
+        if len(calls) == 1:
+            raise RuntimeError("The AI returned no answer.")
+        return {"message": MT103}
+
+    monkeypatch.setattr(agents, "_run", fake_run)
+    out = asyncio.run(agents.translate(PACS008, "pacs.008", "MT103"))
+    assert out.message == MT103 and len(calls) == 2
