@@ -5401,3 +5401,23 @@ a.cs-lesson-row:focus-visible { box-shadow: var(--ring-strong); }
   .tr-actions { flex: 1 1 100%; }
   .tr-actions .tr-go { flex: 1; justify-content: center; }
 }
+
+/* Translator v3 (2026-10): Source picks a sample, Destination follows, one AI button. */
+.tr-dest { display: flex; align-items: baseline; gap: 8px; min-height: 40px; padding: 8px 12px; border: 1px dashed var(--border-hi); border-radius: var(--radius-sm); background: var(--surface-alt); }
+.tr-dest-code { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.tr-dest-note { font-size: 12px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tr-dest.is-none .tr-dest-code { color: var(--text-faint); }
+.tr-version { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 2px 8px; white-space: nowrap; }
+.tr-version:empty { display: none; }
+.tr-notice.is-info { border-left-color: var(--primary); }
+.tr-inerr { padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+.tr-inerr-title { font-weight: 700; font-size: 16px; color: var(--danger); }
+.tr-inerr p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--text-muted); }
+.tr-inerr .tr-flags { margin: 0; }
+.tr-inerr-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.tr-fixed { margin: 14px 16px 0; padding: 12px 14px; border-radius: var(--radius-sm); border-left: 3px solid var(--primary); background: var(--glass-tint-strong); }
+.tr-fixed-title { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--primary-deep); }
+.tr-fixed p { margin: 6px 0 0; font-size: 14px; line-height: 1.55; color: var(--text); }
+.tr-unres { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; line-height: 1.55; color: var(--text-muted); }
+.tr-unres b { color: var(--warning); }
+.tr-pane-out > .tr-out > .tr-det { margin-top: 10px; }

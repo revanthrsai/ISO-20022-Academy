@@ -28,7 +28,7 @@ const ACADEMY_UPDATES = [
         date: '2026-10-16',
         kind: 'tool',
         title: 'AI Translate and AI Repair',
-        body: 'The Translator now runs on AI. Paste any ISO 20022 or SWIFT MT message and translate it into any other format, or press AI Repair to find what is wrong with it and fix it. Every result is checked before you see it: the format is validated, and every amount, BIC, account, date and reference is compared with your original, so anything the AI made up is flagged in red.',
+        body: 'The Translator now runs on AI. Pick a Source format to see a valid sample, or paste your own ISO 20022 or SWIFT MT message, and AI Translate turns it into its direct equivalent following the field rules for that pair. If your message has errors, the AI can fix them first. Every result is checked before you see it: the format is validated, and every amount, BIC, account, date and reference is compared with your original, so anything the AI made up is flagged in red.',
         links: [{ label: 'Try it', route: '#/playground' }]
     },
     {

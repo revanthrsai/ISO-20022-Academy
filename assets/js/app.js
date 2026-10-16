@@ -151,9 +151,9 @@ const PAGES = {
                 <div class="eyebrow">Playground</div>
                 <h2 class="section-title">Live Translator</h2>
                 <p class="section-description">
-                    Paste an ISO&nbsp;20022 or SWIFT&nbsp;MT message. <strong>AI Translate</strong> turns it into
-                    any other format; <strong>AI Repair</strong> finds what&rsquo;s wrong and fixes it. Every result
-                    is checked against your original before you see it.
+                    Pick a Source format to see a valid sample, or paste your own message. <strong>AI Translate</strong>
+                    turns it into its direct equivalent, following the field rules for that pair, and checks every
+                    value against your original. If your message has errors, the AI can fix them first.
                 </p>`)}
             <div id="tr-root"></div>
         </div>

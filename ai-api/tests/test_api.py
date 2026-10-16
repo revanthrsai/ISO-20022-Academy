@@ -53,16 +53,26 @@ def test_translate_flags_invented_values(client, monkeypatch):
     assert {"kind": "amount", "value": "4000 USD"} in j["fidelity"]["invented"]
 
 
-def test_rebuild_pair_is_allowed_but_not_direct(client, monkeypatch):
-    stub(monkeypatch, translate=TranslateOutput(message=PACS008.replace("pacs.008.001.08", "pain.001.001.09")))
-    j = client.post("/api/translate", json={"source": MT103, "target": "pain.001"}).json()
-    assert j["ok"] and j["direct"] is False
+def test_only_the_direct_equivalent_is_accepted(client, monkeypatch):
+    stub(monkeypatch, translate=TranslateOutput(message=MT103))
+    r = client.post("/api/translate", json={"source": MT103_OLD_RULES, "target": "pain.001"})
+    assert r.status_code == 422 and "pacs.008" in r.json()["message"]
+    r = client.post("/api/translate", json={"source": ":20:X\n:79:hello there", "target": "pacs.002"})
+    assert r.status_code == 422 and "no structured equivalent" in r.json()["message"]
+
+
+def test_check_endpoint_needs_no_key_and_finds_errors(client, monkeypatch):
+    monkeypatch.delenv("GOOGLE_API_KEY")
+    bad = PACS008.replace("<NbOfTxs>1</NbOfTxs>", "<NbOfTxs>2</NbOfTxs>")
+    j = client.post("/api/check", json={"source": bad}).json()
+    assert j["sourceType"] == "pacs.008" and j["equivalent"] == "MT103" and j["version"] == "pacs.008.001.08"
+    assert j["validation"]["valid"] is False and j["validation"]["findings"][0]["rule"] == "NbOfTxs"
 
 
 def test_rejects_bad_input(client):
     assert client.post("/api/translate", json={"source": "hello", "target": "MT103"}).status_code == 422
     assert client.post("/api/translate", json={"source": PACS008, "target": "pacs.008"}).status_code == 422
-    assert client.post("/api/translate", json={"source": PACS008, "target": "MT999"}).status_code == 422
+    assert client.post("/api/translate", json={"source": PACS008, "target": "MT101"}).status_code == 422
     assert client.post("/api/translate", json={"source": PACS008, "target": "MT103", "sourceType": "MT101"}).status_code == 422
     assert client.post("/api/translate", json={"source": "x" * 20001, "target": "MT103"}).status_code == 422
 

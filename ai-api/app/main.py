@@ -96,14 +96,43 @@ def _ai_error(e: Exception) -> HTTPException:
     return HTTPException(502, "The AI couldn't produce a usable answer for this message. Try again, or check the message is complete.")
 
 
+_check_hits: dict[str, deque] = defaultdict(deque)
+
+
+@app.post("/api/check")
+async def check(body: RepairRequest, req: Request):
+    """Validate a message without the AI: instant, and doesn't count towards the AI limits."""
+    ip, now = _client_ip(req), time.monotonic()
+    q = _check_hits[ip]
+    while q and now - q[0] > 60:
+        q.popleft()
+    if len(q) >= 30:
+        raise HTTPException(429, "Too many checks in a minute. Wait a moment and try again.")
+    q.append(now)
+    det = checks.detect(body.source)
+    v = checks.validate(body.source)
+    if det["std"] == "MT":
+        hdr = mappings.header_findings(body.source)
+        if hdr:
+            v["findings"] = v["findings"] + hdr
+            v["valid"] = False
+    code = det["code"]
+    return {"ok": True, "sourceType": code, "version": det.get("version"),
+            "equivalent": formats.FORMATS.get(code or "", {}).get("equivalent"), "validation": v}
+
+
 @app.post("/api/translate")
 async def translate(body: TranslateRequest, req: Request):
     _require_key()
     det = _source_type(body.source, body.sourceType)
-    if body.target not in formats.FORMATS:
-        raise HTTPException(422, f"{body.target} isn't a destination the Translator supports.")
-    if det["code"] == body.target:
-        raise HTTPException(422, f"The message is already a {body.target}.")
+    src = det["code"]
+    if src not in formats.FORMATS:
+        raise HTTPException(422, f"{src or 'This message type'} isn't supported by the Translator yet.")
+    equivalent = formats.FORMATS[src]["equivalent"]
+    if not equivalent:
+        raise HTTPException(422, f"{src} is free text and has no structured equivalent to translate into.")
+    if body.target != equivalent:
+        raise HTTPException(422, f"{src} translates to {equivalent}, its direct equivalent.")
     await _admit(req)
 
     from . import agents  # imported lazily so /api/health works without ADK credentials

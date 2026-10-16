@@ -1,0 +1,13 @@
+{
+  "code": "MT192",
+  "family": "mt",
+  "label": "MT192",
+  "kind": "Request for cancellation",
+  "sub": "Request for cancellation",
+  "note": "Bob's bank asks HDFC to cancel the $400: it was sent twice.",
+  "std": "MT",
+  "dest": [
+    "translator"
+  ],
+  "message": "{1:F01EBILAEADAXXX0000000000}{2:I192HDFCINBBXXXXN}{3:{121:eb6305c9-1f7c-4a9b-9b1e-2c2f4e7a91d4}}{4:\n:20:EBILAEAD-CXL-040\n:21:EBILAEAD-INSTR-0\n:11S:103\n260627\n:79:/DUPL/Duplicate payment. Please cancel\nand return USD 400,00.\n-}\n"
+}

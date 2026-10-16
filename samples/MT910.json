@@ -1,0 +1,13 @@
+{
+  "code": "MT900 / MT910",
+  "family": "mt",
+  "label": "MT900 / MT910",
+  "kind": "Confirmation of credit",
+  "sub": "Confirmation of credit",
+  "note": "HDFC Bank confirms Bob's $400 was credited to Sweety's account.",
+  "std": "MT",
+  "dest": [
+    "translator"
+  ],
+  "message": "{1:F01HDFCINBBAXXX0000000000}{2:I910HDFCINBBXXXXN}{4:\n:20:NTF-77-0042\n:21:BOB-INV0042\n:25:50100123456789\n:32A:260627USD400,00\n:50K:Bob Marsh\n:52A:EBILAEAD\n-}\n"
+}
