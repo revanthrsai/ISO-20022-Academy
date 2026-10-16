@@ -152,7 +152,7 @@ async def translate(body: TranslateRequest, req: Request):
     from . import agents  # imported lazily so /api/health works without ADK credentials
     t0 = time.monotonic()
     try:
-        out = await agents.translate(body.source, det["code"], body.target)
+        out = await agents.translate(body.source, det["code"], body.target, fix=body.fix)
     except Exception as e:  # noqa: BLE001 — every failure becomes a plain message
         raise _ai_error(e)
 
@@ -162,7 +162,7 @@ async def translate(body: TranslateRequest, req: Request):
         validation["findings"] = validation["findings"] + rule_findings
         validation["valid"] = False
     detected_out = checks.detect(out.message)
-    fidelity = checks.compare_values(body.source, out.message, declared=[f.value for f in out.filled])
+    fidelity = checks.compare_values(body.source, out.message, declared=[f.value for f in out.filled] + [c.after for c in out.fixed])
     return {
         "ok": True,
         "kind": "translate",
@@ -171,7 +171,8 @@ async def translate(body: TranslateRequest, req: Request):
         "outputType": detected_out["code"],
         "direct": formats.is_direct(det["code"] or "", body.target),
         "message": out.message,
-        "mapping": [m.model_dump() for m in out.mapping],
+        "carried": fidelity.get("carried", []),  # worked out by our value comparison, not written by the model
+        "fixed": [c.model_dump() for c in out.fixed],
         "filled": [f.model_dump() for f in out.filled],
         "dropped": [d.model_dump() for d in out.dropped],
         "notes": out.notes,

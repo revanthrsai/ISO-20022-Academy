@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import main
-from app.models import Change, Filled, FieldMap, RepairOutput, TranslateOutput
+from app.models import Change, Filled, RepairOutput, TranslateOutput
 from tests.test_checks import MT103 as MT103_OLD_RULES, PACS008
 from tests.test_mappings import GOOD as MT103  # follows the pacs.008 → MT103 field rules
 
@@ -25,7 +25,7 @@ def client():
 def stub(monkeypatch, translate=None, repair=None):
     from app import agents
 
-    async def t(source, st, target):
+    async def t(source, st, target, fix=False):
         return translate
 
     async def r(source, st, reason):
@@ -40,10 +40,11 @@ def test_health(client):
 
 
 def test_translate_clean(client, monkeypatch):
-    stub(monkeypatch, translate=TranslateOutput(message=MT103, mapping=[FieldMap(source_field="IntrBkSttlmAmt", target_field=":32A:", value="400,00")]))
+    stub(monkeypatch, translate=TranslateOutput(message=MT103))
     j = client.post("/api/translate", json={"source": PACS008, "target": "MT103"}).json()
     assert j["ok"] and j["sourceType"] == "pacs.008" and j["outputType"] == "MT103" and j["direct"] is True
     assert j["validation"]["valid"] and j["fidelity"]["ok"]
+    assert {"kind": "amount", "value": "400 USD"} in j["carried"] and "mapping" not in j
 
 
 def test_translate_flags_invented_values(client, monkeypatch):
@@ -105,7 +106,7 @@ def test_rate_limit(client, monkeypatch):
 def test_ai_failure_is_a_plain_message(client, monkeypatch):
     from app import agents
 
-    async def boom(*a):
+    async def boom(*a, **kw):
         raise ValueError("model said nonsense")
 
     monkeypatch.setattr(agents, "translate", boom)
@@ -136,7 +137,7 @@ def test_quota_and_key_errors_say_what_happened(client, monkeypatch):
             self.code = code
 
     for code, text, word in [(429, "RESOURCE_EXHAUSTED", "usage limit"), (400, "API_KEY_INVALID", "key"), (404, "NOT_FOUND", "model")]:
-        async def boom(*a, _c=code, _t=text):
+        async def boom(*a, _c=code, _t=text, **kw):
             raise ApiErr(_c, _t)
         monkeypatch.setattr(agents, "translate", boom)
         r = client.post("/api/translate", json={"source": PACS008, "target": "MT103"})
@@ -157,3 +158,43 @@ def test_unreadable_first_answer_gets_a_second_try(monkeypatch):
     monkeypatch.setattr(agents, "_run", fake_run)
     out = asyncio.run(agents.translate(PACS008, "pacs.008", "MT103"))
     assert out.message == MT103 and len(calls) == 2
+
+
+def test_sample_answers_are_reused_but_visitor_messages_are_not(monkeypatch):
+    import asyncio, json
+    from pathlib import Path
+    from app import agents
+    calls = []
+    sample = json.loads((Path(__file__).parents[2] / "samples" / "pacs.008.json").read_text())["xml"] if (Path(__file__).parents[2] / "samples").exists() else None
+    if sample is None:
+        import pytest; pytest.skip("samples folder not next to ai-api")
+    good = json.loads((Path(__file__).parents[2] / "samples" / "MT103.json").read_text())["message"]
+
+    async def fake_run(kind, prompt):
+        calls.append(prompt)
+        return {"message": good}
+
+    monkeypatch.setattr(agents, "_run", fake_run)
+    agents._sample_cache.clear()
+    for _ in range(3):
+        asyncio.run(agents.translate(sample.replace("\n", "\r\n"), "pacs.008", "MT103"))
+    assert len(calls) == 1  # the sample costs one model call, then it's reused
+    own = sample.replace("400.00", "401.00")
+    asyncio.run(agents.translate(own, "pacs.008", "MT103"))
+    asyncio.run(agents.translate(own, "pacs.008", "MT103"))
+    assert all(k[0] in agents._SAMPLE_HASHES for k in agents._sample_cache)
+
+
+def test_fix_mode_sends_the_errors_in_one_call(monkeypatch):
+    import asyncio
+    from app import agents
+    calls = []
+
+    async def fake_run(kind, prompt):
+        calls.append(prompt)
+        return {"message": MT103, "fixed": [{"field": "NbOfTxs", "before": "2", "after": "1", "reason": "one transaction"}]}
+
+    monkeypatch.setattr(agents, "_run", fake_run)
+    bad = PACS008.replace("<NbOfTxs>1</NbOfTxs>", "<NbOfTxs>2</NbOfTxs>")
+    out = asyncio.run(agents.translate(bad, "pacs.008", "MT103", fix=True))
+    assert "Fix the source first" in calls[0] and "NbOfTxs" in calls[0] and out.fixed[0].after == "1"

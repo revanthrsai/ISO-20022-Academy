@@ -458,4 +458,7 @@ def compare_values(source: str, output: str, declared: list[str] | None = None) 
             if declared_has(val):
                 continue
             dropped.append({"kind": KIND_LABEL[kind], "value": val})
-    return {"ok": not invented, "invented": invented, "dropped": dropped, "new_references": new_refs, "truncated": truncated}
+    carried = [{"kind": KIND_LABEL.get(k, "reference"), "value": val}
+               for k in ("amounts", "bics", "accounts", "dates", "refs") for val in sorted(s[k] & o[k])]
+    return {"ok": not invented, "invented": invented, "dropped": dropped, "new_references": new_refs, "truncated": truncated,
+            "carried": carried}

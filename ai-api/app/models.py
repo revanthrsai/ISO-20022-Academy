@@ -9,56 +9,50 @@ MAX_MESSAGE_CHARS = 20_000
 
 
 # ── what the agents return (enforced by ADK output_schema) ──────────────────
-class FieldMap(BaseModel):
-    source_field: str = Field(description="Where the value came from in the source message, e.g. ':32A:' or 'CdtTrfTxInf/IntrBkSttlmAmt'.")
-    target_field: str = Field(description="Where it went in the output message.")
-    value: str = Field(description="The value as written in the output.")
-
-
 class Filled(BaseModel):
-    field: str = Field(description="Output field that had no source value.")
-    value: str = Field(description="What was written there.")
-    reason: str = Field(description="Why: generated identifier, required default, or placeholder.")
+    field: str
+    value: str
+    reason: str = Field(description="A few words.")
 
 
 class Dropped(BaseModel):
-    field: str = Field(description="Source field with no place in the target format.")
+    field: str
     value: str
-    reason: str
-
-
-class TranslateOutput(BaseModel):
-    message: str = Field(description="The complete translated message, ready to copy.")
-    mapping: list[FieldMap] = Field(default_factory=list)
-    filled: list[Filled] = Field(default_factory=list)
-    dropped: list[Dropped] = Field(default_factory=list)
-    notes: str = Field(default="", description="One or two plain sentences a payments analyst should know about this translation.")
+    reason: str = Field(description="A few words.")
 
 
 class Change(BaseModel):
-    field: str = Field(description="The field that was changed, e.g. 'CdtrAcct/Id/IBAN' or ':32A:'.")
+    field: str
     before: str
     after: str
-    reason: str = Field(description="Plain-English reason, naming the rule that was broken.")
+    reason: str = Field(description="A few words naming the rule.")
+
+
+class TranslateOutput(BaseModel):
+    message: str = Field(description="The complete target message.")
+    fixed: list[Change] = Field(default_factory=list, description="Only when asked to fix the source: each correction made.")
+    filled: list[Filled] = Field(default_factory=list, description="Target fields with no source value.")
+    dropped: list[Dropped] = Field(default_factory=list, description="Source values with no place in the target.")
+    notes: str = Field(default="", description="One short sentence, or empty.")
 
 
 class Unresolved(BaseModel):
     issue: str
-    reason: str = Field(description="Why it can't be fixed safely without the sender, and what to do instead.")
+    reason: str = Field(description="Why only the sender can fix it.")
 
 
 class RepairOutput(BaseModel):
-    message: str = Field(description="The complete repaired message, in the same format as the input.")
+    message: str = Field(description="The complete repaired message, same format.")
     changes: list[Change] = Field(default_factory=list)
     unresolved: list[Unresolved] = Field(default_factory=list)
-    summary: str = Field(default="", description="One or two sentences: what was wrong and what was done.")
+    summary: str = Field(default="", description="One short sentence.")
 
 
-# ── API ─────────────────────────────────────────────────────────────────────
 class TranslateRequest(BaseModel):
     source: str = Field(min_length=1, max_length=MAX_MESSAGE_CHARS)
     target: str = Field(min_length=2, max_length=32)
     sourceType: Optional[str] = Field(default=None, max_length=32)
+    fix: bool = Field(default=False, description="Correct the source's validation errors while translating (one AI call).")
 
 
 class RepairRequest(BaseModel):

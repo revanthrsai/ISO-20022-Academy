@@ -319,36 +319,28 @@ const Translator = (function () {
             if (!errs.length) { runTranslate(src, null); return; }
             setBusy(false);
             renderInputErrors(src, errs);
-        }).catch(function () { runTranslate(src, null); });   // checker unreachable: translate, the result still carries its checks
+        }).catch(function () { runTranslate(src, false); });   // checker unreachable: translate, the result still carries its checks
     }
 
-    function runTranslate(src, repaired) {
+    function runTranslate(src, fix) {
         setBusy(true);
-        const text = repaired ? repaired.message : src.text;
-        loading('AI is translating ' + esc(src.srcCode) + ' into ' + esc(destinationLabel(src.srcCode, text).label) + '…', esc(src.srcCode) + ' &rarr; ' + esc(destinationLabel(src.srcCode, text).label));
-        call('/api/translate', { source: text, target: src.target, sourceType: src.srcCode })
-            .then(function (r) { renderTranslate(r, text, repaired); })
+        const text = src.text, dest = destinationLabel(src.srcCode, text).label;
+        loading((fix ? 'AI is fixing and translating ' : 'AI is translating ') + esc(src.srcCode) + ' into ' + esc(dest) + '…', esc(src.srcCode) + ' &rarr; ' + esc(dest));
+        call('/api/translate', { source: text, target: src.target, sourceType: src.srcCode, fix: !!fix })
+            .then(function (r) { renderTranslate(r, text, fix); })
             .catch(function (e) { renderError(e); })
             .then(function () { setBusy(false); });
     }
 
+    // One AI call: the errors go with the translation request, and the corrections come back with it.
     function fixThenTranslate() {
         const src = readSource();
-        if (!src || busy) return;
-        setBusy(true);
-        setOut('<div class="tr-loading"><span class="tr-spin" aria-hidden="true"></span><div><strong>AI is fixing your ' + esc(src.srcCode) + '…</strong><br>'
-            + 'Only what is provably wrong is changed. Anything only the sender can know is left for you.</div></div>',
-            '<span class="tr-badge-pill">Fix &middot; ' + esc(src.srcCode) + '</span>', false, 'Translation');
-        call('/api/repair', { source: src.text, sourceType: src.srcCode }).then(function (r) {
-            const box = $('tr-src');
-            if (box && r.message && (r.changes || []).length) { box.value = r.message; detected = detect(r.message); syncDestination(); }
-            runTranslate(src, r);
-        }).catch(function (e) { setBusy(false); renderError(e); });
+        if (src && !busy) runTranslate(src, true);
     }
 
     function translateAnyway() {
         const src = readSource();
-        if (src && !busy) runTranslate(src, null);
+        if (src && !busy) runTranslate(src, false);
     }
 
     function call(path, body) {
@@ -422,23 +414,22 @@ const Translator = (function () {
             + '</tbody></table></div></details>';
     }
 
-    function renderTranslate(r, text, repaired) {
+    function renderTranslate(r, text, fix) {
         const bad = (r.fidelity && r.fidelity.invented && r.fidelity.invented.length) || (r.validation && !r.validation.valid)
             || (r.outputType && r.targetType && r.outputType !== r.targetType);
         const isSample = sampleText && text.trim() === sampleText.trim();
         let fixed = '';
-        if (repaired) {
-            const ch = repaired.changes || [], un = repaired.unresolved || [];
-            fixed = '<div class="tr-fixed"><div class="tr-fixed-title">' + (ch.length ? 'Fixed first: ' + plural(ch.length, 'change') : 'The AI couldn’t fix it safely') + '</div>'
-                + (repaired.summary ? '<p>' + esc(repaired.summary) + '</p>' : '')
-                + (un.length ? '<ul class="tr-unres">' + un.map(function (u) { return '<li><b>' + esc(u.issue) + '</b> ' + esc(u.reason) + '</li>'; }).join('') + '</ul>' : '')
-                + '</div>' + table('Changes to your message', ['Field', 'Before', 'After', 'Why'], ch.map(function (c) { return [c.field, c.before, c.after, c.reason]; }), true);
+        if (fix) {
+            const ch = r.fixed || [];
+            fixed = '<div class="tr-fixed"><div class="tr-fixed-title">' + (ch.length ? 'Fixed while translating: ' + plural(ch.length, 'change') : 'Nothing in your message could be fixed safely') + '</div>'
+                + '<p>Your original message on the left is unchanged.</p></div>'
+                + table('Corrections', ['Field', 'Before', 'After', 'Why'], ch.map(function (c) { return [c.field, c.before, c.after, c.reason]; }), true);
         }
         setOut(fixed + checksHtml(r)
             + (r.notes ? '<div class="tr-note">' + esc(r.notes) + '</div>' : '')
             + '<pre class="tr-result" id="tr-result">' + esc(r.message) + '</pre>'
             + '<div class="tr-dets">'
-            + table('Field mapping', ['From', 'To', 'Value'], (r.mapping || []).map(function (m) { return [m.source_field, m.target_field, m.value]; }), false)
+            + table('Carried over, checked by code', ['Kind', 'Value'], (r.carried || []).map(function (m) { return [m.kind, m.value]; }), false)
             + table('Filled in by the AI', ['Field', 'Value', 'Why'], (r.filled || []).map(function (m) { return [m.field, m.value, m.reason]; }), true)
             + table('Not carried over', ['Field', 'Value', 'Why'], (r.dropped || []).map(function (m) { return [m.field, m.value, m.reason]; }), true)
             + '</div>'

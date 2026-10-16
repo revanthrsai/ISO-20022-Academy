@@ -20,7 +20,7 @@ Browser ──▶ POST /api/translate ─┐
    field goes where, header blocks, /ROC/, charge codes…) go into the prompt, and the agent answers once. Our checks run on
    that answer; only if they find problems does the agent get a second attempt with the exact
    findings. At most two model calls per request, so results come back in seconds.
-2. Its answer is forced into a typed shape (ADK `output_schema`): the message, a field mapping
+2. Its answer is forced into a typed shape (ADK `output_schema`): the message, the corrections when fixing
    (or list of changes for a repair), and the fields it had to fill in or drop.
 3. **The API re-runs the same checks on the final message** and returns them with the result:
    - `validation`: structure, namespace, mandatory MT fields, IBAN checksum, BIC format, dates,
@@ -38,7 +38,7 @@ Browser ──▶ POST /api/translate ─┐
 | Method | Path | Body | Returns |
 |---|---|---|---|
 | GET | `/api/health` | | `{ ok, configured }` |
-| POST | `/api/translate` | `{ source, target, sourceType? }` | message, mapping, filled, dropped, notes, `direct`, validation, fidelity |
+| POST | `/api/translate` | `{ source, target, sourceType?, fix? }` | message, fixed, filled, dropped, notes, `carried` (computed), `direct`, validation, fidelity |
 | POST | `/api/repair` | `{ source, sourceType?, rejectReason? }` | message, changes, unresolved, summary, validationBefore, validation, fidelity |
 
 `direct` is false when source and target aren't real equivalents (for example MT103 → pain.001).
@@ -73,3 +73,14 @@ New → Web Service → this repository → **Root Directory `ai-api`** → Runt
 Under Environment add `GOOGLE_API_KEY` (and optionally the other variables in `.env.example`).
 The site expects it at `https://iso20022academy-ai-api.onrender.com`; if Render gives a different
 URL, update `AI_API` in `assets/js/translator.js`.
+
+
+## Token budget
+
+- The model writes only the message and short `filled` / `dropped` / `fixed` lists. Which values were
+  carried over is worked out by `checks.compare_values`, not written by the model.
+- `THINKING_LEVEL=MINIMAL` by default (thinking tokens are billed as output); `MAX_OUTPUT_TOKENS` caps an answer.
+- `fix: true` corrects the source and translates it in **one** call, instead of a repair call plus a translate call.
+- Answers for the site's own samples (`app/sample_hashes.json`) are kept in memory and reused, so trying the
+  sample costs one model call per restart, not one per visitor. Visitors' own messages are never cached.
+- A second attempt happens only when our checks find an error in the first answer (`MAX_ATTEMPTS=1` turns it off).
