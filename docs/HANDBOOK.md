@@ -163,29 +163,37 @@ view's **mount element** instead (`#dict-root`, `#glossary-grid`, `#xv-root`,
 `#ws-root`) — with parent-tab highlighting, the tab name no longer identifies
 the view.
 
-The home route `#/` redirects to `#/history`.
-
-Hash-based routing, with one query-string layer for shareable filter state:
+**Clean URLs (2026-10).** Every view has a real address. `scripts/build-seo.js`
+writes a copy of `index.html` into each route's folder (with that page's title,
+description, canonical, Open Graph and JSON-LD, and its content pre-written in
+`<main>` for crawlers and no-JS readers), plus `404.html`. The app reads
+`location.pathname`, updates it with `history.pushState` (so Back/Forward work),
+and converts old `#/…` links on arrival. Internally the router still matches
+`#/…` strings: `currentRoute()`, `setUrl()` and `goRoute()` in `app.js` translate.
+All asset paths in the shell are site-absolute (`/assets/…`, `/content/…`).
 
 ```
-#/                                 → redirect to #/history
-#/history/<chapter-slug>           → a single History chapter
-#/library                          → Library landing (shelves index)
-#/library/<level>                  → a shelf overview (100…600)
-#/library/<level>/<topic-slug>     → a single lesson
-#/playground                       → the Live Translator
-#/glossary?category=<cat>          → filtered glossary  (also ?q=<query>)
-#/glossary/<term-slug>             → a single term (scrolls + highlights the card)
-#/dictionary                       → the Dictionary landing (families → messages)
-#/dictionary/<message>             → one message + its interactive anatomy
-#/dictionary/<message>/<Element>   → one element's entry (deep-linkable, SEO)
-#/dictionary/codes                 → the code-set index
-#/dictionary/codes/<set>           → one code set (filterable)
-#/dictionary/changes               → the What's-Changing hub
-#/library/glossary                 → the Glossary's new canonical home
-#/workshop                         → the Workshop landing (scenario cards)
-#/workshop/<id>                    → one workshop, running
+/                                  → the Library (home)
+/library/                          → the Library (canonical: /)
+/library/<id>/                     → one lesson
+/history/  /history/<slug>/        → History landing, one chapter
+/playground/                       → the Live Translator
+/workshop/  /workshop/<id>/        → Workshop landing, one workshop
+/reference/                        → the Glossary (canonical: /glossary/)
+/glossary/?category=&q=            → filtered glossary
+/glossary/<term-slug>/             → one term
+/dictionary/                       → the Dictionary landing
+/dictionary/field/<Element>/       → one element
+/dictionary/codes/                 → the code-set index
+/dictionary/codes/<set>/           → one code set
+/dictionary/codes/<set>/<code>/    → one code (opens its set, filtered)
+/dictionary/changes/               → the What's-Changing hub
+/whats-new/  /journey/             → changelog, the life of a payment
 ```
+
+Local preview needs the generated folders: run `node scripts/build-toc.js &&
+node scripts/build-seo.js && node scripts/build-samples.js`, then any static
+server from the repo root.
 
 ### The Workshop (1.6)
 

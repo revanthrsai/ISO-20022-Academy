@@ -3,10 +3,12 @@
 // scripts/build-seo.js — generates crawlable static pages for every published
 // Library article, plus sitemap.xml and robots.txt.
 //
-// Why: the app is a hash-routed SPA, so search engines see one URL. These
-// pages give every lesson a real URL (/library/<id>/) with full content,
-// meta/OG tags, JSON-LD, internal links to related lessons, and a CTA into
-// the interactive app.
+// Clean URLs (2026-10): every view of the app has a real address. For each one
+// this writes a copy of the app shell (index.html) into that route's folder,
+// with the page's own <title>, description, canonical URL, Open Graph tags and
+// JSON-LD, plus the page's content pre-written inside <main> for search engines
+// and no-JS readers. When the app starts it renders the same view over it.
+// GitHub Pages then serves /library/301-pacs-008/ as a real 200 page.
 //
 // Zero-dependency (same ethos as build-toc.js). Runs in the Pages workflow
 // after build-toc.js:   node scripts/build-seo.js
@@ -58,10 +60,10 @@ function mapHref(spec) {
     const parts = String(spec).split(':');
     const kind = parts[0], arg = parts[1];
     if (kind === 'article' && arg) return `/library/${arg}/`;
-    if (kind === 'page' && arg) return `/#/${arg}`;
-    if (kind === 'explorer') return `/#/playground`;
-    if (kind === 'playground') return `/#/playground`;
-    return `/#/library`;
+    if (kind === 'page' && arg) return `/${arg}/`;
+    if (kind === 'explorer') return `/playground/`;
+    if (kind === 'playground') return `/playground/`;
+    return `/library/`;
 }
 
 // ---- Tiny markdown → HTML (good enough for crawlers, keeps links) ---------
@@ -145,10 +147,36 @@ function mdToHtml(md) {
     return out.join('\n');
 }
 
+// ---- The app shell, specialised per page -----------------------------------
+const TEMPLATE = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+function attr(s) { return esc(String(s || '')).replace(/\s+/g, ' ').trim(); }
+function shell(o) {
+    // o: { path:'/library/x/', title, desc, canonical?, ogType?, jsonld?, prerender, noindex? }
+    const url = SITE + (o.canonical || o.path);
+    let h = TEMPLATE;
+    const swap = (re, val) => { if (!re.test(h)) throw new Error('build-seo: template is missing ' + re); h = h.replace(re, val); };
+    swap(/<title>[\s\S]*?<\/title>/, `<title>${esc(o.title)}</title>`);
+    swap(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${attr(o.desc).slice(0, 300)}">`);
+    swap(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${url}">` + (o.noindex ? '\n    <meta name="robots" content="noindex">' : ''));
+    swap(/<meta property="og:type" content="[^"]*">/, `<meta property="og:type" content="${o.ogType || 'website'}">`);
+    swap(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${attr(o.ogTitle || o.title)}">`);
+    swap(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${attr(o.desc).slice(0, 300)}">`);
+    swap(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${url}">`);
+    if (o.jsonld) swap(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, `<script type="application/ld+json">${JSON.stringify(o.jsonld)}</script>`);
+    swap(/(<main class="content-area" id="content" tabindex="-1">)[\s\S]*?(<\/main>)/,
+        `$1\n            <div class="prerender">${o.prerender || ''}</div>\n        $2`);
+    return h;
+}
+function writeShell(rel, o, inSitemap) {
+    const dir = path.join(ROOT, rel);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'index.html'), shell({ ...o, path: '/' + rel + '/' }));
+    if (inSitemap !== false) urls.push(`${SITE}/${rel}/`);
+}
+
 // ---- Page template ---------------------------------------------------------
 function pageHtml(meta, bodyHtml, id, titleById, neighbors) {
     const url = `${SITE}/library/${id}/`;
-    const app = `${SITE}/#/library/${id}`;
     const title = `${meta.title} · ISO 20022 Academy`;
     const desc = String(meta.summary || '').slice(0, 300);
     const rel = (Array.isArray(meta.related) ? meta.related : [])
@@ -173,92 +201,18 @@ function pageHtml(meta, bodyHtml, id, titleById, neighbors) {
         mainEntityOfPage: url,
         isAccessibleForFree: true
     };
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${esc(title)}</title>
-<meta name="description" content="${esc(desc)}">
-<link rel="canonical" href="${url}">
-<link rel="icon" href="/favicon.ico" sizes="48x48">
-<link rel="icon" type="image/png" sizes="192x192" href="/assets/images/favicon-192.png">
-<meta property="og:type" content="article">
-<meta property="og:site_name" content="ISO 20022 Academy">
-<meta property="og:title" content="${esc(meta.title)}">
-<meta property="og:description" content="${esc(desc)}">
-<meta property="og:url" content="${url}">
-<meta property="og:image" content="${SITE}/assets/images/og-image.jpg">
-<meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">${JSON.stringify(jsonld)}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@600;700;800&family=Newsreader:ital,opsz,wght@0,18..72,400;0,18..72,500;1,18..72,400&display=swap" rel="stylesheet">
-<style>
-  /* These pages are where search lands — they carry the same brand as the app:
-     Newsreader for reading, Jakarta for headings, the emerald palette. */
-  :root { --bg:#FAF9F5; --ink:#1A211C; --muted:#5C685F; --primary:#0E9F70; --border:#E4E2DA; --heads:'Plus Jakarta Sans',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.7 'Newsreader',Georgia,serif; }
-  .wrap { max-width:720px; margin:0 auto; padding:0 20px 80px; }
-  a { color:var(--primary); }
-  .topbar { position:sticky; top:0; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); margin:0 -20px 34px; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:14px; }
-  .brand { font-family:var(--heads); font-weight:800; color:var(--ink); text-decoration:none; font-size:15px; letter-spacing:-.01em; }
-  .brand em { color:var(--primary); font-style:normal; }
-  .topnav { display:flex; gap:16px; font-family:var(--heads); font-size:13.5px; font-weight:600; }
-  .topnav a { text-decoration:none; color:var(--muted); }
-  .topnav a:hover { color:var(--primary); }
-  .kicker { font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--primary); margin:10px 0 8px; }
-  h1 { font-family:var(--heads); font-weight:800; font-size:clamp(30px,5vw,38px); line-height:1.12; letter-spacing:-.02em; margin:0 0 10px; }
-  .standfirst { color:var(--muted); font-size:19px; font-style:italic; margin:0 0 14px; }
-  .meta { color:var(--muted); font-size:14px; font-family:var(--heads); margin-bottom:26px; }
-  .cta { display:inline-block; font-family:var(--heads); font-weight:700; font-size:15px; color:#fff; background:var(--primary); padding:11px 20px; border-radius:999px; text-decoration:none; margin:6px 0 30px; box-shadow:0 6px 18px -8px var(--primary); }
-  blockquote { margin:0 0 1em; padding:14px 18px; background:#EAF4EE; border-left:3px solid var(--primary); border-radius:8px; }
-  h2 { font-family:var(--heads); font-weight:700; font-size:24px; margin-top:1.6em; letter-spacing:-.01em; }
-  h3 { font-family:var(--heads); font-weight:700; font-size:19px; margin-top:1.4em; }
-  code { font-family:var(--mono); font-size:.85em; background:#EFEEE7; padding:1px 5px; border-radius:4px; }
-  pre { background:#10201A; color:#D9E6DE; padding:16px; border-radius:10px; overflow-x:auto; }
-  pre code { background:none; color:inherit; padding:0; }
-  table { border-collapse:collapse; width:100%; margin:0 0 1.4em; font-family:var(--heads); font-size:15px; }
-  th, td { border:1px solid var(--border); padding:8px 12px; text-align:left; vertical-align:top; }
-  th { background:#EFEEE7; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
-  ol, ul { padding-left:1.3em; }
-  .more a { font-family:var(--heads); font-weight:600; text-decoration:none; }
-  .qa { background:#F3F1EA; border-radius:8px; padding:12px 16px; font-family:var(--heads); font-size:15px; }
-  .pager { display:flex; justify-content:space-between; gap:14px; margin-top:44px; font-family:var(--heads); font-size:14px; font-weight:600; }
-  .pager a { flex:0 1 46%; text-decoration:none; color:var(--ink); border:1px solid var(--border); border-radius:12px; padding:12px 16px; }
-  .pager a:hover { border-color:var(--primary); }
-  .pager a span { display:block; font-family:var(--mono); font-size:10.5px; font-weight:400; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
-  .pager-next { text-align:right; margin-left:auto; }
-  .related { margin-top:44px; padding-top:20px; border-top:1px solid var(--border); }
-  .related h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
-  .related ul { list-style:none; padding:0; font-family:var(--heads); }
-  .related li { margin:8px 0; }
-  .foot { margin-top:48px; padding-top:18px; border-top:1px solid var(--border); color:var(--muted); font-family:var(--heads); font-size:13px; }
-</style>
-</head>
-<body>
-<div class="wrap">
-  <header class="topbar">
-    <a class="brand" href="${SITE}/">ISO 20022 <em>Academy</em></a>
-    <nav class="topnav" aria-label="Site">
-      <a href="${SITE}/#/library">Library</a>
-      <a href="${SITE}/#/playground">Playground</a>
-      <a href="${SITE}/#/workshop">Workshop</a>
-    </nav>
-  </header>
-  <div class="kicker">${esc(String(meta.level))} · Library</div>
+    return shell({
+        path: `/library/${id}/`, title, desc, ogType: 'article', ogTitle: meta.title, jsonld,
+        prerender: `<article class="prerender-article">
+  <p class="prerender-kicker">${esc(String(meta.level))} · Library</p>
   <h1>${esc(meta.title)}</h1>
-  ${meta.summary ? `<p class="standfirst">${esc(meta.summary)}</p>` : ''}
-  <div class="meta">${meta.minutes ? meta.minutes + ' min read · ' : ''}free, no signup</div>
-  <a class="cta" href="${app}">Read in the interactive Academy &rarr;</a>
+  ${meta.summary ? `<p class="prerender-standfirst">${esc(meta.summary)}</p>` : ''}
+  <p class="prerender-meta">${meta.minutes ? meta.minutes + ' min read · ' : ''}free, no signup</p>
   ${bodyHtml}
   ${pagerHtml}
   ${relatedHtml}
-  <div class="foot">Part of <a href="${SITE}/">ISO 20022 Academy</a> — lessons, a message playground, quizzes, and a glossary for the language of modern payments. Written by <a href="https://www.linkedin.com/in/revanth-sai-2002/">Revanth Sai Rayapati</a>.</div>
-</div>
-<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "11b2bff9a0f84f4a83a1bccdc1da12df"}'></script>
-</body>
-</html>`;
+</article>`
+    });
 }
 
 // ---- Build -----------------------------------------------------------------
@@ -285,6 +239,7 @@ pages.forEach((p, i) => {
     fs.mkdirSync(dir, { recursive: true });
     const neighbors = { prev: pages[i - 1] || null, next: pages[i + 1] || null };
     fs.writeFileSync(path.join(dir, 'index.html'), pageHtml(p.meta, mdToHtml(p.body), p.id, titleById, neighbors));
+    // (each lesson folder now holds the full app, opened on that lesson)
     urls.push(`${SITE}/library/${p.id}/`);
 });
 
@@ -331,61 +286,24 @@ function writePage(rel, html) {
 function refPage(o) {
     const url = `${SITE}/${o.rel}/`;
     const d = (o.desc || '').replace(/\s+/g, ' ').slice(0, 300);
-    const jsonld = { '@context': 'https://schema.org', '@type': o.type || 'DefinedTerm', name: o.term || o.title, description: d, url, inDefinedTermSet: `${SITE}/#/dictionary`, isAccessibleForFree: true, publisher: { '@type': 'Organization', name: 'ISO 20022 Academy', url: SITE } };
-    return `<!DOCTYPE html>
-<html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${esc(o.title)} · ISO 20022 Academy</title>
-<meta name="description" content="${esc(d)}">
-<link rel="canonical" href="${url}">
-<link rel="icon" href="/favicon.ico" sizes="48x48">
-<meta property="og:type" content="website"><meta property="og:site_name" content="ISO 20022 Academy">
-<meta property="og:title" content="${esc(o.title)}"><meta property="og:description" content="${esc(d)}">
-<meta property="og:url" content="${url}"><meta property="og:image" content="${SITE}/assets/images/og-image.jpg">
-<meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">${JSON.stringify(jsonld)}</script>
-<style>
- :root{--bg:#FAF9F5;--ink:#1A211C;--muted:#5C685F;--primary:#0E9F70;--border:#E4E2DA}
- body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.7 Georgia,'Times New Roman',serif}
- .wrap{max-width:720px;margin:0 auto;padding:40px 20px 80px}
- a{color:var(--primary)}
- .brand{font-family:system-ui,sans-serif;font-weight:700;color:var(--ink);text-decoration:none;font-size:15px}
- .brand em{color:var(--primary);font-style:normal}
- .kicker{font-family:ui-monospace,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin:34px 0 8px}
- h1{font-family:ui-monospace,monospace;font-size:30px;margin:0 0 12px;letter-spacing:-.01em}
- h1.txt{font-family:system-ui,sans-serif;letter-spacing:-.02em;font-size:34px}
- .standfirst{color:var(--muted);font-size:18px;margin:0 0 16px}
- .cta{display:inline-block;font-family:system-ui,sans-serif;font-weight:600;font-size:15px;color:#fff;background:var(--primary);padding:11px 20px;border-radius:10px;text-decoration:none;margin:6px 0 26px}
- h2{font-family:system-ui,sans-serif;font-size:20px;margin-top:1.6em}
- code{font-family:ui-monospace,monospace;font-size:.9em;background:#EFEEE7;padding:1px 5px;border-radius:4px}
- pre{background:#10201A;color:#D9E6DE;padding:16px;border-radius:10px;overflow-x:auto;font-size:13px;line-height:1.5}
- pre code{background:none;color:inherit;padding:0}
- table{border-collapse:collapse;width:100%;margin:0 0 1.4em;font-family:system-ui,sans-serif;font-size:15px}
- th,td{border:1px solid var(--border);padding:8px 12px;text-align:left;vertical-align:top}
- th{background:#EFEEE7;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
- dl{font-family:system-ui,sans-serif;margin:0 0 1em}dt{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:12px}dd{margin:2px 0 0;font-size:16px}
- .chips a{display:inline-block;font-family:ui-monospace,monospace;font-size:13px;background:#EFEEE7;border-radius:999px;padding:3px 11px;margin:0 6px 7px 0;text-decoration:none}
- .foot{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
-</style></head>
-<body><div class="wrap">
-<a class="brand" href="${SITE}/">ISO 20022 <em>Academy</em></a>
-<div class="kicker">${esc(o.kicker)}</div>
-<h1${o.titleClass ? ' class="' + o.titleClass + '"' : ''}>${esc(o.title)}</h1>
-${o.standfirst ? `<p class="standfirst">${o.standfirst}</p>` : ''}
-${o.appUrl ? `<a class="cta" href="${o.appUrl}">Open in the interactive Academy &rarr;</a>` : ''}
-${o.body}
-<div class="foot">Part of the <a href="${SITE}/#/dictionary">ISO 20022 Dictionary</a> — the reference layer of <a href="${SITE}/">ISO 20022 Academy</a>. Written by <a href="https://www.linkedin.com/in/revanth-sai-2002/">Revanth Sai Rayapati</a>.</div>
-</div>
-<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "11b2bff9a0f84f4a83a1bccdc1da12df"}'></script>
-</body></html>`;
+    const jsonld = { '@context': 'https://schema.org', '@type': o.type || 'DefinedTerm', name: o.term || o.title, description: d, url, inDefinedTermSet: `${SITE}/dictionary/`, isAccessibleForFree: true, publisher: { '@type': 'Organization', name: 'ISO 20022 Academy', url: SITE } };
+    return shell({
+        path: `/${o.rel}/`, title: `${o.title} · ISO 20022 Academy`, ogTitle: o.title, desc: d, jsonld,
+        prerender: `<section class="prerender-ref">
+  <p class="prerender-kicker">${esc(o.kicker)}</p>
+  <h1>${esc(o.title)}</h1>
+  ${o.standfirst ? `<p class="prerender-standfirst">${o.standfirst}</p>` : ''}
+  ${o.body}
+</section>`
+    });
 }
 
 let refCount = 0;
 // Dictionary landing
 writePage('dictionary', refPage({ rel: 'dictionary', type: 'WebPage', kicker: 'Reference', title: 'The ISO 20022 Dictionary', titleClass: 'txt',
     standfirst: 'Every element and code set — definitions, cardinality, valid codes, and an example.',
-    desc: 'The ISO 20022 dictionary: message elements and code sets (reason, purpose, status, settlement).', appUrl: `${SITE}/#/dictionary`,
-    body: `<p>Browse ${Object.keys(DICT.ELEMENTS).length} elements and ${CODES.SETS.length} code sets — definitions, cardinality, valid codes, and examples. To work with a whole message, use the <a href="${SITE}/#/playground">Live Translator</a>.</p>` }));
+    desc: 'The ISO 20022 dictionary: message elements and code sets (reason, purpose, status, settlement).',
+    body: `<p>Browse ${Object.keys(DICT.ELEMENTS).length} elements and ${CODES.SETS.length} code sets — definitions, cardinality, valid codes, and examples. To work with a whole message, use the <a href="${SITE}/playground/">Live Translator</a>.</p>` }));
 refCount++;
 
 // Retired message pages (2026-10). Whole messages now live in the Live
@@ -394,7 +312,7 @@ refCount++;
 Object.keys(DICT.MESSAGES).forEach(code => {
     const dir = path.join(ROOT, 'dictionary', code);
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'index.html'), `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${esc(code)} · ISO 20022 Academy</title><meta name="robots" content="noindex"><link rel="canonical" href="${SITE}/dictionary/"><meta http-equiv="refresh" content="0; url=/#/playground"></head><body><p>${esc(code)} now lives in the <a href="/#/playground">Live Translator</a>.</p></body></html>`);
+    fs.writeFileSync(path.join(dir, 'index.html'), `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${esc(code)} · ISO 20022 Academy</title><meta name="robots" content="noindex"><link rel="canonical" href="${SITE}/dictionary/"><meta http-equiv="refresh" content="0; url=/playground/"></head><body><p>${esc(code)} now lives in the <a href="/playground/">Live Translator</a>.</p></body></html>`);
 });
 
 // Elements
@@ -404,7 +322,7 @@ Object.keys(DICT.ELEMENTS).forEach(name => {
     const exBlock = e.ex ? `<h2>Example</h2><pre><code>${esc(e.ex)}</code></pre>` : '';
     const noteBlock = e.note ? `<p><strong>Watch out.</strong> ${esc(e.note)}</p>` : '';
     writePage(`dictionary/field/${name}`, refPage({ rel: `dictionary/field/${name}`, type: 'DefinedTerm', kicker: 'ISO 20022 element', title: `<${name}>`, term: name,
-        standfirst: esc(e.def), desc: `${name} — ${e.def}`, appUrl: `${SITE}/#/dictionary/_/${name}`,
+        standfirst: esc(e.def), desc: `${name} — ${e.def}`,
         body: `<dl><dt>Cardinality (typical)</dt><dd><code>${esc(e.c || '—')}</code></dd></dl>${noteBlock}${codesBlock}${exBlock}` }));
     refCount++;
 });
@@ -413,12 +331,12 @@ Object.keys(DICT.ELEMENTS).forEach(name => {
 CODES.SETS.forEach(s => {
     const rows = s.codes.map(c => `<tr><td><code><a href="/dictionary/codes/${s.id}/${c.code}/">${esc(c.code)}</a></code></td><td>${esc(c.name)}</td><td>${esc(c.desc)}</td></tr>`).join('');
     writePage(`dictionary/codes/${s.id}`, refPage({ rel: `dictionary/codes/${s.id}`, type: 'DefinedTermSet', kicker: 'ISO 20022 code set', title: s.name,
-        standfirst: esc(s.blurb), desc: `${s.name}: ${s.blurb} Carried in ${s.field}.`, appUrl: `${SITE}/#/dictionary/codes/${s.id}`,
+        standfirst: esc(s.blurb), desc: `${s.name}: ${s.blurb} Carried in ${s.field}.`,
         body: `<p><strong>Carried in:</strong> ${esc(s.field)}</p>${s.note ? `<p><em>${esc(s.note)}</em></p>` : ''}<table><thead><tr><th>Code</th><th>Name</th><th>Meaning</th></tr></thead><tbody>${rows}</tbody></table>` }));
     refCount++;
     s.codes.forEach(c => {
         writePage(`dictionary/codes/${s.id}/${c.code}`, refPage({ rel: `dictionary/codes/${s.id}/${c.code}`, type: 'DefinedTerm', kicker: `${s.name} · ISO 20022 code`, title: c.code, term: c.code,
-            standfirst: `<strong>${esc(c.name)}</strong> — ${esc(c.desc)}`, desc: `${c.code} (${c.name}) — ${c.desc} An ISO 20022 code from the ${s.name.toLowerCase()}, carried in ${s.field}.`, appUrl: `${SITE}/#/dictionary/codes/${s.id}`,
+            standfirst: `<strong>${esc(c.name)}</strong> — ${esc(c.desc)}`, desc: `${c.code} (${c.name}) — ${c.desc} An ISO 20022 code from the ${s.name.toLowerCase()}, carried in ${s.field}.`,
             body: `<dl><dt>Code</dt><dd><code>${esc(c.code)}</code></dd><dt>Name</dt><dd>${esc(c.name)}</dd><dt>Code set</dt><dd><a href="/dictionary/codes/${s.id}/">${esc(s.name)}</a></dd><dt>Carried in</dt><dd>${esc(s.field)}</dd></dl>` }));
         refCount++;
     });
@@ -429,7 +347,7 @@ if (CHG.MILESTONES.length) {
     const tl = CHG.MILESTONES.map(m => `<tr><td><strong>${esc(m.when)}</strong></td><td>${esc(m.title)}<br>${esc(m.body)}</td></tr>`).join('');
     const map = CHG.MAP.map(r => `<tr><td><code>${esc(r.mt)}</code></td><td><code>${esc(r.mx)}</code></td><td>${esc(r.what)}</td></tr>`).join('');
     writePage('dictionary/changes', refPage({ rel: 'dictionary/changes', type: 'WebPage', kicker: 'ISO 20022', title: "What's changing", titleClass: 'txt',
-        standfirst: 'Migration deadlines, the MT&nbsp;&#8644;&nbsp;MX map, and how versions move.', desc: 'ISO 20022 migration timeline (MT retirement, structured addresses, Case Management) plus the MT to MX message mapping and the version cycle.', appUrl: `${SITE}/#/dictionary/changes`,
+        standfirst: 'Migration deadlines, the MT&nbsp;&#8644;&nbsp;MX map, and how versions move.', desc: 'ISO 20022 migration timeline (MT retirement, structured addresses, Case Management) plus the MT to MX message mapping and the version cycle.',
         body: `<h2>Migration timeline</h2><table><tbody>${tl}</tbody></table><h2>MT &#8644; MX map</h2><table><thead><tr><th>Legacy MT</th><th>ISO 20022</th><th>What it is</th></tr></thead><tbody>${map}</tbody></table>` }));
     refCount++;
 }
@@ -438,7 +356,7 @@ if (CHG.MILESTONES.length) {
 GLOSS.forEach(t => {
     if (!t.slug || !t.term) return;
     writePage(`glossary/${t.slug}`, refPage({ rel: `glossary/${t.slug}`, type: 'DefinedTerm', kicker: 'ISO 20022 glossary', title: t.term, titleClass: 'txt', term: t.term,
-        standfirst: '', desc: t.definition || t.term, appUrl: `${SITE}/#/glossary/${t.slug}`,
+        standfirst: '', desc: t.definition || t.term,
         body: `<p>${esc(t.definition || '')}</p>` }));
     refCount++;
 });
@@ -454,7 +372,6 @@ if (WS.LIST.length) {
         rel: 'workshop', type: 'WebPage', kicker: 'Hands-on', title: 'ISO 20022 Workshops', titleClass: 'txt',
         standfirst: 'Practise on real broken messages, not multiple choice.',
         desc: 'Hands-on ISO 20022 workshops: debug a broken pacs.008, migrate an MT103, and handle R-transactions. Checked automatically against real validation rules.',
-        appUrl: `${SITE}/#/workshop`,
         body: cards
     }));
     refCount++;
@@ -467,13 +384,44 @@ if (WS.LIST.length) {
             title: w.title, titleClass: 'txt',
             standfirst: esc(w.blurb),
             desc: `${w.blurb} A hands-on ISO 20022 workshop, checked automatically.`,
-            appUrl: `${SITE}/#/workshop/${w.id}`,
             body: `<p>${esc(w.blurb)}</p><h2>What you practise</h2><ul>${skills}</ul>` +
                   (d.task ? `<h2>The task</h2><p>${esc(d.task)}</p>` : '')
         }));
         refCount++;
     });
 }
+
+// ---------------------------------------------------------------------------
+// THE REST OF THE APP'S VIEWS — each gets its folder too, so a reload or a
+// shared link on any clean URL lands on a real page instead of a 404.
+// ---------------------------------------------------------------------------
+const appSrc = fs.readFileSync(path.join(ROOT, 'assets/js/app.js'), 'utf8');
+const chapters = [];
+appSrc.replace(/slug: '([a-z0-9-]+)', status: 'ready'[\s\S]*?title: '([^']+)'[\s\S]*?summary: '([^']+)'/g, (m, slug, title, summary) => { chapters.push({ slug, title, summary }); return m; });
+const simple = (rel, title, desc, body, extra) => writeShell(rel, {
+    title: `${title} · ISO 20022 Academy`, ogTitle: title, desc,
+    prerender: `<section class="prerender-ref"><h1>${esc(title)}</h1><p class="prerender-standfirst">${esc(desc)}</p>${body || ''}</section>`, ...(extra || {})
+}, !(extra && extra.canonical));
+const lessonList = pages.map(p => `<li><a href="/library/${p.id}/">${esc(p.meta.title)}</a></li>`).join('');
+simple('library', 'The Library', 'A free ISO 20022 course in six sections, from what money is to reading a real pacs.008.',
+    `<ol>${lessonList}</ol>`, { canonical: '/' });
+simple('playground', 'Live Translator', 'Translate between ISO 20022 (MX) and SWIFT MT: pacs.008 and MT103, pain.001 and MT101, camt.053 and MT940 and more, checked field by field.');
+simple('history', 'History', 'How money became information: five chapters from the first ledgers to ISO 20022.',
+    `<ol>${chapters.map(c => `<li><a href="/history/${c.slug}/">${esc(c.title)}</a></li>`).join('')}</ol>`);
+chapters.forEach(c => simple(`history/${c.slug}`, c.title, c.summary));
+simple('whats-new', "What's new", 'Every new lesson, workshop and tool on ISO 20022 Academy, newest first.');
+simple('journey', 'The life of a payment', 'Follow one payment end to end, from the customer instruction to the final credit.');
+simple('reference', 'Reference', 'The ISO 20022 glossary and dictionary.', '', { canonical: '/glossary/' });
+simple('glossary', 'Glossary', `${GLOSS.length} ISO 20022 and payments terms, explained in plain English.`,
+    `<ul>${GLOSS.filter(t => t.slug && t.term).map(t => `<li><a href="/glossary/${t.slug}/">${esc(t.term)}</a></li>`).join('')}</ul>`);
+simple('dictionary/codes', 'ISO 20022 code sets', 'Reason, purpose, status and other ISO 20022 code sets with every code explained.',
+    `<ul>${CODES.SETS.map(c => `<li><a href="/dictionary/codes/${c.id}/">${esc(c.name)}</a></li>`).join('')}</ul>`);
+
+// Anything else (a mistyped or retired address): GitHub Pages serves 404.html,
+// which is the app too, so the visitor lands in the Library rather than a dead end.
+fs.writeFileSync(path.join(ROOT, '404.html'), shell({ path: '/404/', canonical: '/', title: 'Page not found · ISO 20022 Academy',
+    desc: 'That page has moved or never existed.', noindex: true,
+    prerender: '<section class="prerender-ref"><h1>Page not found</h1><p>That address has moved or never existed. <a href="/library/">Go to the Library</a>.</p></section>' }));
 
 // sitemap.xml + robots.txt
 const today = new Date().toISOString().slice(0, 10);

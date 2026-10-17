@@ -276,7 +276,7 @@ const Articles = (function () {
         if (cache[id]) return cache[id];
         const entry = getArticle(id);
         if (!entry) throw new Error('Unknown article: ' + id);
-        const res = await fetch('content/' + entry.file);
+        const res = await fetch('/content/' + entry.file);
         if (!res.ok) throw new Error('Could not load ' + entry.file + ' (' + res.status + ')');
         const raw = await res.text();
         const { meta, body } = splitFrontmatter(raw);
@@ -590,6 +590,11 @@ async function openArticle(id) {
     closeDetailPanel();
     window.scrollTo({ top: 0, behavior: 'auto' });
 
+    // Give the lesson its own address (/library/<id>/) so it can be shared and reloaded.
+    if (typeof setUrl === 'function') setUrl('#/library/' + id, false);
+    const tocEntry = typeof getArticle === 'function' ? getArticle(id) : null;
+    if (typeof setTitle === 'function' && tocEntry) setTitle(tocEntry.title);
+
     // Record reading context so the header arrows step between articles.
     window.__currentArticle = id;
     window.__currentHistory = null;
@@ -647,11 +652,11 @@ function initArticleToc() {
 }
 
 // ---- Share a lesson by link (Track 2) -------------------------------------
-// Builds the deep link (#/library/<id>) that routeOnLoad/hashchange resolve to
+// Builds the lesson's own address (/library/<id>/), which opens straight onto
 // this exact article. Uses the native share sheet on mobile, clipboard on
 // desktop, with inline "Copied" feedback.
 function shareArticle(id, btn) {
-    const url = location.origin + location.pathname + '#/library/' + id;
+    const url = location.origin + '/library/' + id + '/';
     const titleEl = document.querySelector('.article-title');
     const title = (titleEl ? titleEl.textContent.trim() : 'ISO 20022 Academy') + ' — ISO 20022 Academy';
     const flash = (text) => {

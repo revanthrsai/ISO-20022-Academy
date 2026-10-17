@@ -1,13 +1,56 @@
 // App Module - Main application logic and navigation
 
-// Clean-URL mode: routes still drive rendering through the hash internally, but
-// the hash is stripped from the address bar right after each render. Incoming
-// deep links (#/library etc.) still open correctly on load; the bar then always
-// shows the bare site URL. Flip to false to restore shareable hash URLs.
-window.CLEAN_URLS = false; // routes stay visible and shareable: #/library, #/workshop/…
-function stripHash() {
-    if (!window.CLEAN_URLS || !location.hash) return;
-    history.replaceState(null, '', location.pathname + location.search);
+// Clean URLs (2026-10): every view has a real address — /library/,
+// /library/301-pacs-008/, /playground/ — served on GitHub Pages by a copy of
+// this shell that scripts/build-seo.js writes into each route's folder.
+// The router below still speaks in "#/route" strings internally; these
+// helpers translate between those and the real path in the address bar.
+// Old #/ links (already shared on LinkedIn) are converted on arrival.
+window.CLEAN_URLS = false; // legacy flag, no longer used
+function stripHash() {}
+
+// '#/library/x?q=1' or '/library/x?q=1' → '/library/x/?q=1' (trailing slash, as the folders are served)
+function routeToPath(route) {
+    let s = String(route || '').replace(/^#/, '');
+    if (s.charAt(0) !== '/') s = '/' + s;
+    const q = s.indexOf('?');
+    let path = q === -1 ? s : s.slice(0, q);
+    const query = q === -1 ? '' : s.slice(q);
+    if (path.charAt(path.length - 1) !== '/') path += '/';
+    return path + query;
+}
+// The address bar as an internal '#/…' route ('' for the home page).
+function currentRoute() {
+    const p = location.pathname.replace(/\/index\.html$/, '').replace(/\/+$/, '');
+    return p ? '#' + p + location.search : '';
+}
+let __lastPush = 0;
+// Reflect a view into the address bar. A push makes Back return to the previous
+// view; a second change within the same click (a section, then its sub-view)
+// replaces instead, so Back doesn't stop on the in-between step.
+function setUrl(route, replace) {
+    if (typeof history === 'undefined' || !history.pushState) return;
+    const want = routeToPath(route);
+    const now = location.pathname + location.search;
+    if (now === want) return;
+    if (location.pathname === '/' && want === '/library/') return;   // the home page is the Library
+    const t = Date.now();
+    const useReplace = replace || (t - __lastPush < 60);
+    history[useReplace ? 'replaceState' : 'pushState'](null, '', want);
+    if (!useReplace) __lastPush = t;
+}
+// Go to a route from code (a link inside a view): update the bar, then render it.
+function goRoute(route) {
+    setUrl(route, false);
+    handleRoute(route);
+}
+// Tab titles follow the view, so bookmarks and history read properly.
+const PAGE_TITLES = {
+    library: 'Library', history: 'History', playground: 'Live Translator', workshop: 'Workshop',
+    glossary: 'Glossary', dictionary: 'Dictionary', 'whats-new': "What's new", journey: 'The life of a payment'
+};
+function setTitle(t) {
+    document.title = t ? t + ' · ISO 20022 Academy' : 'ISO 20022 Academy | Interactive ISO 20022 Learning Platform';
 }
 
 const PAGES = {
@@ -15,8 +58,8 @@ const PAGES = {
         <div class="page">
             <section class="hero-stage" data-hero aria-label="ISO Academy introduction">
                 <div class="hero-bg" aria-hidden="true">
-                    <video class="hero-video" autoplay muted loop playsinline preload="auto" poster="assets/images/hero-poster.jpg"
-                           src="content/videobyte/iso20022_cinematic_intro.mp4"></video>
+                    <video class="hero-video" autoplay muted loop playsinline preload="auto" poster="/assets/images/hero-poster.jpg"
+                           src="/content/videobyte/iso20022_cinematic_intro.mp4"></video>
                     <div class="hero-vignette"></div>
                 </div>
             </section>
@@ -285,7 +328,7 @@ function ensureDict() {
     if (!document.getElementById('dict-root')) navigate('dictionary');
 }
 function dictHash(target) {
-    if (!window.CLEAN_URLS && typeof history !== 'undefined' && location.hash !== target) history.replaceState(null, '', target);
+    setUrl(target, false);
 }
 function dictHome(evt) {
     if (evt) evt.preventDefault();
@@ -309,7 +352,8 @@ function dictMessage() { dictHome(); }
 function dictElement(code, name) {
     ensureDict();
     if (window.AcademyDictionary) AcademyDictionary.showElement(code, name);
-    dictHash('#/dictionary/' + (code || '_') + '/' + name);
+    dictHash(code ? '#/dictionary/' + code + '/' + name : '#/dictionary/field/' + name);
+    setTitle('<' + name + '> · Dictionary');
     window.scrollTo({ top: 0, behavior: 'auto' });
 }
 function dictCodes(evt) {
@@ -322,7 +366,7 @@ function dictCodes(evt) {
 function dictCodeSet(id, q) {
     ensureDict();
     if (window.AcademyDictionary) AcademyDictionary.showCodeSet(id, q);
-    dictHash('#/dictionary/codes/' + id);
+    dictHash('#/dictionary/codes/' + id + (q && /^[A-Za-z0-9]+$/.test(q) ? '/' + q : ''));
     window.scrollTo({ top: 0, behavior: 'auto' });
 }
 function dictChanges(evt) {
@@ -567,10 +611,10 @@ function navigate(page, evt) {
     // (replaceState, no reload) so this never re-enters the hashchange router.
     if (page === 'glossary') {
         if (typeof syncGlossaryHash === 'function') syncGlossaryHash();
-    } else if (!window.CLEAN_URLS && typeof history !== 'undefined') {
-        const secTarget = '#/' + page;
-        if (location.hash !== secTarget) history.replaceState(null, '', secTarget);
+    } else {
+        setUrl('#/' + page, false);
     }
+    setTitle(PAGE_TITLES[page] || '');
 
     // The curriculum spine sits beside an open lesson (markdown.js mounts it).
     // The Library index is itself the full course outline, so the rail would
@@ -1103,7 +1147,7 @@ function historyPagerHtml(index){
         if (ch.status !== 'ready'){
             return '<span class="' + cls + ' pager-disabled"><span class="pager-dir">' + dirLabel + '</span><span class="pager-label">' + ch.title + ' &middot; Coming soon</span></span>';
         }
-        return '<a class="' + cls + '" href="#/history/' + ch.slug + '" onclick="openHistoryChapter(\'' + ch.slug + '\', event)"><span class="pager-dir">' + dirLabel + '</span><span class="pager-label">' + ch.title + '</span></a>';
+        return '<a class="' + cls + '" href="/history/' + ch.slug + '/" onclick="openHistoryChapter(\'' + ch.slug + '\', event)"><span class="pager-dir">' + dirLabel + '</span><span class="pager-label">' + ch.title + '</span></a>';
     }
     return '<nav class="pager" aria-label="History chapters">' + side(prev, 'prev') + side(next, 'next') + '</nav>';
 }
@@ -1162,6 +1206,7 @@ function renderHistoryChapter(slug){
     if (typeof updateNavArrows === 'function') updateNavArrows();
 
     content.innerHTML = historyChapterHtml(ch, index);
+    setTitle(ch.title + ' · History');
     initRevealAnimations();
     if (window.Motion) Motion.scan(content);
 }
@@ -1172,9 +1217,8 @@ function openHistoryChapter(slug, evt){
     if (evt) evt.preventDefault();
     const ch = getHistoryChapter(slug);
     if (!ch || ch.status !== 'ready') return;
-    const target = '#/history/' + slug;
-    if (location.hash === target) renderHistoryChapter(slug);
-    else location.hash = target;
+    setUrl('#/history/' + slug, false);
+    renderHistoryChapter(slug);
 }
 
 // Leave a chapter for the History landing. navigate('history') clears the hash.
@@ -1187,9 +1231,8 @@ function goToHistoryLanding(evt){
 // and the location.hash assignments in openHistoryChapter / gotoGlossaryTerm).
 // navigate() and the sync helpers use replaceState, so they never land here —
 // no render loop.
-window.addEventListener('hashchange', function(){
-    setTimeout(stripHash, 0); // scrub the bar after this handler finishes rendering
-    const h = location.hash || '';
+function handleRoute(h){
+    h = h || '';
     const mh = h.match(/^#\/history\/([a-z0-9-]+)$/);
     if (mh) { renderHistoryChapter(mh[1]); return; }
     if (/^#\/history$/.test(h)) {
@@ -1211,8 +1254,12 @@ window.addEventListener('hashchange', function(){
     if (/^#\/playground(\?|$)/.test(h)) { translatorHome(); return; }
     if (/^#\/dictionary\/changes$/.test(h)) { dictChanges(); return; }
     if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
+    const mdq = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)\/([A-Za-z0-9]+)$/);
+    if (mdq) { dictCodeSet(mdq[1], mdq[2]); return; }
     const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);
     if (mdc) { dictCodeSet(mdc[1]); return; }
+    const mdf = h.match(/^#\/dictionary\/field\/([A-Za-z0-9]+)$/);
+    if (mdf) { dictElement('', mdf[1]); return; }
     const mde = h.match(/^#\/dictionary\/([a-z0-9._]+)\/([A-Za-z0-9]+)$/);
     if (mde) { dictElement(mde[1] === '_' ? '' : mde[1], mde[2]); return; }
     const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
@@ -1225,15 +1272,30 @@ window.addEventListener('hashchange', function(){
     const ml = h.match(/^#\/library\/([a-z0-9-]+)$/);
     if (ml && typeof getArticle === 'function' && getArticle(ml[1])) { openArticle(ml[1]); return; }
     if (/^#\/library(\/|\?|$)/.test(h)) { if (!document.getElementById('learn-root')) navigate('library'); return; }
+    if (/^#\/(playground|reference)(\/|\?|$)/.test(h)) { if (/reference/.test(h)) navigate('glossary'); else translatorHome(); return; }
+    // The home page, or anything unknown: the Library.
+    if (!document.getElementById('learn-root')) navigate('library');
+}
+
+// Back / forward between views.
+window.addEventListener('popstate', function () { handleRoute(currentRoute()); });
+// A stray old-style #/ link clicked inside the page: move it to the clean path.
+window.addEventListener('hashchange', function () {
+    const h = location.hash || '';
+    if (h.indexOf('#/') !== 0) return;
+    history.replaceState(null, '', routeToPath(h));
+    handleRoute(h);
 });
 
 // First paint: honor a deep-linked chapter, otherwise open the History landing.
 function routeOnLoad(){
-    setTimeout(stripHash, 0); // honor the deep link below, then scrub the bar
-    const h = location.hash || '';
+    // An old #/ link (shared before 2026-10): move it to its clean address first.
+    if ((location.hash || '').indexOf('#/') === 0) history.replaceState(null, '', routeToPath(location.hash));
+    const h = currentRoute();
     const mh = h.match(/^#\/history\/([a-z0-9-]+)$/);
     const ch = mh && getHistoryChapter(mh[1]);
     if (ch && ch.status === 'ready') { renderHistoryChapter(mh[1]); return; }
+    if (/^#\/history(\/|\?|$)/.test(h)) { navigate('history'); return; }
     if (/^#\/glossary(\/|\?|$)/.test(h)) { navigate('glossary'); return; }
     if (/^#\/reference(\/|\?|$)/.test(h)) { navigate('glossary'); return; }
     if (/^#\/library\/glossary(\/|\?|$)/.test(h)) { navigate('glossary'); return; }
@@ -1245,8 +1307,12 @@ function routeOnLoad(){
     if (/^#\/playground(\?|$)/.test(h)) { translatorHome(); return; }
     if (/^#\/dictionary\/changes$/.test(h)) { dictChanges(); return; }
     if (/^#\/dictionary\/codes$/.test(h)) { dictCodes(); return; }
+    const mdq = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)\/([A-Za-z0-9]+)$/);
+    if (mdq) { dictCodeSet(mdq[1], mdq[2]); return; }
     const mdc = h.match(/^#\/dictionary\/codes\/([a-z0-9-]+)$/);
     if (mdc) { dictCodeSet(mdc[1]); return; }
+    const mdf = h.match(/^#\/dictionary\/field\/([A-Za-z0-9]+)$/);
+    if (mdf) { dictElement('', mdf[1]); return; }
     const mde = h.match(/^#\/dictionary\/([a-z0-9._]+)\/([A-Za-z0-9]+)$/);
     if (mde) { dictElement(mde[1] === '_' ? '' : mde[1], mde[2]); return; }
     const mdm = h.match(/^#\/dictionary\/([a-z0-9.]+)$/);
@@ -1299,7 +1365,7 @@ function renderUpdates() {
     root.innerHTML = list.map(u => {
         const kind = UPDATE_KINDS[u.kind] || { label: 'Update' };
         const links = (u.links || []).map(l =>
-            `<a class="upd-link" href="${escAttr(l.route)}" onclick="updGo('${escAttr(l.route)}', event)">${escHtml(l.label)} &rarr;</a>`
+            `<a class="upd-link" href="${escAttr(routeToPath(l.route))}" onclick="updGo('${escAttr(l.route)}', event)">${escHtml(l.label)} &rarr;</a>`
         ).join('');
         return `
             <article class="upd" data-reveal="up">
@@ -1330,8 +1396,7 @@ function escAttr(s) {
 // deep links, back/forward and copy-link all behave normally.
 function updGo(route, evt) {
     if (evt) evt.preventDefault();
-    if (location.hash === route) return;
-    location.hash = route;
+    goRoute(route);
 }
 
 function initRevealAnimations() {

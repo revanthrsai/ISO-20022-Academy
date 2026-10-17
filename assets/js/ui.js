@@ -320,9 +320,9 @@ function filterGlossary(query) {
 // Jump to one term (from a "See also" chip): clear the category, search it.
 function gotoGlossaryTerm(slug) {
     if (!getGlossaryTerm(slug)) return;
-    const target = '#/glossary/' + slug;
-    if (location.hash === target) { applyGlossaryHash(); renderGlossary(); }
-    else location.hash = target;   // the hash router re-renders + focuses the card
+    setUrl('#/glossary/' + slug, false);
+    if (!document.getElementById('glossary-grid')) navigate('glossary');
+    else { applyGlossaryHash(); renderGlossary(); }
 }
 
 // Outbound cross-link from a glossary term into a Library article or a Playground
@@ -337,22 +337,19 @@ function gotoGlossaryLink(kind, target) {
 // reload); routeOnLoad / applyGlossaryHash read it back.
 function syncGlossaryHash() {
     if (typeof location === 'undefined' || typeof history === 'undefined') return;
-    if (window.CLEAN_URLS) return; // clean-URL mode: never reflect state into the bar
     if (glossaryState.focus) {
-        const ft = '#/glossary/' + glossaryState.focus;
-        if (location.hash !== ft) history.replaceState(null, '', ft);
+        setUrl('#/glossary/' + glossaryState.focus, true);
         return;
     }
     const params = [];
     if (glossaryState.category && glossaryState.category !== 'all') params.push('category=' + encodeURIComponent(glossaryState.category));
     if (glossaryState.q.trim()) params.push('q=' + encodeURIComponent(glossaryState.q.trim()));
-    const target = '#/glossary' + (params.length ? '?' + params.join('&') : '');
-    if (location.hash !== target) history.replaceState(null, '', target);
+    setUrl('#/glossary' + (params.length ? '?' + params.join('&') : ''), true);
 }
 
 // Seed glossaryState from the URL (called on glossary navigate / first paint).
 function applyGlossaryHash() {
-    const h = location.hash || '';
+    const h = currentRoute();
     glossaryState.category = 'all';
     glossaryState.q = '';
     glossaryState.focus = '';

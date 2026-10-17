@@ -75,7 +75,7 @@ const Spine = (function () {
             const isDone = learned(a.id);
             const isHere = a.id === activeId;
             return `<li class="spine-item${isHere ? ' is-here' : ''}${isDone ? ' is-done' : ''}">
-                <a href="#/library/${esc(a.id)}" onclick="Spine.go('${esc(a.id)}', event)"${isHere ? ' aria-current="page"' : ''}>
+                <a href="/library/${esc(a.id)}/" onclick="Spine.go('${esc(a.id)}', event)"${isHere ? ' aria-current="page"' : ''}>
                     <span class="spine-mark" aria-hidden="true"></span>
                     <span class="spine-item-title">${esc(a.title.split(':')[0])}</span>
                     <span class="spine-item-min">${esc(a.minutes)}m</span>
@@ -106,7 +106,7 @@ const Spine = (function () {
 
         root.innerHTML = `
             <nav class="spine" aria-label="Curriculum">
-                <a class="spine-top" href="#/library" onclick="navigate('library', event)">
+                <a class="spine-top" href="/library/" onclick="navigate('library', event)">
                     <span class="spine-eyebrow">The path</span>
                     <span class="spine-total">${done} <span>of ${all} lessons</span></span>
                 </a>
@@ -114,7 +114,7 @@ const Spine = (function () {
                     <i style="width:${pct}%"></i>
                 </div>
                 <div class="spine-levels">${list.map(levelHtml).join('')}</div>
-                <a class="spine-ref" href="#/glossary" onclick="navigate('glossary', event)">
+                <a class="spine-ref" href="/glossary/" onclick="navigate('glossary', event)">
                     Reference &amp; glossary
                 </a>
             </nav>`;

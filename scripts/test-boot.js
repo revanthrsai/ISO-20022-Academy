@@ -48,9 +48,10 @@ const errs=[]; w.addEventListener('error', e=>errs.push(e.message));
 Object.defineProperty(w.document,'readyState',{value:'interactive',configurable:true});
 let ran = 0;
 for (const rel of order) {
-  if (!rel.startsWith('assets/js/')) continue;   // CDN marked.js stubbed below
+  const local = rel.replace(/^\//, '');            // site-absolute paths (/assets/js/…) since clean URLs
+  if (!local.startsWith('assets/js/')) continue;   // CDN marked.js stubbed below
   const el = w.document.createElement('script');
-  el.textContent = fs.readFileSync(path.join(ROOT, rel),'utf8');
+  el.textContent = fs.readFileSync(path.join(ROOT, local),'utf8');
   w.document.body.appendChild(el); ran++;
 }
 w.document.dispatchEvent(new w.Event('DOMContentLoaded',{bubbles:true}));

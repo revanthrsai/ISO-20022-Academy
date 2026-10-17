@@ -94,7 +94,7 @@ The web-facing folders **must** stay at the repo root — GitHub Pages serves th
 | `docs/` | Project documentation — start with [`HANDBOOK.md`](./docs/HANDBOOK.md) | — |
 | `.github/workflows/` | The GitHub Pages deploy pipeline | CI |
 
-**Generated at build time (git-ignored):** `library/`, `dictionary/`, `glossary/`, `workshop/` SEO pages, `sitemap.xml`, `robots.txt`, `samples/manifest.json`.
+**Generated at build time (git-ignored):** one folder per page for clean URLs (`library/`, `history/`, `playground/`, `workshop/`, `glossary/`, `dictionary/`, `whats-new/`, `journey/`, `reference/`), each holding the app with that page's title, description and content pre-written for search engines; plus `404.html`, `sitemap.xml`, `robots.txt` and `samples/manifest.json`.
 
 ---
 
@@ -126,9 +126,9 @@ Everything runs on free tiers.
 ## 💻 Local development
 
 ```bash
-# the site — any static server from the repo root
+# the site: generate the per-page folders (clean URLs), then any static server from the repo root
+node scripts/build-toc.js && node scripts/build-seo.js && node scripts/build-samples.js
 npx serve .
-node scripts/build-toc.js && node scripts/build-samples.js   # after adding a lesson or sample
 
 # the Translator service
 cd ai-api

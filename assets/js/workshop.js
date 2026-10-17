@@ -509,7 +509,7 @@ const Workshop = (function () {
             ? 'Five for five, first time. That is the real thing.'
             : `You took ${wrongTotal} wrong turn${wrongTotal === 1 ? '' : 's'} on the way — which is where the learning was.`;
         const next = (def.next || []).map(x => `
-            <li><a href="#/library/${x.id}" onclick="openArticle('${x.id}'); return false;">
+            <li><a href="/library/${x.id}/" onclick="openArticle('${x.id}'); return false;">
                 ${esc(lessonTitle(x.id))}</a> <span>${esc(x.why)}</span></li>`).join('');
 
         return `
@@ -817,7 +817,7 @@ const Workshop = (function () {
             ? `You used ${hintsUsed} hint${hintsUsed === 1 ? '' : 's'} across ${attempts} attempt${attempts === 1 ? '' : 's'}.`
             : `No hints, ${attempts} attempt${attempts === 1 ? '' : 's'}.`;
         const next = (def.next || []).map(x => `
-            <li><a href="#/library/${x.id}" onclick="openArticle('${x.id}'); return false;">
+            <li><a href="/library/${x.id}/" onclick="openArticle('${x.id}'); return false;">
                 ${esc(lessonTitle(x.id))}</a> <span>${esc(x.why)}</span></li>`).join('');
 
         return `
@@ -976,7 +976,7 @@ const Workshop = (function () {
             </div>`).join('');
 
         const next = (def.next || []).map(x => `
-            <li><a href="#/library/${x.id}" onclick="openArticle('${x.id}'); return false;">
+            <li><a href="/library/${x.id}/" onclick="openArticle('${x.id}'); return false;">
                 ${esc(lessonTitle(x.id))}</a> <span>${esc(x.why)}</span></li>`).join('');
 
         return `

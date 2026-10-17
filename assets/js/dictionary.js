@@ -73,7 +73,7 @@ const AcademyDictionary = (function () {
             const isNext = nx && m === nx;
             const st = done ? 'done' : (isNext ? 'next' : 'upcoming');
             const label = done ? 'Done' : (isNext ? 'Next' : 'Upcoming');
-            const link = m.link ? '<a class="dict-chg-link" href="#/library/' + esc(m.link) + '" onclick="openArticle(\'' + esc(m.link) + '\'); return false;">Read the lesson &rarr;</a>' : '';
+            const link = m.link ? '<a class="dict-chg-link" href="/library/' + esc(m.link) + '/" onclick="openArticle(\'' + esc(m.link) + '\'); return false;">Read the lesson &rarr;</a>' : '';
             return '<div class="dict-tl-row is-' + st + '">'
                 + '<div class="dict-tl-dot"></div>'
                 + '<div class="dict-tl-body"><div class="dict-tl-head"><span class="dict-tl-when">' + esc(m.when) + '</span>'

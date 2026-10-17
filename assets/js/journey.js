@@ -60,7 +60,7 @@ const PaymentJourney = (function () {
             + '<div class="jn-stage-wrap"><div class="jn-stage">' + stageHtml() + '</div></div>'
             + '<div class="jn-scenes">' + scenes + '</div>'
             + '</div>'
-            + '<div class="jn-foot"><a class="jn-cta" href="#/playground" onclick="navigate(\'playground\', event)">Now open the real pacs.008 in the Playground &rarr;</a></div>';
+            + '<div class="jn-foot"><a class="jn-cta" href="/playground/" onclick="navigate(\'playground\', event)">Now open the real pacs.008 in the Playground &rarr;</a></div>';
 
         // measure the arc, then start the scroll driver
         const path = document.getElementById('jn-arc');

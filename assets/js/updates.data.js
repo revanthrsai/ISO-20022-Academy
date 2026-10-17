@@ -27,6 +27,13 @@ const ACADEMY_UPDATES = [
     {
         date: '2026-10-17',
         kind: 'improvement',
+        title: 'Clean addresses for every page',
+        body: 'Every page now has its own plain address, like iso20022academy.in/library/301-pacs-008/ or /playground/, instead of a # in the middle. Links are easier to share, Back and Forward work between pages, and old links with # still open the right page.',
+        links: [{ label: 'Browse the course', route: '#/library' }],
+    },
+    {
+        date: '2026-10-17',
+        kind: 'improvement',
         title: 'Easier to read, and the Translator handles batches',
         body: 'Text that used the bright brand green, and the faint grey hints, now meet the WCAG AA contrast standard on every page, so they are readable for everyone. The Translator now turns a message carrying several transactions into one MT per transaction, the way banks do it, instead of giving up. The status page shows the Translator and whether its AI backup is available.',
         links: [{ label: 'Try a translation', route: '#/playground' }],
