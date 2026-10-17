@@ -274,7 +274,7 @@ function renderGlossary() {
                 const kind = l.article ? 'article' : (l.tool ? 'tool' : '');
                 const target = l.article || l.tool || '';
                 if (!kind) return '';
-                return '<button type="button" class="tag" style="cursor:pointer;border-color:var(--primary);color:var(--primary)" onclick="gotoGlossaryLink(\'' + kind + '\',\'' + gEsc(target) + '\')">' + gEsc(l.label) + ' \u2197</button>';
+                return '<button type="button" class="tag" style="cursor:pointer;border-color:var(--primary);color:var(--primary-text,#0A7450)" onclick="gotoGlossaryLink(\'' + kind + '\',\'' + gEsc(target) + '\')">' + gEsc(l.label) + ' \u2197</button>';
             }).join('');
             return '' +
             '<div class="glossary-card" id="gloss-' + gEsc(item.slug) + '" data-slug="' + gEsc(item.slug) + '" data-reveal="up" data-reveal-delay="' + (Math.min(i, 8) * 55) + '" data-tilt>' +

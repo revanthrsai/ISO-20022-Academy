@@ -246,7 +246,7 @@ const Search = (function () {
         .sp-list{max-height:min(52vh,440px);overflow-y:auto;padding:8px}
         .sp-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:var(--radius-md,12px);cursor:pointer}
         .sp-item.is-active{background:color-mix(in srgb,var(--primary) 10%,var(--surface))}
-        .sp-type{flex:none;width:74px;font-size:var(--fs-micro,11px);text-transform:uppercase;letter-spacing:.05em;color:var(--primary);font-weight:var(--fw-semibold,600)}
+        .sp-type{flex:none;width:74px;font-size:var(--fs-micro,11px);text-transform:uppercase;letter-spacing:.05em;color:var(--primary-text,#0A7450);font-weight:var(--fw-semibold,600)}
         .sp-main{flex:1;min-width:0}
         .sp-label{display:block;font-size:var(--fs-body,16px);font-weight:var(--fw-medium,500);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .sp-sub{display:block;font-size:var(--fs-small,13px);color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -256,8 +256,8 @@ const Search = (function () {
         .sp-foot kbd{font-family:var(--font-mono,monospace);border:1px solid var(--border);border-radius:5px;padding:1px 5px;margin-right:2px}
         /* header trigger */
         .nav-search{display:inline-flex;align-items:center;gap:8px;background:var(--surface-alt,rgba(0,0,0,.04));border:1px solid var(--border);border-radius:var(--radius-pill,999px);padding:7px 12px;color:var(--text-muted);cursor:pointer;font:inherit;font-size:var(--fs-small,13px);transition:border-color var(--dur-fast,.15s),color var(--dur-fast,.15s)}
-        .nav-search:hover{border-color:var(--primary);color:var(--primary)}
-        .nav-search-kbd{font-family:var(--font-mono,monospace);font-size:var(--fs-micro,11px);opacity:.8}
+        .nav-search:hover{border-color:var(--primary);color:var(--primary-text,#0A7450)}
+        .nav-search-kbd{font-family:var(--font-mono,monospace);font-size:var(--fs-micro,11px);color:var(--text-muted)}
         @media (max-width:640px){.nav-search-label,.nav-search-kbd{display:none}.sp-overlay{padding-top:8vh}}
         `;
         const style = document.createElement('style');

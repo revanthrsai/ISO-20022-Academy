@@ -61,10 +61,19 @@ jobs:
           npx --yes esbuild assets/js/*.js --minify-whitespace --minify-syntax --allow-overwrite --outdir=assets/js
           npx --yes esbuild assets/css/style.css --minify --allow-overwrite --outfile=assets/css/style.css
 
+      # Publish only what the website serves. The Translator service (ai-api),
+      # the retired Java engine, docs and build scripts stay in the repo only.
+      - name: Collect the web-facing files
+        run: |
+          mkdir _site
+          cp -r index.html favicon.ico .nojekyll assets content samples status insights admin \
+                library dictionary glossary workshop sitemap.xml robots.txt _site/
+          if [ -f CNAME ]; then cp CNAME _site/; fi
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment

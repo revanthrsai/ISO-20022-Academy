@@ -587,7 +587,7 @@ const SchemaValidator = (function () {
         .val-live {
             margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
             font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em;
-            text-transform: uppercase; color: var(--primary);
+            text-transform: uppercase; color:var(--primary-text,#0A7450);
         }
         .val-live::before {
             content: ''; width: 6px; height: 6px; border-radius: 50%;
@@ -602,7 +602,7 @@ const SchemaValidator = (function () {
 
         .val-src {
             flex: 1; min-height: 420px; resize: vertical; border: 0; outline: 0;
-            padding: 16px; background: transparent; color: var(--primary-bright);
+            padding: 16px; background: transparent; color:var(--primary-text,#0A7450);
             font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6;
             white-space: pre; tab-size: 2;
         }
@@ -648,7 +648,7 @@ const SchemaValidator = (function () {
         .val-rule { font-family: var(--font-display); font-weight: 700; font-size: 13.5px; color: var(--text); }
         .val-where {
             margin-left: auto; font-family: var(--font-mono); font-size: 11px;
-            color: var(--primary); letter-spacing: 0.01em;
+            color:var(--primary-text,#0A7450); letter-spacing: 0.01em;
         }
         .val-finding-msg { margin-top: 7px; font-size: 13px; line-height: 1.6; color: var(--text-muted); }
         .val-finding-val { margin-top: 8px; display: flex; align-items: baseline; gap: 9px; }

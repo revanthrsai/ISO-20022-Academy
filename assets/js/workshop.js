@@ -641,13 +641,13 @@ const Workshop = (function () {
                         <span class="ws-pane-name">message.xml</span>
                         <button class="ws-mini" onclick="Workshop.reset()">reset</button>
                     </div>
-                    <textarea id="ws-src" class="ws-src" spellcheck="false">${esc(def.start)}</textarea>
+                    <textarea id="ws-src" class="ws-src" spellcheck="false" aria-label="Message to fix">${esc(def.start)}</textarea>
 
                     <div class="ws-out">
-                        <div class="ws-out-tabs" role="tablist">
-                            <button class="ws-tab is-on" id="ws-tab-result" role="tab"
+                        <div class="ws-out-tabs">
+                            <button class="ws-tab is-on" id="ws-tab-result"
                                     onclick="Workshop.pane('result')">Result</button>
-                            <button class="ws-tab" id="ws-tab-hints" role="tab"
+                            <button class="ws-tab" id="ws-tab-hints"
                                     onclick="Workshop.pane('hints')">Hints<span class="ws-tab-n" id="ws-hint-n" hidden>0</span></button>
                             <div class="ws-out-actions">
                                 <button class="ws-hint-btn" id="ws-hint-btn" onclick="Workshop.hint()">
@@ -732,10 +732,10 @@ const Workshop = (function () {
 
                     <!-- Revealed by Run or Hint; the board owns the height until then. -->
                     <div class="ws-out" id="ws-out" hidden>
-                        <div class="ws-out-tabs" role="tablist">
-                            <button class="ws-tab is-on" id="ws-tab-result" role="tab"
+                        <div class="ws-out-tabs">
+                            <button class="ws-tab is-on" id="ws-tab-result"
                                     onclick="Workshop.pane('result')">Result</button>
-                            <button class="ws-tab" id="ws-tab-hints" role="tab"
+                            <button class="ws-tab" id="ws-tab-hints"
                                     onclick="Workshop.pane('hints')">Hints<span class="ws-tab-n" id="ws-hint-n" hidden>0</span></button>
                             <button class="ws-out-x" type="button" aria-label="Hide this panel"
                                     onclick="Workshop.hideOut()">&times;</button>
@@ -1147,7 +1147,7 @@ const Workshop = (function () {
         .ws-card.is-locked { cursor: default; opacity: 0.62; }
         .ws-card.is-locked:hover { border-color: var(--border); transform: none; box-shadow: none; }
         .ws-card-top { display: flex; align-items: center; gap: 10px; }
-        .ws-card-n { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--primary); }
+        .ws-card-n { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color:var(--primary-text,#0A7450); }
         .ws-card-kicker { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em;
             text-transform: uppercase; color: var(--text-faint); }
         .ws-card-soon { margin-left: auto; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.07em;
@@ -1162,7 +1162,7 @@ const Workshop = (function () {
         .ws-card-foot { display: flex; align-items: center; justify-content: space-between;
             gap: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
         .ws-card-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
-        .ws-card-cta { font-size: 13px; font-weight: 600; color: var(--primary); }
+        .ws-card-cta { font-size: 13px; font-weight: 600; color:var(--primary-text,#0A7450); }
         .ws-card-cta.is-off { color: var(--text-faint); }
         .ws-foot-note { margin-top: 32px; font-size: 13.5px; line-height: 1.7;
             color: var(--text-faint); max-width: 620px; }
@@ -1183,11 +1183,11 @@ const Workshop = (function () {
             font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);
             transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
         }
-        .ws-back:hover { border-color: var(--primary); color: var(--primary); }
+        .ws-back:hover { border-color: var(--primary); color:var(--primary-text,#0A7450); }
         .ws-ide-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
         .ws-ide-kicker {
             font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
-            text-transform: uppercase; color: var(--primary);
+            text-transform: uppercase; color:var(--primary-text,#0A7450);
         }
         .ws-ide-title {
             font-family: var(--font-display); font-weight: 800; font-size: 20px;
@@ -1195,7 +1195,7 @@ const Workshop = (function () {
         }
         .ws-ide-progress {
             margin-left: auto; flex-shrink: 0;
-            font-family: var(--font-mono); font-size: 11px; color: var(--primary);
+            font-family: var(--font-mono); font-size: 11px; color:var(--primary-text,#0A7450);
             padding: 5px 12px; border-radius: var(--radius-pill);
             background: var(--glass-tint, rgba(16,185,129,0.08)); border: 1px solid var(--border);
         }
@@ -1243,7 +1243,7 @@ const Workshop = (function () {
         /* ---- Right pane: editor over output ---- */
         .ws-src {
             flex: 1 1 55%; min-height: 180px; resize: none; border: 0; outline: 0; display: block;
-            width: 100%; padding: 14px; background: transparent; color: var(--primary-bright);
+            width: 100%; padding: 14px; background: transparent; color:var(--primary-text,#0A7450);
             font-family: var(--font-mono); font-size: 12px; line-height: 1.6;
             white-space: pre; overflow: auto; tab-size: 2;
         }
@@ -1263,7 +1263,7 @@ const Workshop = (function () {
             color: var(--text-faint);
         }
         .ws-tab:hover { color: var(--text); }
-        .ws-tab.is-on { background: var(--surface); color: var(--primary); }
+        .ws-tab.is-on { background: var(--surface); color:var(--primary-text,#0A7450); }
         .ws-tab-n {
             font-family: var(--font-mono); font-size: 9.5px; padding: 1px 6px;
             border-radius: var(--radius-pill); background: var(--warning, #e3b341); color: #3a2c00;
@@ -1336,7 +1336,7 @@ const Workshop = (function () {
         }
         .ws-finding-top { display: flex; align-items: center; gap: 10px; }
         .ws-finding-rule { font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--text); }
-        .ws-finding-where { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--primary); }
+        .ws-finding-where { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color:var(--primary-text,#0A7450); }
         .ws-finding-msg { margin-top: 6px; font-size: 12.5px; line-height: 1.6; color: var(--text-muted); }
 
         .ws-debrief { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--border); }
@@ -1344,12 +1344,12 @@ const Workshop = (function () {
             border: 1px solid var(--border); margin-bottom: 10px; }
         .ws-solved-top { display: flex; align-items: center; gap: 10px; }
         .ws-solved-label { font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--text); }
-        .ws-solved-where { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--primary); }
+        .ws-solved-where { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color:var(--primary-text,#0A7450); }
         .ws-solved-reveal { margin: 8px 0 0; font-size: 13.5px; line-height: 1.7; color: var(--text-muted); }
         .ws-debrief-p { font-size: 14.5px; line-height: 1.75; color: var(--text); margin: 0 0 14px; }
         .ws-next { margin: 0 0 20px; padding-left: 18px; }
         .ws-next li { font-size: 14px; line-height: 1.8; color: var(--text-muted); }
-        .ws-next a { color: var(--primary); font-weight: 600; text-decoration: none; }
+        .ws-next a { color:var(--primary-text,#0A7450); font-weight: 600; text-decoration: none; }
         .ws-next a:hover { text-decoration: underline; }
         .ws-next span { color: var(--text-faint); }
         .ws-again { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -1413,7 +1413,7 @@ const Workshop = (function () {
 
         .wsm-tag {
             flex-shrink: 0; font-family: var(--font-mono); font-size: 10.5px; font-weight: 700;
-            color: var(--primary); min-width: 42px;
+            color:var(--primary-text,#0A7450); min-width: 42px;
         }
         .wsm-body { display: flex; flex-direction: column; gap: 0; min-width: 0; flex: 1; }
         .wsm-name {
@@ -1469,7 +1469,7 @@ const Workshop = (function () {
         .wsd-step-n {
             flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            background: var(--glass-tint, rgba(16,185,129,0.12)); color: var(--primary);
+            background: var(--glass-tint, rgba(16,185,129,0.12)); color:var(--primary-text,#0A7450);
             font-family: var(--font-mono); font-size: 11px; font-weight: 700;
         }
         .wsd-step-n.is-ok { background: var(--success, #4ad6a0); color: #fff; }
@@ -1479,7 +1479,7 @@ const Workshop = (function () {
         }
         .wsd-step-ans {
             margin-left: auto; flex-shrink: 0;
-            font-family: var(--font-mono); font-size: 11px; color: var(--primary);
+            font-family: var(--font-mono); font-size: 11px; color:var(--primary-text,#0A7450);
             padding: 3px 10px; border-radius: var(--radius-pill);
             background: var(--glass-tint, rgba(16,185,129,0.1));
         }
@@ -1500,7 +1500,7 @@ const Workshop = (function () {
         }
         .wsd-opt:hover { border-color: var(--primary); transform: translateX(2px); }
         .wsd-opt-label { font-family: var(--font-display); font-weight: 700; font-size: 13.5px; color: var(--text); }
-        .wsd-opt-code .wsd-opt-label { font-family: var(--font-mono); color: var(--primary); }
+        .wsd-opt-code .wsd-opt-label { font-family: var(--font-mono); color:var(--primary-text,#0A7450); }
         .wsd-opt-sub { font-size: 12px; line-height: 1.55; color: var(--text-muted); }
 
         .wsd-feedback:not(:empty) { margin: 12px 0 0 35px; }

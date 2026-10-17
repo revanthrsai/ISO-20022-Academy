@@ -423,6 +423,7 @@ class Out:
         self.filled: list[dict] = []
         self.dropped: list[dict] = []
         self.notes: list[str] = []
+        self.parts: list[tuple[str, str]] = []  # (source piece, message) when one MX became several MTs
 
     def fill(self, field: str, value: str, reason: str):
         self.filled.append({"field": field, "value": value, "reason": reason})

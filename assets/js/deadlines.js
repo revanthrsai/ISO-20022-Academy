@@ -83,16 +83,16 @@ const Deadlines = (function () {
                     : `<span class="dl-pill dl-upcoming">In ${d} days</span>`;
             const click = it.ref ? ` role="button" tabindex="0" onclick="openArticle('${esc(it.ref)}')" onkeydown="if(event.key==='Enter'){openArticle('${esc(it.ref)}')}"` : '';
             return `
-                <li class="dl-row dl-${st}"${click}>
+                <div class="dl-row dl-${st}"${click}>
                     <span class="dl-row-date">${esc(fmtDate(it))}</span>
                     <span class="dl-row-body">
                         <span class="dl-row-title">${esc(it.title)}</span>
                         <span class="dl-row-scope">${esc(it.scope)}</span>
                     </span>
                     ${pill}
-                </li>`;
+                </div>`;
         }).join('');
-        return `<ul class="dl-timeline">${rows}</ul>`;
+        return `<div class="dl-timeline">${rows}</div>`;  /* rows are buttons, so not a <ul> */
     }
 
     function sectionHtml() {
@@ -143,17 +143,17 @@ const Deadlines = (function () {
         const css = `
         .dl-wrap{margin-top:32px;display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:start}
         .dl-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg,18px);padding:var(--space-2xl,40px);box-shadow:var(--shadow-sm)}
-        .dl-hero-tag{font-size:var(--fs-eyebrow,12px);text-transform:uppercase;letter-spacing:.08em;color:var(--primary);font-weight:var(--fw-semibold,600);margin-bottom:12px}
+        .dl-hero-tag{font-size:var(--fs-eyebrow,12px);text-transform:uppercase;letter-spacing:.08em;color:var(--primary-text,#0A7450);font-weight:var(--fw-semibold,600);margin-bottom:12px}
         .dl-hero-title{font-family:var(--font-display,var(--font-sans));font-size:var(--fs-h3,24px);line-height:var(--lh-tight,1.15);margin:0 0 6px}
         .dl-hero-date{font-size:var(--fs-lead,17px);font-weight:var(--fw-semibold,600);color:var(--text);margin-bottom:20px}
         .dl-approx{color:var(--text-muted);font-weight:var(--fw-regular,400);font-size:var(--fs-small,14px)}
         .dl-countdown{display:flex;gap:10px;margin-bottom:20px}
         .dl-cd-cell{flex:1;background:var(--surface-alt,rgba(0,0,0,.04));border:1px solid var(--border);border-radius:var(--radius-md,14px);padding:12px 6px;text-align:center;font-variant-numeric:tabular-nums}
-        .dl-cd-num{display:block;font-family:var(--font-mono,monospace);font-size:var(--fs-h3,24px);font-weight:var(--fw-bold,700);color:var(--primary);line-height:1}
+        .dl-cd-num{display:block;font-family:var(--font-mono,monospace);font-size:var(--fs-h3,24px);font-weight:var(--fw-bold,700);color:var(--primary-text,#0A7450);line-height:1}
         .dl-cd-lbl{display:block;font-size:var(--fs-micro,11px);text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:6px}
         .dl-hero-done{display:inline-block;background:color-mix(in srgb,var(--success,#0B8A60) 12%,var(--surface));color:var(--success,#0B8A60);border-radius:var(--radius-pill,999px);padding:8px 16px;font-weight:var(--fw-semibold,600);font-size:var(--fs-small,14px);margin-bottom:20px}
         .dl-hero-summary{color:var(--text-secondary,var(--text-muted));font-size:var(--fs-body,16px);line-height:var(--lh-relaxed,1.6);margin:0 0 16px}
-        .dl-hero-learn{color:var(--primary);font-weight:var(--fw-semibold,600);font-size:var(--fs-body,16px);text-decoration:none}
+        .dl-hero-learn{color:var(--primary-text,#0A7450);font-weight:var(--fw-semibold,600);font-size:var(--fs-body,16px);text-decoration:none}
         .dl-hero-learn:hover{text-decoration:underline}
 
         .dl-timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
@@ -170,7 +170,7 @@ const Deadlines = (function () {
         .dl-pill{flex:none;font-size:var(--fs-micro,11px);font-weight:var(--fw-semibold,600);text-transform:uppercase;letter-spacing:.04em;border-radius:var(--radius-pill,999px);padding:5px 11px;white-space:nowrap}
         .dl-pill.dl-past{background:color-mix(in srgb,var(--success,#0B8A60) 12%,transparent);color:var(--success,#0B8A60)}
         .dl-pill.dl-imminent{background:color-mix(in srgb,var(--danger,#C13543) 12%,transparent);color:var(--danger,#C13543)}
-        .dl-pill.dl-upcoming{background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary)}
+        .dl-pill.dl-upcoming{background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary-text,#0A7450)}
         .dl-updated{grid-column:1 / -1;margin:8px 0 0;font-size:var(--fs-micro,12px);color:var(--text-faint,var(--text-muted))}
         @media (max-width:820px){.dl-wrap{grid-template-columns:1fr}.dl-row-date{width:88px}}
         `;

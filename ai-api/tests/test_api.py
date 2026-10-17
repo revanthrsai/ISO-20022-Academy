@@ -283,3 +283,23 @@ def test_fix_checks_the_result_against_the_fixed_message(client, monkeypatch):
     bad = PACS008.replace("<NbOfTxs>1</NbOfTxs>", "<NbOfTxs>2</NbOfTxs>").replace("<IntrBkSttlmDt>2026-06-27", "<IntrBkSttlmDt>2026-27-06")
     j = client.post("/api/translate", json={"source": bad, "target": "MT103", "fix": True}).json()
     assert j["engine"] == "rules" and calls == [] and j["validation"]["valid"] and j["fidelity"]["ok"], j["validation"]
+
+
+def test_several_transactions_are_split_by_the_engine(client, monkeypatch):
+    stub(monkeypatch, translate=RuntimeError("no"))
+    i, j = PACS008.index("<CdtTrfTxInf>"), PACS008.index("</CdtTrfTxInf>") + len("</CdtTrfTxInf>")
+    tx = PACS008[i:j]
+    two = PACS008.replace(tx, tx + tx.replace("400.00", "50.00")).replace("<NbOfTxs>1</NbOfTxs>", "<NbOfTxs>2</NbOfTxs>")
+    j = client.post("/api/translate", json={"source": two, "target": "MT103"}).json()
+    assert j["engine"] == "rules" and calls == [] and j["message"].count(":32A:") == 2
+    assert j["validation"]["valid"] and j["fidelity"]["ok"], (j["validation"], j["fidelity"])
+
+
+def test_decline_with_the_ai_out_says_why(client, monkeypatch):
+    engine_declines(monkeypatch)
+
+    class Quota(Exception):
+        code = 429
+    stub(monkeypatch, translate=Quota("RESOURCE_EXHAUSTED"))
+    r = client.post("/api/translate", json={"source": PACS008, "target": "MT103"})
+    assert r.status_code == 503 and "not covered" in r.json()["message"] and "usage limit" in r.json()["message"]

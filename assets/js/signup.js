@@ -77,7 +77,7 @@ const Signup = (function () {
         const css = `
         .site-footer-col{display:flex;flex-direction:column;gap:var(--space-xl,32px)}
         .site-footer-signup{max-width:360px}
-        .su-label{font-size:var(--fs-eyebrow,12px);text-transform:uppercase;letter-spacing:.08em;color:var(--primary);font-weight:var(--fw-semibold,600);margin-bottom:8px}
+        .su-label{font-size:var(--fs-eyebrow,12px);text-transform:uppercase;letter-spacing:.08em;color:var(--primary-text,#0A7450);font-weight:var(--fw-semibold,600);margin-bottom:8px}
         .su-title{font-size:var(--fs-h4,19px);font-weight:var(--fw-semibold,600);color:var(--text);margin:0 0 6px;line-height:var(--lh-snug,1.3)}
         .su-sub{font-size:var(--fs-small,14px);color:var(--text-muted);margin:0 0 14px;line-height:var(--lh-normal,1.5)}
         .su-row{display:flex;gap:8px}

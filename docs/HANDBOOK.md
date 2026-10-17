@@ -173,8 +173,7 @@ Hash-based routing, with one query-string layer for shareable filter state:
 #/library                          → Library landing (shelves index)
 #/library/<level>                  → a shelf overview (100…600)
 #/library/<level>/<topic-slug>     → a single lesson
-#/playground/<tool-slug>           → a tool (viewer|transformer|samples)
-#/playground/<tool>?sample=…       → tool deep-linked to a sample message
+#/playground                       → the Live Translator
 #/glossary?category=<cat>          → filtered glossary  (also ?q=<query>)
 #/glossary/<term-slug>             → a single term (scrolls + highlights the card)
 #/dictionary                       → the Dictionary landing (families → messages)
@@ -294,9 +293,8 @@ assets/js/markdown.js      lesson engine: frontmatter, marked.js, {{embed}}/{{ch
 assets/js/flow-diagram.js  beat-4 business-terms flow diagram
 assets/js/data.js          glossary terms (87) + message metadata + Progress store
 assets/js/ui.js            glossary rendering, detail panel/modal
-assets/js/xml-viewer.js    Playground: the single XML message viewer (right pane)
-assets/js/transformer.js   Playground: MsgTransformer.callEngine() → the live MT ⇄ MX engine (§9)
-assets/js/samples.js       Playground: the catalogue of cards (left pane), fetches /samples/<code>.json
+assets/js/translator.js    Playground: the Live Translator (Source → its direct equivalent), calls ai-api (§9)
+assets/js/validator.js     SchemaValidator: in-browser checks used by the Workshop
 assets/js/quiz.data.js / quiz.js       per-level quizzes (31 questions) + CTA
 assets/js/deadlines.data.js / deadlines.js   the live compliance calendar
 assets/js/search.js        ⌘K command palette (indexes lessons, glossary, messages, pages)
@@ -304,16 +302,15 @@ assets/js/signup.js        Formspree email capture (footer)
 assets/js/motion.js        motion design system (reduced-motion gated)
 assets/js/preloader.js     one-time intro animation
 
-transform-api/             the Spring Boot + Prowide backend — see §9
+ai-api/                    the Translator service: rules engine first, Gemini as fallback — see §9
+transform-api/             the retired Spring Boot + Prowide engine (no longer called by the site)
 ```
 
-The Playground is one workspace: the **catalogue cards** (left) load a message
-into the single **XML viewer** (right), and **Transform** runs it through the live
-engine in a **slide-over** (§9). The old Validate and Compare tools, and the tool-
-tab model, were retired in the 2026-07 refactor. Each Playground JS module is an
-IIFE that assigns a `const` and then exposes it on `window` (e.g.
-`window.SampleLibrary = …`) — that exposure line is load-bearing; app.js guards on
-`if (window.SampleLibrary)`.
+The Playground is the **Live Translator** (2026-10): pick a Source format (a valid
+sample loads) or paste a message; the Destination is always its direct equivalent.
+The catalogue, XML viewer, Transform slide-over and Workbench were retired. Each
+JS module is an IIFE that assigns a `const` and exposes it on `window` (e.g.
+`window.Translator`); that exposure line is load-bearing.
 
 **The hybrid content model:** `data.js` powers the *interactive* surfaces
 (Playground, Message Explorer, Glossary); `content/*.md` + the generated TOC
@@ -495,71 +492,34 @@ a practitioner's life in 2026." In priority order:*
 
 ## 9. Full-Stack Architecture & Operations
 
-The academy started as a static site and grew a backend for the one thing that
-genuinely needs a server: parsing real payment messages. The stack is two
-independently deployed halves in one repository.
+The academy is a static site plus one service for the thing that needs a server:
+translating and checking payment messages.
 
 ```
-                            ┌─────────────────────────────────────────────┐
-   Browser  ───────────────▶│  STATIC SITE  ·  GitHub Pages                │
-                            │  iso20022academy.in                          │
-                            │  vanilla HTML/CSS/JS · no framework          │
-                            └───────────────┬─────────────────────────────┘
-                                            │  fetch (CORS)
-                                            ▼
-                            ┌─────────────────────────────────────────────┐
-      "Transform"          │  TRANSFORM API  ·  Render (Docker)           │
-       button ────────────▶│  Spring Boot 3 · Java 17 · Prowide Core      │
-                            │  POST /api/transform  (9 MT ⇄ MX types)      │
-                            └─────────────────────────────────────────────┘
-                                            ▲
-                     UptimeRobot ───────────┘  pings /api/health every 10 min
+   Browser  ──────────▶  STATIC SITE · GitHub Pages (vanilla HTML/CSS/JS)
+                                   │  fetch (CORS)
+                                   ▼
+                         TRANSLATOR API · Render (Docker, FastAPI)   /ai-api
+                           1. rules engine (app/engine): translate + safe repairs, instant
+                           2. Google ADK + Gemini: only when the engine declines
+                           3. the same checks on every result (validation, pair rules, values)
 ```
 
-### The transform backend (`/transform-api`)
+### The Translator service (`/ai-api`)
 
-A Spring Boot 3.3 service on Java 17 that detects an ISO 20022 message type and
-converts it to its legacy SWIFT MT equivalent (and, for MT103, back). The MT
-parsing is done with **Prowide Core** (`pw-swift-core` `SRU2025-10.3.13`, Apache
-2.0); every field mapping is hand-coded and auditable, so no commercial
-translator is needed.
+- **Rules engine** (`app/engine/`): all 16 directions between pacs.008, pacs.004,
+  pain.001, pain.008, camt.053/054/056, pacs.002/pain.002 and MT103, MT103 RETN,
+  MT101, MT104, MT940, MT900/910, MT192, MT199. An MX carrying several
+  transactions becomes one MT per transaction. Values with no place in the target
+  are listed as dropped. It declines rather than guesses.
+- **AI fallback** (`app/agents.py`): Google ADK agents on Gemini, called only when
+  the engine declines or its result breaks a rule the source didn't.
+- **Endpoints:** `GET /api/health` (engine + AI state, used by `/status/`),
+  `POST /api/check`, `POST /api/translate` (`fix: true` repairs first),
+  `POST /api/repair`, and the private `/api/admin/*` used by `/insights/`.
+- Details, limits and env vars: `ai-api/README.md`.
 
-- **Coverage (MX → MT):** nine payment & cash-management messages —
-  `pacs.008 → MT103`, `pacs.004 → MT103 RETN`, `pain.001 → MT101`,
-  `pain.008 → MT104`, `camt.053 → MT940`, `camt.054 → MT900/910`,
-  `camt.056 → MT192`, and `pacs.002` / `pain.002 → MT199`. The `MX_TO_MT` path
-  dispatches on the type detected from the schema namespace (`detectIsoType`);
-  each pair is one mapping method, so adding a pair is a localized change.
-  Reverse (`MT → MX`) currently covers `MT103 → pacs.008`. Messages with no MT
-  counterpart (securities, cards, FX, trade, headers, admin) are rejected with a
-  clear message.
-- **Layout:** `TransformController` (REST) → `TransformService` (type dispatch +
-  the mappings) → `dto/TransformRequest` + `TransformResponse`; `config/WebConfig`
-  sets CORS (allows `iso20022academy.in` + `localhost:5500`). Packaged with a
-  multi-stage `Dockerfile` (Maven build → JRE runtime) and reads `$PORT`.
-- **Endpoints:** `POST /api/transform` — body `{ direction: "AUTO" | "MT_TO_MX" | "MX_TO_MT", source }`;
-  `GET /api/health` — the liveness probe used by the status page and UptimeRobot.
-- **Two hard-won fixes worth remembering:** (1) `MT103.parse()` needs a full FIN
-  message, so bare `:20:`-style field input is wrapped in a minimal FIN envelope
-  before parsing. (2) Prowide 10.3.13 calls `org.apache.commons.lang3.Strings`,
-  added in commons-lang3 **3.18.0** — pinned via `<commons-lang3.version>` in
-  `pom.xml` to override Spring Boot's older managed version (else a runtime
-  `NoClassDefFoundError`). CreDtTm is truncated to whole seconds.
-
-### How the Playground uses it — the live-only slide-over
-
-The Playground is one workspace: the catalogue cards (left, `samples.js`) load a
-message into the single **XML viewer** (right, `xml-viewer.js`), and a
-**Transform** button in the top bar sends the current message to the backend.
-The result renders in a **slide-over panel** — live-only, no in-browser
-approximation — with a "waking the engine…" state for Render cold starts and a
-graceful error + Retry so a sleeping server never leaves a dead panel. The panel
-is appended to `<body>` (not the page) so `position: fixed` fills the viewport
-rather than being clipped by the page's animation transform. Transform is enabled
-only for messages whose sample `dest` includes `transformer`; the request helper
-is `MsgTransformer.callEngine(source, direction)` and the API base is
-`TRANSFORM_API` at the top of `assets/js/transformer.js` (point it at
-`http://localhost:8080` for local dev).
+The old Java service in `/transform-api` is kept for reference only.
 
 ### Hosting & services
 
@@ -567,7 +527,7 @@ is `MsgTransformer.callEngine(source, direction)` and the API base is
 |---|---|---|
 | Static site | **GitHub Pages** | serves repo root; custom domain via CNAME; `.nojekyll` |
 | Site deploy | **GitHub Actions** | `.github/workflows/pages.yml` runs the 3 build scripts |
-| Backend | **Render** | Docker, root dir `transform-api`, scales to zero |
+| Backend | **Render** | Docker, root dir `ai-api`, free plan (sleeps after 15 min idle) |
 | Keep-warm / uptime | **UptimeRobot** | pings `/api/health` every 10 min |
 | Analytics | **Cloudflare Web Analytics** | cookieless |
 | Email capture | **Formspree** | `signup.js`, no backend |
@@ -584,11 +544,13 @@ SPA's hash router. These outputs are generated and git-ignored.
 
 ### Monitoring & status
 
-`/status/` is a standalone page (outside the SPA) that hits `/api/health`, shows
-the Website and Transform Engine states with response times, and auto-refreshes
-every 60 s. Every page's footer carries a pulsing **"Page status: Live"** pill
-(inline script in `index.html`) that flips to red / "Page status: Offline" if the
-engine can't be reached.
+`/status/` is a standalone page (outside the SPA) that hits the Translator's
+`/api/health` and shows the Website, the Translator (rules engine) with its
+response time, and the AI fallback (available, paused at its usage limit, or off).
+It auto-refreshes every 60 s.
+
+`/insights/` is the owner-only traffic dashboard: it asks for the admin key and
+reads Cloudflare Web Analytics through `/api/admin/*` on the Translator service.
 
 ### Operational gotcha — the mount-sync gremlin
 

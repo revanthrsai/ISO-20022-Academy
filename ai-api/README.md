@@ -52,6 +52,13 @@ MT104, a missing mandatory value. A decline goes to the AI.
 
 Only the direct equivalent is accepted as a target (MT103 → pacs.008, never MT103 → pain.001).
 
+## Owner dashboard (`/insights/`)
+
+`GET /api/admin/traffic?days=1|7|30` (Cloudflare Web Analytics, cached 5 minutes) and `GET /api/admin/service`
+(Translator counts since the instance started) need the `X-Admin-Key` header to equal `ADMIN_KEY`. Ten wrong keys
+in ten minutes lock that address out for a while. Env vars: `ADMIN_KEY`, `CF_API_TOKEN` (Account Analytics: Read),
+`CF_ACCOUNT_ID`, optional `CF_SITE_TAG` / `SITE_HOST`. Nothing about visitors is stored by this service.
+
 ## Limits and privacy
 
 - Rules engine: `ENGINE_PER_MINUTE` (30) per visitor, no daily cap (it costs nothing).

@@ -172,7 +172,7 @@ const Translator = (function () {
             +       '</span></div>'
             +     '<textarea id="tr-src" class="tr-src" spellcheck="false" autocomplete="off" aria-label="Message"'
             +       ' placeholder="Paste a pacs.008, pain.001, camt.053, MT103… message here" oninput="Translator.onInput()"></textarea>'
-            +     '<div class="tr-privacy">Don’t paste real customer data. Messages are sent to Google Gemini to process and are not stored by us.</div>'
+            +     '<div class="tr-privacy">Don’t paste real customer data. Your message is translated on our server and never stored. Only a message the rules engine can’t handle is passed to Google Gemini.</div>'
             +   '</section>'
             +   '<section class="tr-pane tr-pane-out" aria-label="Result" aria-live="polite">'
             +     '<div class="tr-bar"><span class="tr-bar-title" id="tr-out-title">Translation</span><span class="tr-badge" id="tr-badge"></span></div>'

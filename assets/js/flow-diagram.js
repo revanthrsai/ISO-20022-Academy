@@ -153,7 +153,7 @@ const FlowDiagram = (function () {
     border-radius: 50%;
     background: var(--glass-tint-strong);
     border: 1px solid var(--border-hi);
-    color: var(--primary-bright);
+    color:var(--primary-text,#0A7450);
     font-size: 11px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;

@@ -27,6 +27,7 @@ from fastapi.responses import JSONResponse
 
 from . import checks, engine, formats, mappings
 from .models import RepairRequest, TranslateRequest
+from .admin import router as admin_router
 
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
     "ALLOWED_ORIGINS",
@@ -37,7 +38,7 @@ PER_DAY = int(os.environ.get("RATE_PER_DAY", "40"))
 DAILY_CAP = int(os.environ.get("DAILY_REQUEST_CAP", "500"))
 
 app = FastAPI(title="ISO 20022 Academy AI API", docs_url=None, redoc_url=None, openapi_url=None)
-app.add_middleware(CORSMiddleware, allow_origins=ALLOWED_ORIGINS, allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
+app.add_middleware(CORSMiddleware, allow_origins=ALLOWED_ORIGINS, allow_methods=["GET", "POST"], allow_headers=["Content-Type", "X-Admin-Key"])
 
 
 # ── limits: per visitor per minute / per day, and a site-wide daily budget ───
@@ -75,14 +76,33 @@ def _require_key() -> None:
         raise HTTPException(503, "The AI isn't configured on the server yet.")
 
 
+app.include_router(admin_router)
+
+
 @app.exception_handler(HTTPException)
 async def _http_err(_req, exc: HTTPException):
     return JSONResponse({"ok": False, "message": exc.detail}, status_code=exc.status_code)
 
 
+# What the status page shows about the AI, from the calls since this instance started.
+_ai_state: dict = {"last_ok": None, "last_error": None, "since": time.time()}
+_counts: dict = defaultdict(int)  # since this instance started: rules / ai / fallbacks / failures
+
+
+def _ai_status() -> str:
+    if not (os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")):
+        return "not-configured"
+    err, ok = _ai_state["last_error"], _ai_state["last_ok"]
+    if err and (not ok or err["at"] > ok) and time.time() - err["at"] < 6 * 3600:
+        return "limited" if err["kind"] == "quota" else "failing"
+    return "available"
+
+
 @app.get("/api/health")
 async def health():
-    return {"ok": True, "service": "ai-api", "configured": bool(os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"))}
+    return {"ok": True, "service": "ai-api", "engine": "rules", "pairs": len(engine.TRANSLATORS),
+            "configured": bool(os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")),
+            "ai": _ai_status()}
 
 
 def _source_type(text: str, given: str | None) -> dict:
@@ -102,6 +122,9 @@ def _ai_error(e: Exception) -> HTTPException:
     # Only the error type and the API's own text are logged, never the message being translated.
     code = getattr(e, "code", None) or getattr(e, "status_code", None)
     log.error("AI call failed: %s (code=%s): %s", type(e).__name__, code, str(e)[:400])
+    quota = code == 429 or "RESOURCE_EXHAUSTED" in str(e)
+    _ai_state["last_error"] = {"kind": "quota" if quota else "error", "at": time.time()}
+    _counts["ai_failed"] += 1
     if isinstance(e, asyncio.TimeoutError):
         return HTTPException(504, "The AI took too long. Try again in a moment.")
     if code == 429 or "RESOURCE_EXHAUSTED" in str(e):
@@ -149,14 +172,19 @@ async def check(body: RepairRequest, req: Request):
             "equivalent": formats.FORMATS.get(code or "", {}).get("equivalent"), "validation": v}
 
 
-def _review(source: str, src: str, target: str, message: str, declared: list[str], original: str | None = None) -> tuple[dict, dict]:
+def _review(source: str, src: str, target: str, message: str, declared: list[str], original: str | None = None,
+            parts: list | None = None) -> tuple[dict, dict]:
     """The same checks for every result, whoever wrote it: validation, the pair's rules, value comparison.
 
     `source` is what was translated (the fixed message, when fixing); values are compared with the
     visitor's `original`, with the declared fixes allowed.
     """
     validation = checks.validate(message)
-    rule_findings = mappings.pair_findings(src, target, source, message)
+    if parts and len(parts) > 1:  # one MT per transaction: each is checked against its own piece of the source
+        rule_findings = [{**f, "where": f"Message {i + 1} {f.get('where', '')}".strip()}
+                         for i, (piece, msg) in enumerate(parts) for f in mappings.pair_findings(src, target, piece, msg)]
+    else:
+        rule_findings = mappings.pair_findings(src, target, source, message)
     if rule_findings:
         validation["findings"] = validation["findings"] + rule_findings
         validation["valid"] = False
@@ -189,10 +217,10 @@ async def translate(body: TranslateRequest, req: Request):
         r = engine.repair(body.source)
         source, fixed, unresolved, ai_fix = r["message"], r["changes"], r["unresolved"], r["needs_ai"]
 
-    def payload(by: str, message: str, filled, dropped, notes: str, extra_fixed=(), reason: str = "", model: str = ""):
+    def payload(by: str, message: str, filled, dropped, notes: str, extra_fixed=(), reason: str = "", model: str = "", parts=None):
         all_fixed = list(fixed) + list(extra_fixed)
         declared = [f["value"] for f in filled] + [c["after"] for c in all_fixed]
-        validation, fidelity = _review(source, src, body.target, message, declared, original=body.source)
+        validation, fidelity = _review(source, src, body.target, message, declared, original=body.source, parts=parts)
         return {
             "ok": True, "kind": "translate", "engine": by, "fallbackReason": reason or None,
             "sourceType": src, "targetType": body.target, "outputType": checks.detect(message)["code"],
@@ -211,14 +239,18 @@ async def translate(body: TranslateRequest, req: Request):
     else:
         try:
             o = engine.translate(source, src, body.target)
-            rules_result = payload("rules", o.message, o.filled, o.dropped, " ".join(o.notes))
+            rules_result = payload("rules", o.message, o.filled, o.dropped, " ".join(o.notes), parts=o.parts)
             new_errs = _new_errors(rules_result["validation"], source)
             if not new_errs and rules_result["fidelity"]["ok"]:
+                _counts["rules"] += 1
+                _counts[f"pair:{src} → {body.target}"] += 1
                 return rules_result
             reason = "The rules engine's result broke a rule: " + (new_errs[0]["message"] if new_errs else "a value didn't match the source.")
         except engine.Decline as e:
             reason = str(e)
     log.info("rules engine passed %s -> %s to the AI: %s", src, body.target, reason[:200])
+    _counts["fallback"] += 1
+    _counts[f"reason:{reason[:80]}"] += 1
 
     # 3. The AI, only now.
     def keep_rules(note: str):
@@ -231,10 +263,10 @@ async def translate(body: TranslateRequest, req: Request):
         raise HTTPException(422, f"The rules engine can't translate this one: {reason}")
     try:
         await _admit(req)
-    except HTTPException:
+    except HTTPException as limit:
         if rules_result:
             return keep_rules("The AI's limit is reached, so this is the rules engine's result with its flags.")
-        raise
+        raise HTTPException(limit.status_code, f"The rules engine can't translate this message: {reason} {limit.detail}")
     from . import agents  # imported lazily so the engine works without ADK credentials
     try:
         out = await agents.translate(source, src, body.target, fix=ai_fix)
@@ -242,7 +274,12 @@ async def translate(body: TranslateRequest, req: Request):
         err = _ai_error(e)
         if rules_result:
             return keep_rules(f"The AI couldn't be reached ({err.detail}) This is the rules engine's result with its flags.")
-        raise err
+        # Say why the rules engine passed it on, not just that the AI is out.
+        raise HTTPException(err.status_code, f"The rules engine can't translate this message: {reason} "
+                                             f"It would normally go to the AI, but {err.detail[0].lower() + err.detail[1:]}")
+    _ai_state["last_ok"] = time.time()
+    _counts["ai"] += 1
+    _counts[f"pair:{src} → {body.target}"] += 1
     return payload("ai", out.message, [f.model_dump() for f in out.filled], [d.model_dump() for d in out.dropped], out.notes,
                    extra_fixed=[c.model_dump() for c in out.fixed], reason=reason, model=agents.MODEL)
 

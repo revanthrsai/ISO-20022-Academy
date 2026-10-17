@@ -2,11 +2,11 @@
 
 **The best place on the internet to understand, explore, and experiment with ISO 20022 — the language of modern payments.**
 
-🌐 **Live:** [iso20022academy.in](https://iso20022academy.in) &nbsp;·&nbsp; 🟢 **Status:** [iso20022academy.in/status](https://iso20022academy.in/status/) &nbsp;·&nbsp; ⚙️ **Engine health:** [/api/health](https://iso20022academy-transform-api.onrender.com/api/health)
+🌐 **Live:** [iso20022academy.in](https://iso20022academy.in) &nbsp;·&nbsp; 🟢 **Status:** [iso20022academy.in/status](https://iso20022academy.in/status/) &nbsp;·&nbsp; ⚙️ **Translator health:** [/api/health](https://iso20022academy-ai-api.onrender.com/api/health)
 
 ---
 
-ISO 20022 Academy is a self-taught, ground-up learning platform for the global payments-messaging standard — built the way I wished someone had built it for me on day one. It began as one person's study notes and grew into a **full-stack product**: an interactive academy of long-form lessons, a live message playground, a searchable glossary, and — behind it — a **real Java + Prowide engine that transforms live between the legacy SWIFT MT world and ISO 20022 MX**.
+ISO 20022 Academy is a self-taught, ground-up learning platform for the global payments-messaging standard — built the way I wished someone had built it for me on day one. It began as one person's study notes and grew into a **full-stack product**: long-form lessons, hands-on workshops, a reference of every element and code, and a **Live Translator** that converts between ISO 20022 (MX) and SWIFT MT with a rules engine first and AI as the fallback.
 
 It is deliberately not the largest financial knowledge base. It is meant to be the *clearest* one.
 
@@ -14,71 +14,51 @@ It is deliberately not the largest financial knowledge base. It is meant to be t
 
 ## ✨ Highlights
 
-- **A live MT ⇄ MX transformation engine.** Pick any of nine payment & cash-management messages and a real backend converts it to its SWIFT MT equivalent — `pacs.008 → MT103`, `pain.001 → MT101`, `camt.053 → MT940`, and more — parsed with **Prowide Core** on a **Spring Boot** service, deployed and monitored. Not a client-side toy; an actual API.
+- **A hybrid Live Translator.** Pick a Source format (a valid sample loads) or paste your own message; the Destination is always its direct equivalent. A **rules engine** translates all 16 directions by the published field rules, instantly and the same way every time, and safely fixes what can be proven wrong. **Google ADK agents on Gemini** step in only for messages the rules don't cover. Every result, whoever wrote it, is checked: the format, the pair's field rules, and every amount, BIC, account, date and reference against the original.
 - **44 long-form lessons** that always open with a human problem and only reach XML at the very end — from "what is money" to `camt.110/111`, the new investigations model, and the November 2026 structured-address deadline.
-- **AI Translator** — pick a Source format to load a valid sample, or paste your own ISO 20022 or SWIFT MT message; the Destination is always its direct equivalent. Google ADK agents on Gemini translate it following each pair’s field rules, every result is re-checked (format, the pair’s rules, and every amount, BIC, account, date and reference against the original), and a message with errors can be fixed by the AI first.
-- **A live compliance calendar** counting down to the real 2026/2027 migration deadlines, and a **chronometer** timeline that sweeps across 5,000 years of payments history as you scroll.
-- **Quizzes, an 87-term glossary, ⌘K command-palette search**, and **per-lesson SEO pages** so every topic is individually discoverable on Google.
-- **Zero-dependency frontend** (vanilla HTML/CSS/JS, no framework) on free static hosting, plus a **containerised Java backend** — the whole stack runs on free tiers.
+- **Hands-on workshops** where you repair broken messages and are graded by code.
+- **A live compliance calendar** counting down to the real 2026/2027 migration deadlines, and a **chronometer** timeline that sweeps across 5,000 years of payments history.
+- **Quizzes, an 87-term glossary, a message dictionary, ⌘K search**, and **per-lesson SEO pages** so every topic is individually discoverable on Google.
+- **Zero-dependency frontend** (vanilla HTML/CSS/JS) on free static hosting, plus one small Python service. The whole stack runs on free tiers.
 
 ---
 
 ## 🏛 Architecture
 
-Two independently deployed halves, one repository:
-
 ```
-                            ┌─────────────────────────────────────────────┐
-   Browser  ───────────────▶│  STATIC SITE  ·  GitHub Pages                │
-                            │  iso20022academy.in                          │
-                            │  vanilla HTML/CSS/JS · no framework          │
-                            │  lessons · playground · glossary · search    │
-                            └───────────────┬─────────────────────────────┘
-                                            │  fetch (CORS)
-                                            ▼
-                            ┌─────────────────────────────────────────────┐
-      "Run the live         │  TRANSFORM API  ·  Render (Docker)           │
-       engine" button ─────▶│  Spring Boot 3 · Java 17 · Prowide Core      │
-                            │  POST /api/transform  (MT103 ⇄ pacs.008)     │
-                            └─────────────────────────────────────────────┘
-                                            ▲
-                     UptimeRobot ───────────┘  pings /api/health every 10 min
-                                               (keeps the free instance warm)
+   Browser  ──────────▶  STATIC SITE · GitHub Pages            iso20022academy.in
+                         vanilla HTML/CSS/JS · lessons, workshops, reference, translator
+                                   │  fetch (CORS)
+                                   ▼
+                         TRANSLATOR API · Render (Docker, FastAPI)     /ai-api
+                           1. rules engine: translate + safe repairs (instant, free)
+                           2. Google ADK + Gemini: only when the engine declines
+                           3. the same checks on every result
+                                   │
+                                   └──▶ Cloudflare Web Analytics API (owner-only /insights/)
 ```
 
-The **frontend is static** — GitHub Pages can't run code, so the site stays fast, free, and resilient. The **backend is a separate deployable** — the one thing that genuinely needs a server (real message parsing) lives on Render. They talk over a small CORS-enabled JSON API.
+The **frontend is static**, so it stays fast, free and resilient. The **Translator service** is the one part that needs a server.
 
 ---
 
-## 🔁 The live MT ⇄ MX transformer
+## 🔁 The Live Translator
 
-The headline feature, and the reason there's a backend at all.
+| ISO 20022 | ⇄ | SWIFT MT |
+|---|---|---|
+| `pacs.008` FI-to-FI credit transfer | ⇄ | `MT103` |
+| `pacs.004` payment return | ⇄ | `MT103 RETN` |
+| `pain.001` credit transfer initiation | ⇄ | `MT101` |
+| `pain.008` direct debit initiation | ⇄ | `MT104` |
+| `camt.053` statement | ⇄ | `MT940` |
+| `camt.054` debit/credit notification | ⇄ | `MT900 / MT910` |
+| `camt.056` cancellation request | ⇄ | `MT192` |
+| `pacs.002` / `pain.002` status report | → | `MT199` (free text, one way) |
 
-- **What it does:** detects the ISO 20022 message type and converts it to its legacy SWIFT MT equivalent. Nine payment & cash-management messages are covered today:
-
-  | ISO 20022 | → | SWIFT MT |
-  |---|---|---|
-  | `pacs.008` FI-to-FI credit transfer | → | `MT103` |
-  | `pacs.004` payment return | → | `MT103 RETN` |
-  | `pain.001` credit transfer initiation | → | `MT101` |
-  | `pain.008` direct debit initiation | → | `MT104` |
-  | `camt.053` statement | → | `MT940` |
-  | `camt.054` debit/credit notification | → | `MT900 / MT910` |
-  | `camt.056` cancellation request | → | `MT192` |
-  | `pacs.002` / `pain.002` status report | → | `MT199` |
-
-  The reverse direction (`MT103 → pacs.008`) is live; the other reverse mappings are the next tranche. Messages with no MT counterpart (securities, cards, FX, trade, headers, network admin) are rejected with a clear message rather than a wrong guess.
-- **How:** MT parsing uses [**Prowide Core**](https://www.prowidesoftware.com/development-tools/core) (Apache 2.0) — the genuinely hard part. Every field mapping is coded explicitly and auditably, so no commercial translator is required.
-- **Where it lives:** [`/transform-api`](./transform-api) — a Spring Boot service with a clean REST surface. The `MX_TO_MT` path dispatches on the detected message type; adding a pair is one mapping method.
-
-```bash
-curl -X POST https://iso20022academy-transform-api.onrender.com/api/transform \
-  -H 'Content-Type: application/json' \
-  -d '{ "direction": "MT_TO_MX",
-        "source": ":20:BOB-INV0042\n:23B:CRED\n:32A:260627USD400,00\n:50K:Bob Marsh\n:52A:EBILAEAD\n:57A:HDFCINBB\n:59:Sweety Rao\n:70:Invoice 0042\n:71A:SHA" }'
-```
-
-Returns a full, well-formed `pacs.008` with a freshly generated UETR. In the Playground, the **"Run through the live engine"** button surfaces this result badged *"transformed by a live Java + Prowide server."* The instant in-browser transform stays as the fast, always-available layer; the API is the real engine on top — with a graceful "warming up…" state for cold starts.
+- **Rules engine** (`ai-api/app/engine`): readers that remember what they used, so anything without a place in the target is listed as *not carried over* rather than lost; an MX with several transactions becomes one MT per transaction; it declines rather than guesses.
+- **Safe repairs:** counts and control sums, unambiguous dates, decimals, MT amount commas, header addresses. What only the sender can know (a wrong IBAN, a missing name) is reported, never guessed.
+- **AI fallback:** called only when the engine can't do it. If the AI is unavailable, the visitor still gets the engine's result with its flags.
+- Details, endpoints, limits and environment variables: [`ai-api/README.md`](./ai-api/README.md).
 
 ---
 
@@ -86,33 +66,35 @@ Returns a full, well-formed `pacs.008` with a freshly generated UETR. In the Pla
 
 | Area | What it is |
 |---|---|
-| **History** | A five-chapter documentary of how money became information, with a live compliance-deadline calendar and a scroll-driven chronometer. |
-| **Library** | 44 long-form lessons across six levels — fundamentals → architecture → message deep-dives → exceptions → case studies → field guides. |
-| **Playground** | Two modes. **Translator**: paste a message (or load the pacs.008 example) and translate it ISO 20022 ⇄ SWIFT MT on the live engine, with a table of available translations. **Dictionary**: every element and code set. |
-| **Glossary** | 87 cross-linked terms, from IBAN to settlement, filterable and searchable. |
-| **Extras** | ⌘K search, per-level quizzes, per-lesson SEO pages, email capture, and a live status page. |
+| **Library** | 44 long-form lessons across six levels, laid out as a course: fundamentals → architecture → message deep-dives → exceptions → case studies → field guides. |
+| **History** | A documentary of how money became information, with a scroll-driven chronometer. |
+| **Playground** | The Live Translator. |
+| **Workshop** | Scenario-based exercises: fix a broken payment, migrate MT to MX, trace an R-transaction. |
+| **Reference** | Glossary (87 terms) and Dictionary (elements, code sets, what's changing). |
+| **Extras** | ⌘K search, per-level quizzes, per-lesson SEO pages, email capture, a live status page, and an owner-only traffic dashboard. |
 
 ---
 
 ## 🗂 Repository structure
 
-Each folder has one job. The web-facing folders **must** stay at the repo root — GitHub Pages serves the root and the app uses absolute paths (`/assets`, `/content`, `/samples`).
+The web-facing folders **must** stay at the repo root — GitHub Pages serves the root and the app uses absolute paths (`/assets`, `/content`, `/samples`).
 
 | Path | Purpose | Served? |
 |---|---|---|
 | `index.html` | The single-page app shell + script includes | ✅ web root |
-| `assets/` | All CSS, JS modules, and images. `style.css :root` is the design-token source of truth | ✅ |
-| `content/` | The 44 lessons as Markdown (frontmatter + prose + custom tokens) — **source of truth for reading** | ✅ (fetched) |
-| `samples/` | The 18 ISO 20022 sample messages as JSON — fetched on demand by the Playground | ✅ (fetched) |
-| `status/` | The standalone live status page (`/status/`) | ✅ |
+| `assets/` | CSS, JS modules and images. `style.css :root` is the design-token source of truth | ✅ |
+| `content/` | The 44 lessons as Markdown — **source of truth for reading** | ✅ (fetched) |
+| `samples/` | The 17 sample messages (one per Translator source) as JSON | ✅ (fetched) |
+| `status/` | The public status page (`/status/`) | ✅ |
+| `insights/` | The owner-only traffic dashboard (`/insights/`, key required) | ✅ (no data without the key) |
 | `admin/` | Decap CMS panel at `/admin` for authoring lessons | ✅ |
-| `scripts/` | Zero-dependency Node build scripts (run in CI) — see below | build-time |
-| `transform-api/` | The **Spring Boot + Prowide** backend (deployed separately to Render) | separate |
-| `ai-api/` | The **Google ADK + Gemini** service behind AI Translate and AI Repair (deployed separately to Render) — see [`ai-api/README.md`](./ai-api/README.md) | separate |
+| `scripts/` | Zero-dependency Node build scripts (run in CI) | build-time |
+| `ai-api/` | The **Translator service**: rules engine + Google ADK/Gemini fallback (Render) | separate, not published |
+| `transform-api/` | The retired Java + Prowide engine, kept for reference | not published |
 | `docs/` | Project documentation — start with [`HANDBOOK.md`](./docs/HANDBOOK.md) | — |
 | `.github/workflows/` | The GitHub Pages deploy pipeline | CI |
 
-**Generated at build time (git-ignored, never edited by hand):** `library/` (per-lesson SEO pages), `sitemap.xml`, `robots.txt`, and `samples/manifest.json`.
+**Generated at build time (git-ignored):** `library/`, `dictionary/`, `glossary/`, `workshop/` SEO pages, `sitemap.xml`, `robots.txt`, `samples/manifest.json`.
 
 ---
 
@@ -122,55 +104,39 @@ Everything runs on free tiers.
 
 | Concern | Choice |
 |---|---|
-| **Frontend** | Vanilla HTML/CSS/JS — **no framework, no build step** for the app itself |
+| **Frontend** | Vanilla HTML/CSS/JS — no framework |
 | **Static hosting** | GitHub Pages (custom domain, GitHub Actions deploy) |
-| **Backend** | Spring Boot 3.3 · Java 17 · [Prowide Core](https://central.sonatype.com/artifact/com.prowidesoftware/pw-swift-core) `SRU2025-10.3.13` (Apache 2.0) |
-| **Backend hosting** | Render (Docker, scales to zero) |
-| **Uptime / keep-warm** | UptimeRobot (pings `/api/health` every 10 min) |
-| **Analytics** | Cloudflare Web Analytics (cookieless) |
-| **Email capture** | Formspree (no backend) |
-| **Markdown / fonts** | `marked.js` (CDN) · Google Fonts (Inter, Plus Jakarta Sans, Newsreader, JetBrains Mono) |
-| **Domain** | `.in` via the National Internet Exchange of India (NIXI) registry |
+| **Translator service** | Python 3.12 · FastAPI · lxml · Google ADK + Gemini (fallback) |
+| **Service hosting** | Render (Docker, free plan) |
+| **Analytics** | Cloudflare Web Analytics (cookieless), read by `/insights/` through the service |
+| **Email capture** | Formspree |
+| **Markdown / fonts** | `marked.js` (CDN) · Google Fonts |
+| **Domain** | `.in` via NIXI |
 
 ---
 
 ## 🚀 Build & deploy
 
-There are **two pipelines**, one per half of the stack.
+**1 · The site (automatic, on every push to `main`)** — `.github/workflows/pages.yml` regenerates the Library registry, the SEO pages + sitemap, and the sample manifest, minifies JS/CSS, and publishes only the web-facing folders to GitHub Pages.
 
-**1 · The site (automatic, on every push to `main`)** — `.github/workflows/pages.yml` runs three zero-dependency Node scripts, then deploys to GitHub Pages:
-
-- `scripts/build-toc.js` → regenerates the Library registry (`assets/js/toc.data.js`) from every lesson's frontmatter.
-- `scripts/build-seo.js` → generates a crawlable `/library/<id>/` page per lesson, plus `sitemap.xml` and `robots.txt`.
-- `scripts/build-samples.js` → regenerates `samples/manifest.json` from the sample files.
-
-Add a lesson (`content/*.md`) or a sample (`samples/*.json`), push, and everything regenerates itself. Nothing is hardcoded.
-
-**2 · The transform API (manual, from `/transform-api`)** — deployed to Render as a Docker service (root directory `transform-api`, using its `Dockerfile`). It reads `$PORT`, so it drops onto Render / Railway / Cloud Run unchanged. See [`transform-api/README.md`](./transform-api/README.md).
+**2 · The Translator service (automatic on Render)** — Render builds `ai-api/` from its `Dockerfile` on every push. Environment variables are set in Render only (never in the repo): see [`ai-api/README.md`](./ai-api/README.md).
 
 ---
 
 ## 💻 Local development
 
-**The site** (any static server; no build needed to view):
-
 ```bash
-# from the repo root — e.g. VS Code Live Server on port 5500, or:
+# the site — any static server from the repo root
 npx serve .
-# then open http://localhost:5500
-# after adding a lesson or sample, refresh the generated files:
-node scripts/build-toc.js && node scripts/build-samples.js
+node scripts/build-toc.js && node scripts/build-samples.js   # after adding a lesson or sample
+
+# the Translator service
+cd ai-api
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -q                                  # the engine runs with no key or network
+uvicorn app.main:app --reload --port 8000  # then set AI_API in assets/js/translator.js to http://localhost:8000
 ```
-
-**The API** (JDK 17+ and Maven):
-
-```bash
-cd transform-api
-mvn spring-boot:run          # → http://localhost:8080
-curl http://localhost:8080/api/health
-```
-
-To point the Playground at your local API during development, change `TRANSFORM_API` at the top of `assets/js/transformer.js` to `http://localhost:8080`.
 
 ---
 
@@ -182,17 +148,16 @@ Lessons are Markdown with a tiny frontmatter contract and a few custom tokens (`
 
 ## 📈 Status & monitoring
 
-- **Live status page:** [iso20022academy.in/status](https://iso20022academy.in/status/) — a real-time health check of the site and the transform engine, with response times.
-- **Footer pill:** every page shows a pulsing **"Page status: Live"** indicator that turns red if the engine is unreachable.
-- **UptimeRobot** keeps the free Render instance warm so visitors don't hit cold starts.
+- **Status page:** [iso20022academy.in/status](https://iso20022academy.in/status/) — the website, the Translator (rules engine) with its response time, and whether the AI fallback is available or paused at its usage limit.
+- **Traffic:** `/insights/` (owner only) shows visits, pages, referrers, countries and devices from Cloudflare Web Analytics.
 
 ---
 
 ## 🎯 Objective & status
 
-**Objective:** be the definitive place to *learn* ISO 20022 — clarity over coverage, understanding before implementation — and to prove the concepts with a working, real-world transformation engine rather than screenshots.
+**Objective:** be the definitive place to *learn* ISO 20022 — clarity over coverage, understanding before implementation — and to prove the concepts with a working translator rather than screenshots.
 
-**Status:** Live and complete. The academy (History, Library, Playground, Glossary), the static-JSON catalogue, the SEO layer, the live MT ⇄ MX backend, and the monitoring/status stack are all in production.
+**Status:** Live. Library, History, Playground (Live Translator), Workshop, Reference, the SEO layer, the Translator service and the status page are in production.
 
 ---
 

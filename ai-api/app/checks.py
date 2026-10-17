@@ -176,11 +176,25 @@ def _f(sev, rule, where, value, msg):
     return {"severity": sev, "rule": rule, "where": where, "value": value, "message": msg}
 
 
+_MT_MSG_RE = re.compile(r"(?:\{1:[^}]*\}(?:\{2:[^}]*\})?(?:\{3:(?:\{[^}]*\})+\})?)?\{4:.*?-\}", re.S)
+
+
+def split_mt(text: str) -> list[str]:
+    """Several MT messages one after another (e.g. one MT103 per transaction) → one string each."""
+    found = _MT_MSG_RE.findall(text or "")
+    return found if len(found) > 1 else [text]
+
+
 def validate(text: str) -> dict:
-    """Validate an ISO 20022 (XML) or SWIFT MT message.
+    """Validate an ISO 20022 (XML) or SWIFT MT message (or several MT messages in a row).
 
     Returns {"valid": bool, "std", "code", "findings": [ {severity: error|warning, rule, where, value, message} ]}.
     """
+    parts = split_mt(text) if not (text or "").lstrip().startswith("<") else [text]
+    if len(parts) > 1:
+        results = [validate(p) for p in parts]
+        findings = [{**f, "where": f"Message {i + 1} {f.get('where', '')}".strip()} for i, r in enumerate(results) for f in r["findings"]]
+        return {"valid": all(r["valid"] for r in results), "std": "MT", "code": results[0]["code"], "findings": findings}
     det = detect(text)
     if det["std"] == "MX":
         findings = _validate_mx(text, det)
@@ -336,6 +350,13 @@ GENERATED_MX = {"CreDtTm", "MsgId", "UETR", "BizMsgIdr", "CreDt"}
 
 def extract_values(text: str) -> dict:
     """Money-critical values as normalized sets: amounts (amount+ccy), currencies, bics (BIC8), accounts, dates, refs."""
+    parts = split_mt(text) if not (text or "").lstrip().startswith("<") else [text]
+    if len(parts) > 1:
+        merged = {}
+        for p in parts:
+            for k, vals in extract_values(p).items():
+                merged.setdefault(k, set()).update(vals)
+        return merged
     det = detect(text)
     v = {"amounts": set(), "currencies": set(), "bics": set(), "accounts": set(), "dates": set(), "refs": set(), "generated": set()}
     if det["std"] == "MX":

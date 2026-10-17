@@ -82,13 +82,29 @@ def test_long_remittance_is_cut_and_reported():
     assert any("RmtInf" in d["field"] for d in out.dropped)
 
 
+def _double(xml, tag, a="BOB-INV0042", b="BOB-INV0043"):
+    i, j = xml.index(f"<{tag}>"), xml.index(f"</{tag}>") + len(f"</{tag}>")
+    one = xml[i:j]
+    return xml.replace(one, one + one.replace(a, b).replace("400.00", "250.00"))
+
+
 @pytest.mark.skipif(not SAMPLES.exists(), reason="samples folder not next to ai-api")
-def test_several_transactions_into_mt103_declines():
-    mx = sample("pacs.008")
-    tx = mx[mx.index("<CdtTrfTxInf>"):mx.index("</CdtTrfTxInf>") + len("</CdtTrfTxInf>")]
-    two = mx.replace(tx, tx + tx).replace("<NbOfTxs>1</NbOfTxs>", "<NbOfTxs>2</NbOfTxs>")
-    with pytest.raises(engine.Decline):
-        engine.translate(two, "pacs.008", "MT103")
+@pytest.mark.parametrize("src,tag,mt", [("pacs.008", "CdtTrfTxInf", "{2:I103"), ("pain.001", "PmtInf", "{2:I101"),
+                                        ("camt.054", "Ntry", ":32A:"), ("camt.056", "TxInf", "{2:I192")])
+def test_several_items_become_one_mt_each(src, tag, mt):
+    two = _double(sample(FILES[src]), tag)
+    if src == "pacs.008":
+        two = two.replace("<NbOfTxs>1</NbOfTxs>", "<NbOfTxs>2</NbOfTxs>")
+    out = engine.translate(two, src, formats.FORMATS[src]["equivalent"])
+    assert len(out.parts) == 2 and out.message.count(mt) == 2, out.message
+    assert "2 " in out.notes[0]
+    for piece, msg in out.parts:  # each MT is right for its own piece of the source
+        assert mappings.pair_findings(src, formats.FORMATS[src]["equivalent"], piece, msg) == []
+        assert checks.validate(msg)["valid"]
+    v = checks.validate(out.message)
+    assert v["valid"], v["findings"]
+    fid = checks.compare_values(two, out.message, declared=[f["value"] for f in out.filled])
+    assert fid["ok"] and not [d for d in fid["dropped"] if d["kind"] == "amount"], fid
 
 
 @pytest.mark.skipif(not SAMPLES.exists(), reason="samples folder not next to ai-api")
